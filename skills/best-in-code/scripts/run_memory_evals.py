@@ -778,19 +778,19 @@ print(json.dumps({'result':result}))
 			return repository_identity(project, "probe")["repository"]["root_commit"]
 
 		root_commit = seed_git_repo(context.project)
-		assert root_commit
+		assert root_commit, "seed_git_repo produced empty root commit"
 		set_state(context.project, state="BUILD", operation="start", run_id="RUN-M39-ACTIVE")
 		_, active_refused, _ = run_process(scripts["init"], ["--project", str(context.project), "--models", "codex", "--rebind-identity", "--dry-run", "--json"], expected={1})
-		assert active_refused["code"] == "ACTIVE_RUN"
+		assert active_refused["code"] == "ACTIVE_RUN", f"active: {active_refused}"
 		set_state(context.project, state="DONE", operation="start", run_id="")
 		_, preview, _ = run_process(scripts["init"], ["--project", str(context.project), "--models", "codex", "--rebind-identity", "--dry-run", "--json"])
 		digest = preview["identity_plan_digest"]
-		assert digest and preview["identity_rebind"] is True
-		assert preview["identity_review"]["before"]["repository"]["kind"] == "directory"
-		assert preview["identity_review"]["after"]["repository"]["root_commit"] == root_commit
+		assert digest and preview["identity_rebind"] is True, f"preview: {preview}"
+		assert preview["identity_review"]["before"]["repository"]["kind"] == "directory", f"review-before: {preview.get('identity_review')}"
+		assert preview["identity_review"]["after"]["repository"]["root_commit"] == root_commit, f"review-after: {preview.get('identity_review')}"
 		run_process(scripts["init"], ["--project", str(context.project), "--models", "codex", "--rebind-identity", "--approve", digest, "--json"])
 		stored_identity = json.loads((context.project / ".harness" / "IDENTITY.json").read_text(encoding="utf-8"))
-		assert stored_identity["repository"]["kind"] == "git" and stored_identity["repository"]["root_commit"] == root_commit
+		assert stored_identity["repository"]["kind"] == "git" and stored_identity["repository"]["root_commit"] == root_commit, f"stored: {stored_identity['repository']} want {root_commit}"
 		beta = context.project.parent / "alpha-beta-copy"
 		shutil.copytree(context.project, beta, ignore=shutil.ignore_patterns(".git"))
 		(beta / ".eval-marker").write_text(uuid.uuid4().hex)
@@ -800,10 +800,10 @@ print(json.dumps({'result':result}))
 		subprocess.run(["git", "-C", str(beta), "add", "-A"], check=True, capture_output=True, env=environment)
 		subprocess.run(["git", "-C", str(beta), "-c", "user.email=eval@harness.local", "-c", "user.name=Eval", "commit", "-qm", "beta"], check=True, capture_output=True, env=environment)
 		_, cross_refused, _ = run_process(scripts["init"], ["--project", str(beta), "--models", "codex", "--rebind-identity", "--approve", digest, "--json"], expected={1})
-		assert cross_refused["code"] == "APPROVAL_REQUIRED"
+		assert cross_refused["code"] == "APPROVAL_REQUIRED", f"cross: {cross_refused}"
 		subprocess.run(["git", "-C", str(context.project), "remote", "add", "origin", "https://example.invalid/m39.git"], check=True, capture_output=True)
 		_, stale_refused, _ = run_process(scripts["init"], ["--project", str(context.project), "--models", "codex", "--rebind-identity", "--approve", digest, "--json"], expected={1})
-		assert stale_refused["code"] == "APPROVAL_REQUIRED"
+		assert stale_refused["code"] == "APPROVAL_REQUIRED", f"stale: {stale_refused}"
 	elif case_id == "M40":
 		baseline = store_digest(context.project)
 		_, ttl_bounded, _ = context.memory(["remember", "--scope", "project", "--kind", "preference", "--key", "ttl.huge", "--value", "safe", "--verification", "ttl:40000d"], expected={2})
