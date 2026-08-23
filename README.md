@@ -78,34 +78,17 @@ Restart the provider session after installing so skill discovery reloads.
 
 ## Workflow
 
-The delivery graph is canonical in [`skills/best-in-code/references/workflow-graph.md`](skills/best-in-code/references/workflow-graph.md); `STATE.json` is its machine-readable authority.
+The delivery graph is canonical in [`skills/best-in-code/references/workflow-graph.md`](skills/best-in-code/references/workflow-graph.md); `STATE.json` is its machine-readable authority. Shape of one run:
 
-```mermaid
-flowchart TD
-	H[Human] <--> PM[Project Manager]
-	PM --> R{Route + capability preflight}
-	R -->|discovery trigger| D[Bounded discovery]
-	R -->|plan needed| P[Planner / Architect]
-	R -->|implementation-ready| C{Applicable work}
-	D -->|material question| H
-	D -->|plan-ready| P
-	P --> PG{Plan gate}
-	PG -->|revise| PM
-	PG -->|approved| C
-	C --> DS[Product Designer]
-	C --> FE[Frontend Engineer]
-	C --> BE[Backend Engineer]
-	DS --> DG{Design gate}
-	DG -->|revise| DS
-	DG -->|approved| FE
-	FE --> I[Integration]
-	BE --> I
-	DS --> I
-	I --> QA[Tester / Reviewer / QA]
-	QA -->|fail| T[Classify defect] --> PM
-	QA -->|delivery pass| A{Human acceptance}
-	A -->|changes| PM
-	A -->|accepted| M[Consolidate memory, close-run]
+```text
+Human ↔ Project Manager → route + capability preflight
+  ├─ Bounded discovery ──┐
+  ├─ Planner/Architect → plan gate
+  │                      ├─ Product Designer → design gate
+  ├─ Frontend + Backend Engineers (parallel, disjoint file ownership)
+  ├─ Integration → independent QA
+  ├─ Human acceptance ───┘
+  └─ Consolidate memory → close-run
 ```
 
 Run states live in `STATE.json`: `INTAKE → DISCOVERY → PLAN → DESIGN → BUILD → INTEGRATE → VERIFY → WAITING_ACCEPTANCE → DONE`, with `REWORK`, `WAITING_DECISION`, and `BLOCKED` as legal side-states. Task-scoped memory is bound to the exact `run_id` and dies with `close-run`.
@@ -113,7 +96,7 @@ Run states live in `STATE.json`: `INTAKE → DISCOVERY → PLAN → DESIGN → B
 ## Architecture
 
 ```mermaid
-flowchart LR
+graph LR
 	subgraph Providers
 		CX[Codex]
 		CC[Claude Code]
