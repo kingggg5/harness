@@ -1,0 +1,18 @@
+{
+	"$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+	"name": "harness",
+	"displayName": "Harness",
+	"version": "0.3.1",
+	"description": "Adaptive cross-model software delivery with scoped memory, role contracts, QA, and human gates.",
+	"author": {
+		"name": "Local developer"
+	},
+	"keywords": [
+		"software-delivery",
+		"multi-agent",
+		"project-memory",
+		"human-in-the-loop",
+		"qa"
+	],
+	"skills": "./skills/"
+}

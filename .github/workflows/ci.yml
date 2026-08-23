@@ -1,0 +1,29 @@
+name: release-gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Portability validation
+        run: python skills/best-in-code/scripts/validate_portability.py
+      - name: Two-process race regression suite
+        run: python skills/best-in-code/scripts/race_tests.py
+      - name: Memory evals (external-model cases tolerated until wired)
+        shell: bash
+        run: |
+          set -o pipefail
+          python skills/best-in-code/scripts/run_memory_evals.py --json > evals.json || true
+          python -c "import json,sys; d=json.load(open('evals.json',encoding='utf-8')); allowed={'M05','M06','M28','M31'}; failed=[r['id'] for r in d['results'] if r.get('status')=='FAIL']; unexpected=[i for i in failed if i not in allowed]; print('counts:',d['counts'],'failed:',failed); sys.exit(1 if unexpected else 0)"
