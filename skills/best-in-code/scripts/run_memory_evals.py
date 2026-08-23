@@ -12,6 +12,7 @@ import stat
 import shutil
 import subprocess
 import sys
+import tempfile
 import uuid
 from pathlib import Path
 from typing import Any
@@ -45,7 +46,10 @@ def parse_args() -> argparse.Namespace:
 
 @contextlib.contextmanager
 def evaluation_directory(parent: str | None):
-	parent_path = Path(parent).expanduser().resolve(strict=True) if parent else Path(os.environ.get("TEMP") or os.environ.get("TMP") or ".").expanduser().resolve(strict=True)
+	if parent:
+		parent_path = Path(parent).expanduser().resolve(strict=True)
+	else:
+		parent_path = Path(tempfile.gettempdir()).resolve(strict=True)
 	root = parent_path / f".he-{uuid.uuid4().hex[:8]}"
 	root.mkdir()
 	try:
