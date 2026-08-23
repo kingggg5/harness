@@ -1,0 +1,37 @@
+{
+	"name": "@kingggg5/harness",
+	"version": "0.3.1",
+	"description": "Adaptive software-delivery harness for Codex, Claude Code, Gemini CLI, and filesystem-capable agents: seven role contracts, durable scoped project memory, digest-bound migrations, and human gates.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kingggg5/harness.git"
+	},
+	"keywords": [
+		"ai-agents",
+		"claude-code",
+		"codex",
+		"gemini-cli",
+		"harness",
+		"project-memory",
+		"skills"
+	],
+	"bin": {
+		"harness": "bin/harness.js"
+	},
+	"files": [
+		"bin/",
+		"skills/",
+		"adapters/",
+		".claude-plugin/",
+		".codex-plugin/",
+		"gemini-extension.json",
+		"README.md",
+		"CHANGELOG.md",
+		"LICENSE"
+	],
+	"engines": {
+		"node": ">=18"
+	},
+	"dependencies": {}
+}
