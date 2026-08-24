@@ -1,3 +1,7 @@
+<p align="center">
+	<img src="assets/brand/harness-logo.png" alt="Harness logo" width="140">
+</p>
+
 # Harness
 
 ![release-gate](https://github.com/kingggg5/harness/actions/workflows/ci.yml/badge.svg)
@@ -7,6 +11,10 @@ Harness is an adaptive software-delivery skill for Codex, Claude Code, Gemini CL
 Everything canonical lives in plain Markdown/JSON under `.harness/` — any model can resume the same project.
 
 `MEMORY.json` is durable authority; `CONTEXT.md` is its generated readable knowledge view. Complex repositories may activate one optional source-grounded `PROJECT-MAP.md` for topology, glossary, ownership, and cross-system flows. It is not created by `init`; Harness activates it only when the map will be reused. Harness deliberately does not create a second generic `KNOWLEDGE.md`.
+
+<p align="center">
+	<img src="assets/brand/harness-workflow.png" alt="Harness workflow: state the goal, plan, bring in the right roles, build and test, pause for human approval, then retain useful context for the next round">
+</p>
 
 ## Demo
 
