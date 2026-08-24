@@ -83,7 +83,7 @@ Restart the provider session after installing so skill discovery reloads.
 ```text
 Harness quick: fix this proven one-file regression
 Harness standard: add this feature and verify it
-Harness full: investigate this production-risk performance issue
+Harness full with adaptive model routing: investigate this production-risk performance issue
 Harness review
 Harness resume
 Harness remember project: API pagination uses cursors
@@ -119,7 +119,7 @@ graph LR
 		GEN[Generic agent]
 	end
 	Providers --> AD[Adapter fragments<br/>AGENTS / CLAUDE / GEMINI / GENERIC]
-	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + 14 references"]
+	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + 15 references"]
 	SKILL --> OPS["Deterministic core (Python)<br/>memory_ops · init · migrate · upgrade"]
 	OPS --> STORE[(".harness/<br/>IDENTITY · MEMORY · STATE<br/>runtime pin · derived views")]
 	OPS -. cross-process writer lock + CAS + digests .-> STORE
@@ -160,7 +160,19 @@ Portable forms: `Harness: <task>`, `Harness full: <task>`, `Harness review`, `Ha
 
 The BA pass is folded into PM for quick work, activated only when requirements are materially unclear, and skipped for implementation-ready tasks. It adds no workflow state or human gate.
 
-**Reference modules** loaded on demand: `workflow-graph`, `memory-loop`, `mode-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+### Model routing
+
+Harness routes model **profiles**, then binds them to models available in the active provider:
+
+| Profile | Typical work | OpenAI GPT-5.6 example |
+|---|---|---|
+| `reasoning` | Material planning/architecture, difficult investigation, high-risk or deep review | `gpt-5.6-sol` |
+| `balanced` | Standard implementation, integration, and ordinary QA | `gpt-5.6-terra` |
+| `fast` | Stable low-risk shards, fixtures, docs, and bounded extraction | `gpt-5.6-luna` |
+
+Quick normally avoids switching. Standard defaults to `balanced` and escalates only material planning/review. Full uses `reasoning` for plan/high-risk review, `balanced` for implementation, and `fast` only after contracts and file ownership are stable. A user-pinned model wins. Missing selection support falls back to the current model with labeled passes; Harness never claims a switch from the request alone. See [official OpenAI model guidance](https://developers.openai.com/api/docs/models).
+
+**Reference modules** loaded on demand: `workflow-graph`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
 
 Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
 

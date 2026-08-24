@@ -1,6 +1,6 @@
 ---
 name: best-in-code
-description: Run an adaptive, reusable software-delivery harness across AI models with conditional business analysis, project management, planning, research, design, frontend, backend, QA, durable scoped memory, capability fallbacks, bounded discovery, and human approval gates. Use when the user invokes Harness or asks for an end-to-end build, review, bug investigation, production-readiness workflow, or project resume; do not use for a quick explanation with no project work.
+description: Run an adaptive, reusable software-delivery harness across AI models with conditional business analysis, model/effort routing, project management, planning, research, design, frontend, backend, QA, durable scoped memory, capability fallbacks, bounded discovery, and human approval gates. Use when the user invokes Harness or asks for an end-to-end build, review, bug investigation, production-readiness workflow, or project resume; do not use for a quick explanation with no project work.
 ---
 
 # Best in Code
@@ -36,6 +36,7 @@ Read [workflow-graph.md](references/workflow-graph.md), the only canonical graph
 
 - The primary agent is Project Manager and the only writer of shared Harness state and memory.
 - Prefer isolated parallel role agents when available and useful. Otherwise run labeled sequential role passes automatically. Call QA **independent** only when it is isolated from implementation context and ownership.
+- When model selection is requested or multiple verified models are available, apply [model-routing.md](references/model-routing.md). User-pinned models win; switch only at stable pass boundaries; record the actual model/effort and fallback. A different model alone does not make QA independent.
 - Every role receives a bounded `ROLE-PACKET.md`: objective, verified record IDs, exclusions, owned files or read-only boundary, capabilities, required checks, stop condition, and return contract.
 - Never assign concurrent write ownership to the same file. Stabilize interfaces before parallel frontend/backend work.
 - Write shared state only at intake, plan/gate, integration, verification, blocker, and completion checkpoints. Role agents return packets; they do not race to edit shared memory.
@@ -47,6 +48,7 @@ Load only the references needed for the selected scale and active lane:
 
 - Always for project work: [engineering-standards.md](references/engineering-standards.md), [workflow-graph.md](references/workflow-graph.md), and [memory-loop.md](references/memory-loop.md).
 - Multi-module onboarding or reusable domain/architecture knowledge: activate the optional source-grounded `PROJECT-MAP.md` described in [memory-loop.md](references/memory-loop.md); skip it for small or one-off work.
+- Multiple model tiers, explicit model selection, cost/latency routing, or cross-model handoff: [model-routing.md](references/model-routing.md).
 - Unclear outcomes, actors, scope, business rules, or acceptance behavior: [requirements-analysis.md](references/requirements-analysis.md).
 - Current library, API, ecosystem, repository, or community evidence: [research-routing.md](references/research-routing.md).
 - Bugs, performance, scale, security, architecture, or uncertainty: [discovery-loop.md](references/discovery-loop.md).

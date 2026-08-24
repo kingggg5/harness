@@ -8,6 +8,7 @@ Harness depends on capabilities, not vendor or model names. At intake, record on
 |---|---|
 | `agents.parallel` | Run bounded role contracts concurrently. |
 | `agents.isolated` | Verify with context and ownership isolated from implementation. |
+| `models.select` | Select and launch a verified model/effort profile for a bounded role pass. |
 | `human.ask` | Pause for a material human decision. |
 | `filesystem.read` / `filesystem.write` | Inspect or mutate project files. |
 | `shell.execute` | Run local diagnostics, tests, builds, and approved scripts. |
@@ -27,6 +28,7 @@ Tool and skill names are backend bindings. Examples include Context7 for `docs.v
 | Need | Fallback order |
 |---|---|
 | Role execution | Parallel isolated agent → sequential isolated session → fresh-session review → labeled same-agent pass |
+| Model selection | Exact user-pinned available model → verified profile binding → current model with supported effort → labeled same-model pass |
 | Current documentation | Versioned-doc tool → official versioned docs → official repository/tag → installed local source → ask human |
 | Remote repository | Connector → local Git → official web source → user-provided evidence |
 | Browser/UI verification | Browser automation → repository E2E → manual screenshot/walkthrough evidence → `Not verified` |

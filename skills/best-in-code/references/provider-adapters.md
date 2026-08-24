@@ -14,6 +14,8 @@ Harness keeps one canonical skill and plain `.harness/` state. Provider files on
 
 Do not put provider aliases in canonical project memory.
 
+Model names are adapter bindings too. Apply the provider-neutral profiles and handoff contract in [model-routing.md](model-routing.md); verify the actual launched model instead of inferring it from a requested alias. A provider without per-pass selection remains a truthful same-model fallback.
+
 ## Project instruction adapters
 
 `adapters/project/AGENTS.md.fragment` is the canonical short project entry point. It points to `.harness/INDEX.md` and the project-pinned `.harness/runtime/SKILL.md`, loading the full skill only on invocation. The pinned snapshot gives Codex, Claude, Gemini, and generic agents the same policy version even when their global installations differ.

@@ -37,6 +37,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/agents/openai.yaml",
 	"skills/best-in-code/references/mode-routing.md",
 	"skills/best-in-code/references/workflow-graph.md",
+	"skills/best-in-code/references/model-routing.md",
 	"skills/best-in-code/references/requirements-analysis.md",
 	"skills/best-in-code/references/capability-contract.md",
 	"skills/best-in-code/references/provider-adapters.md",
@@ -278,6 +279,12 @@ def check_fixtures(root: Path, errors: list[str]) -> None:
 			errors.append("Router fixtures need a complex-repository project-map activation case")
 		if not any("PROJECT-MAP required" in case.get("forbidden_claims", []) for case in cases):
 			errors.append("Router fixtures need a small-task project-map skip case")
+		if not any(isinstance(case.get("expected_model_profiles"), dict) for case in cases):
+			errors.append("Router fixtures need an adaptive model-profile case")
+		if not any(case.get("expected_model_fallback") == "current model with labeled passes" for case in cases):
+			errors.append("Router fixtures need an unavailable model-selector fallback case")
+		if not any(case.get("expected_user_pinned_model") for case in cases):
+			errors.append("Router fixtures need a user-pinned model preservation case")
 	memory = load_json(eval_root / "memory-cases.json", errors)
 	if isinstance(memory, dict):
 		cases = memory.get("cases", [])

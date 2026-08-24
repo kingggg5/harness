@@ -57,6 +57,14 @@ These expire with this run and do not mutate durable memory.
 | Capability ID | Backend/version | Permission/isolation | State | Fallback/limitation |
 |---|---|---|---|---|
 
+## Model routing ledger
+
+- Policy: current-only | adaptive | user-pinned
+- User-pinned model/profile/effort or `N/A`:
+
+| Packet/pass | Requested profile | Preferred model/effort | Actual model/effort | Selection reason/isolation | Fallback or escalation trigger |
+|---|---|---|---|---|---|
+
 ## Role packets
 
 | Packet ID | Role/pass | Isolation label | Objective | Scope/owned files | State | Return evidence |

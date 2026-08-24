@@ -31,6 +31,20 @@
 - Semantic cache root: `.harness/.cache/memory`
 - Semantic cache is canonical: no
 
+## Model routing
+
+- Policy: adaptive when `models.select` is ready; current model otherwise
+- User-pinned model/profile/effort wins: yes
+- Switch boundary: stable role/pass boundary only
+- Escalation order: fast → balanced → reasoning, only on evidence or changed risk
+- Full-chat cross-model handoff: prohibited
+
+| Profile | Intended work | Preferred backend/model | Default effort | Fallback |
+|---|---|---|---|---|
+| reasoning | Material planning, architecture, high-risk/deep review | | high | current model, limitation recorded |
+| balanced | Standard implementation, integration, ordinary QA | | medium | current model |
+| fast | Stable low-risk bounded shards | | low or medium | balanced/current model |
+
 ## Capability bindings
 
 Leave backend blank until preflight proves it ready. Do not treat installation as readiness.
@@ -39,6 +53,7 @@ Leave backend blank until preflight proves it ready. Do not treat installation a
 |---|---|---|---|
 | agents.parallel | | sequential role passes | UNAVAILABLE |
 | agents.isolated | | labeled self-review | UNAVAILABLE |
+| models.select | | current model with labeled pass | UNAVAILABLE |
 | docs.versioned | | official docs/repo/local source | UNAVAILABLE |
 | repository.remote | | local Git/official web/user evidence | UNAVAILABLE |
 | browser.interactive | | E2E/manual evidence/Not verified | UNAVAILABLE |

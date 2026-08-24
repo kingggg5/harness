@@ -139,6 +139,39 @@
 			"required_gates": ["Plan checkpoint", "Acceptance"],
 			"required_artifacts": [".harness/PROJECT-MAP.md"],
 			"forbidden_claims": ["CONTEXT.md is editable memory authority", "KNOWLEDGE.md required", "external documentation copied into project map"]
+		},
+		{
+			"id": "R16",
+			"request": "Harness full with adaptive model routing: plan and review with the strongest reasoning profile, implement with balanced workers, and use fast workers only for stable low-risk shards.",
+			"available_capabilities": ["agents.parallel", "agents.isolated", "models.select"],
+			"expected_operation": "start",
+			"expected_scale": "full",
+			"required_roles": ["Project Manager", "Planner / Architect", "Frontend Engineer", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan", "Acceptance"],
+			"expected_model_profiles": {"material_planning": "reasoning", "implementation": "balanced", "bounded_shards": "fast", "deep_final_review": "reasoning"},
+			"forbidden_claims": ["different model automatically means independent QA", "fast profile owns architecture"]
+		},
+		{
+			"id": "R17",
+			"request": "Harness standard: implement this normal feature with adaptive model routing.",
+			"available_capabilities": [],
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Acceptance"],
+			"expected_model_fallback": "current model with labeled passes",
+			"forbidden_claims": ["model switch occurred", "requested model proves actual runtime"]
+		},
+		{
+			"id": "R18",
+			"request": "Harness standard using Terra only for every pass; do not substitute another model.",
+			"available_capabilities": ["models.select"],
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Acceptance"],
+			"expected_user_pinned_model": "gpt-5.6-terra",
+			"forbidden_claims": ["automatic escalation to Sol", "Luna shard launched"]
 		}
 	]
 }
