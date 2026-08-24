@@ -35,10 +35,10 @@ jobs:
           set -euo pipefail
           mkdir -p dist .release-smoke
           npm pack --ignore-scripts --pack-destination dist
-          archive="$(find dist -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          archive="$(find "$PWD/dist" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
           test -n "$archive"
-          npm install --ignore-scripts --prefix .release-smoke "$archive"
-          ./.release-smoke/node_modules/.bin/harness --help >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund --prefix .release-smoke -- "$archive"
+          node .release-smoke/node_modules/@kingggg5/harness/bin/harness.js --help >/dev/null
           (cd dist && sha256sum *.tgz > SHA256SUMS)
       - name: Publish immutable GitHub Release
         env:

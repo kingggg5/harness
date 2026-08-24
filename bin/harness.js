@@ -20,7 +20,7 @@ const MEMORY_COMMANDS = new Set([
 	"render", "export-cache", "close-run", "mem-validate",
 ]);
 
-const USAGE = `Harness ${process.env.npm_package_version || "0.4.0"} — adaptive delivery skill with durable project memory
+const USAGE = `Harness ${process.env.npm_package_version || "0.4.1"} — adaptive delivery skill with durable project memory
 
 Usage:
   npx github:kingggg5/harness <command> [args...]

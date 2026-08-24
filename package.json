@@ -1,6 +1,6 @@
 {
 	"name": "@kingggg5/harness",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"description": "Adaptive software-delivery harness for Codex, Claude Code, Gemini CLI, and filesystem-capable agents: model/effort routing, seven delivery roles, conditional business analysis, durable scoped memory, and human gates.",
 	"license": "MIT",
 	"homepage": "https://github.com/kingggg5/harness#readme",

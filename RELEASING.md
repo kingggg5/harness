@@ -20,8 +20,8 @@ npm run pack:check
 Create and push an annotated tag that exactly matches `v` plus the package version:
 
 ```bash
-git tag -a v0.4.0 -m "Harness v0.4.0"
-git push origin v0.4.0
+git tag -a vX.Y.Z -m "Harness vX.Y.Z"
+git push origin vX.Y.Z
 ```
 
 The `publish-release-package` workflow repeats the deterministic gates, verifies the archive allowlist, installs the packed artifact in a clean directory, checks the CLI entry point, creates `SHA256SUMS`, and publishes both files to GitHub Releases. A mismatched tag, failed gate, missing file, unexpected private file, or duplicate release stops the workflow.
@@ -31,7 +31,7 @@ The `publish-release-package` workflow repeats the deterministic gates, verifies
 Download the `.tgz` and `SHA256SUMS` from the release, verify the checksum, then install:
 
 ```bash
-npm install --global ./kingggg5-harness-0.4.0.tgz
+npm install --global ./kingggg5-harness-X.Y.Z.tgz
 harness --help
 ```
 

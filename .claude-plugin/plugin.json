@@ -2,7 +2,7 @@
 	"$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
 	"name": "harness",
 	"displayName": "Harness",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"description": "Adaptive cross-model software delivery with model routing, conditional business analysis, scoped memory, QA, and human gates.",
 	"author": {
 		"name": "Local developer"

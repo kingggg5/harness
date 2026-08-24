@@ -31,7 +31,7 @@ One-shot project health report (`doctor`):
     { "check": "identity-valid", "ok": true, "detail": "project-8a5f6dfd-…" },
     { "check": "store-valid", "ok": true, "revision": 0 },
     { "check": "views-fresh", "ok": true, "detail": "all derived views match canonical memory" },
-    { "check": "runtime-pinned", "ok": true, "detail": "version=0.4.0" },
+    { "check": "runtime-pinned", "ok": true, "detail": "version=0.4.1" },
     { "check": "writer-lock-probe", "ok": true, "detail": "AVAILABLE" }
   ]
 }

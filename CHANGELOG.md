@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — portable release smoke install
+
+### Fixed
+
+- The Linux release job now resolves the packed archive to an absolute file path and invokes the installed launcher through Node directly, avoiding platform-specific npm bin-symlink permission and relative-package-spec behavior.
+
 ## 0.4.0 — release-ready package and reusable examples
 
 ### Added
