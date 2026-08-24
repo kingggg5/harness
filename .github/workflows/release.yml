@@ -1,0 +1,55 @@
+name: publish-release-package
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Match tag to package version
+        run: node -e "const p=require('./package.json'); if ('v'+p.version !== process.env.GITHUB_REF_NAME) throw new Error('tag must equal v'+p.version)"
+      - name: Run deterministic release gates
+        run: npm test
+      - name: Verify package allowlist and version parity
+        run: npm run pack:check
+      - name: Build and smoke-install release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist .release-smoke
+          npm pack --ignore-scripts --pack-destination dist
+          archive="$(find dist -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          test -n "$archive"
+          npm install --ignore-scripts --prefix .release-smoke "$archive"
+          ./.release-smoke/node_modules/.bin/harness --help >/dev/null
+          (cd dist && sha256sum *.tgz > SHA256SUMS)
+      - name: Publish immutable GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(find dist -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          gh release create "$GITHUB_REF_NAME" \
+            "$archive#npm install archive" \
+            "dist/SHA256SUMS#SHA-256 checksums" \
+            --verify-tag \
+            --generate-notes \
+            --title "Harness $GITHUB_REF_NAME"

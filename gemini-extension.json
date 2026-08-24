@@ -1,5 +1,5 @@
 {
 	"name": "harness",
-	"version": "0.3.1",
+	"version": "0.4.0",
 	"description": "Adaptive cross-model software delivery with model routing, conditional business analysis, scoped memory, QA, and human gates."
 }

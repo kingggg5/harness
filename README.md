@@ -4,7 +4,8 @@
 
 # Harness
 
-![release-gate](https://github.com/kingggg5/harness/actions/workflows/ci.yml/badge.svg)
+[![release-gate](https://github.com/kingggg5/harness/actions/workflows/ci.yml/badge.svg)](https://github.com/kingggg5/harness/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/kingggg5/harness?display_name=tag)](https://github.com/kingggg5/harness/releases/latest)
 
 Harness is an adaptive software-delivery skill for Codex, Claude Code, Gemini CLI, and filesystem-capable AI agents. One portable skill routes each task through quick, standard, or full delivery; coordinates seven delivery roles plus a conditional Business Analyst pass; keeps durable, scoped project memory in plain files; defends research from prompt injection; applies evidence-based QA; and pauses only at real human gates.
 
@@ -30,7 +31,7 @@ One-shot project health report (`doctor`):
     { "check": "identity-valid", "ok": true, "detail": "project-8a5f6dfd-…" },
     { "check": "store-valid", "ok": true, "revision": 0 },
     { "check": "views-fresh", "ok": true, "detail": "all derived views match canonical memory" },
-    { "check": "runtime-pinned", "ok": true, "detail": "version=0.3.1" },
+    { "check": "runtime-pinned", "ok": true, "detail": "version=0.4.0" },
     { "check": "writer-lock-probe", "ok": true, "detail": "AVAILABLE" }
   ]
 }
@@ -75,6 +76,8 @@ npx github:kingggg5/harness portability # package structure gate
 
 Requires Node 18+ (for the launcher) and Python 3.12+ (for consistent symlink/junction defenses). No npm registry needed — `npx github:kingggg5/harness` runs straight from this repository.
 
+For a pinned install, download the versioned `.tgz` and `SHA256SUMS` from [GitHub Releases](https://github.com/kingggg5/harness/releases), verify the checksum, then run `npm install --global ./kingggg5-harness-<version>.tgz`.
+
 ### Provider setup
 
 | Provider | Install | Invoke |
@@ -97,6 +100,19 @@ Harness resume
 Harness remember project: API pagination uses cursors
 Harness standard: map this multi-service repository for reusable cross-service planning
 ```
+
+## Examples
+
+Start with one small example instead of learning the whole system first:
+
+| Example | What it demonstrates |
+|---|---|
+| [Quick bug fix](examples/quick-bug-fix.md) | The smallest safe route with focused verification |
+| [Full product feature](examples/full-product-feature.md) | BA, planning, design, parallel build, QA, and human gates |
+| [Cross-model handoff](examples/cross-model-handoff.md) | Start in one provider and resume or review in another |
+| [Production review](examples/production-review.md) | Read-only security, performance, scale, and failure-path review |
+
+See [all examples](examples/README.md) for the expected evidence and reusable prompt pattern.
 
 ## Workflow
 

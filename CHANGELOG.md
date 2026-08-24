@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 — release-ready package and reusable examples
+
+### Added
+
+- A tag-driven GitHub Release workflow that validates the deterministic core, verifies the exact npm package contents, smoke-installs the archive, and publishes the `.tgz` with `SHA256SUMS`.
+- A fail-closed package gate that synchronizes npm, Codex, Claude, and Gemini versions; requires runtime, adapter, brand, and example files; rejects private or build-only files; and caps accidental package growth.
+- Four copy-paste examples covering a quick bug fix, a full product feature, cross-model handoff, and read-only production review.
+- A maintainer release checklist that keeps tagging deliberate and leaves npm-registry publication opt-in.
+
+### Changed
+
+- The npm archive now includes the README brand assets and examples so the packaged documentation is complete offline.
+
 ## 0.3.1 — concurrency and initialization hardening
 
 Projects pinning the bundled runtime should re-run `upgrade_project.py --dry-run` to pick up this version.

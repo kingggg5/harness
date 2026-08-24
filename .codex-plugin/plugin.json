@@ -1,6 +1,6 @@
 {
   "name": "harness",
-  "version": "0.3.1+codex.20260824084017",
+  "version": "0.4.0+codex.20260824090520",
   "description": "An adaptive, model-neutral software-delivery harness with model/effort routing, conditional business analysis, durable scoped memory, bounded discovery, QA, and human gates.",
   "author": {
     "name": "Local developer"
