@@ -26,6 +26,7 @@
 - Recall ceiling: 20 records and 12000 UTF-8 bytes
 - Global store: `$HARNESS_HOME/MEMORY.json` or `~/.harness/MEMORY.json`
 - Derived views: `CONTEXT.md`, `PREFERENCES.md`, `DECISIONS.md`
+- Project map: optional; activate only for reusable complex-repository knowledge
 - Semantic adapter: none
 - Semantic cache root: `.harness/.cache/memory`
 - Semantic cache is canonical: no

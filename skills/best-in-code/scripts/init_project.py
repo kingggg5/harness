@@ -460,7 +460,7 @@ def main() -> int:
 		existing_ids = stored_project_ids(harness_dir)
 		existing_canonical = harness_dir.exists() and any((harness_dir / name).exists() for name in TEMPLATE_FILES)
 		if existing_canonical and not is_current_layout(harness_dir):
-			raise MemoryErrorWithCode("MIGRATION_REQUIRED", "Legacy or mixed Harness schemas detected; preview scripts/migrate_project.py --dry-run, then apply its exact approval digest")
+			raise MemoryErrorWithCode("MIGRATION_REQUIRED", "Legacy or mixed Harness schemas detected; from a trusted full package preview skills/best-in-code/scripts/migrate_project.py --dry-run, then apply its exact approval digest")
 		if existing_canonical and not existing_ids:
 			raise MemoryErrorWithCode("MIGRATION_REQUIRED", "Existing Harness files have no valid Project ID; run an additive migration")
 		if args.rebind_identity and not existing_canonical:

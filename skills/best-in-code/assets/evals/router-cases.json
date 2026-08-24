@@ -18,7 +18,7 @@
 			"expected_scale": "quick",
 			"required_roles": ["Project Manager", "Backend Engineer", "Tester / Reviewer / QA"],
 			"required_gates": ["Acceptance"],
-			"forbidden_claims": ["full discovery required"]
+			"forbidden_claims": ["full discovery required", "PROJECT-MAP required"]
 		},
 		{
 			"id": "R03",
@@ -111,6 +111,34 @@
 			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
 			"required_gates": ["Plan checkpoint", "Acceptance"],
 			"forbidden_claims": ["tool unavailable means passed", "independent QA"]
+		},
+		{
+			"id": "R13",
+			"request": "Build a returns approval workflow spanning customers, support, warehouse, and finance; rule owners disagree and acceptance behavior is undefined.",
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Business Analyst", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Decision", "Acceptance"],
+			"forbidden_claims": ["stakeholder preference invented", "Business Analyst chooses implementation architecture"]
+		},
+		{
+			"id": "R14",
+			"request": "Implement this approved low-risk export endpoint; the request/response contract and acceptance tests are supplied.",
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Acceptance"],
+			"forbidden_claims": ["Business Analyst required", "new requirements file required"]
+		},
+		{
+			"id": "R15",
+			"request": "Harness standard: onboard this multi-service monorepo and create a reusable source-grounded system map before planning cross-service work.",
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Researcher", "Planner / Architect", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Acceptance"],
+			"required_artifacts": [".harness/PROJECT-MAP.md"],
+			"forbidden_claims": ["CONTEXT.md is editable memory authority", "KNOWLEDGE.md required", "external documentation copied into project map"]
 		}
 	]
 }

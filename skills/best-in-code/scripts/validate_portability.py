@@ -37,6 +37,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/agents/openai.yaml",
 	"skills/best-in-code/references/mode-routing.md",
 	"skills/best-in-code/references/workflow-graph.md",
+	"skills/best-in-code/references/requirements-analysis.md",
 	"skills/best-in-code/references/capability-contract.md",
 	"skills/best-in-code/references/provider-adapters.md",
 	"skills/best-in-code/references/memory-loop.md",
@@ -54,6 +55,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/assets/templates/INDEX.md",
 	"skills/best-in-code/assets/templates/CONFIG.md",
 	"skills/best-in-code/assets/templates/CONTEXT.md",
+	"skills/best-in-code/assets/templates/PROJECT-MAP.md",
 	"skills/best-in-code/assets/templates/PREFERENCES.md",
 	"skills/best-in-code/assets/templates/DECISIONS.md",
 	"skills/best-in-code/assets/templates/STATE.json",
@@ -67,6 +69,7 @@ SCHEMA_EXPECTATIONS = {
 	"INDEX.md": 2,
 	"CONFIG.md": 2,
 	"CONTEXT.md": 4,
+	"PROJECT-MAP.md": 1,
 	"PREFERENCES.md": 2,
 	"DECISIONS.md": 3,
 	"WORKFLOW.md": 4,
@@ -267,6 +270,14 @@ def check_fixtures(root: Path, errors: list[str]) -> None:
 			scale = case.get("expected_scale")
 			if scale is not None and scale not in ALLOWED_SCALES - {"auto"}:
 				errors.append(f"Invalid router scale in {case.get('id')}")
+		if not any("Business Analyst" in case.get("required_roles", []) for case in cases):
+			errors.append("Router fixtures need a requirements-trigger case with Business Analyst")
+		if not any("Business Analyst required" in case.get("forbidden_claims", []) for case in cases):
+			errors.append("Router fixtures need an implementation-ready case that skips Business Analyst")
+		if not any(".harness/PROJECT-MAP.md" in case.get("required_artifacts", []) for case in cases):
+			errors.append("Router fixtures need a complex-repository project-map activation case")
+		if not any("PROJECT-MAP required" in case.get("forbidden_claims", []) for case in cases):
+			errors.append("Router fixtures need a small-task project-map skip case")
 	memory = load_json(eval_root / "memory-cases.json", errors)
 	if isinstance(memory, dict):
 		cases = memory.get("cases", [])

@@ -12,6 +12,7 @@
 
 - Objective:
 - Explicit exclusions:
+- Requirement baseline IDs or `N/A`:
 - Verified memory IDs and minimal values:
 - Inputs and source locations:
 - Owned files or read-only boundary:
@@ -29,6 +30,7 @@
 - Files changed (if authorized):
 - Findings/risks:
 - Blockers/open questions:
+- Material questions requiring a human answer:
 - Checks actually run:
 - Checks not run and why:
 - Recommended next state:

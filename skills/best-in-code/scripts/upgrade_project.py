@@ -217,6 +217,8 @@ def main() -> int:
 		staging: Path | None = None
 		archive: Path | None = None
 		new_runtime_installed = False
+		transaction_lock = target_file_lock(project / ".harness" / "MEMORY.json")
+		transaction_lock.__enter__()
 		try:
 			with target_file_lock(project / ".harness" / "MEMORY.json"):
 				try:
@@ -282,8 +284,11 @@ def main() -> int:
 				raise MemoryErrorWithCode(exc.code if isinstance(exc,MemoryErrorWithCode) else "UPGRADE_ERROR",f"{exc}; failed runtime preserved at {recovery}") from exc
 			raise
 		finally:
-			if staging is not None and staging.exists():
-				remove_tree(staging)
+			try:
+				if staging is not None and staging.exists():
+					remove_tree(staging)
+			finally:
+				transaction_lock.__exit__(None,None,None)
 		print(json.dumps(result,ensure_ascii=False,indent=2) if args.json else f"Harness runtime upgraded: {digest}")
 		return 0
 	except (OSError,UnicodeDecodeError,MemoryErrorWithCode,json.JSONDecodeError) as exc:

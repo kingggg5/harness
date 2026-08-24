@@ -11,12 +11,22 @@ Projects pinning the bundled runtime should re-run `upgrade_project.py --dry-run
 - **Fallback lock aliasing:** fallback writer locks keyed by unresolved paths let one file reached through different aliases (8.3 short names, subst drives, case variants, symlinks) acquire two independent locks. Lock keys are canonicalized via `realpath`, proven against both 8.3 aliases on NTFS and symlink aliases on Linux.
 - **Unopenable lock files burned the contention timeout:** ACL/read-only lock files now fail fast as `LOCK_UNAVAILABLE`; byte-range contention keeps its bounded wait.
 - **Memory eval harness:** M37 crashed on a missing `scripts["init"]` entry.
+- **Approval/commit races:** migration now parses, archives, and CAS-checks one bounded byte snapshot; upgrade verifies the moved runtime against the approved exact snapshot before installing; initialization rollback also binds the exact generated runtime manifest.
+- **Rollback recovery:** lifecycle operations hold one project writer lock through recovery. A changed failed runtime is preserved under `runtime-recovery` and the prior reviewed runtime is restored when safe; partial recovery reports `ROLLBACK_FAILED` with exact paths.
+- **Wrong-repository recall:** recall now fails closed on Git root/remote/logical-scope mismatch instead of returning memory before write-time identity validation.
+- **Canonical audit truth:** record, identity, tombstone, and transaction timestamps reject future skew; normal transaction IDs are recomputed; history links require reciprocal, same-tuple, acyclic relationships; tombstone scope must match its ID.
+- **Derived-view dead end:** generated Markdown is a deterministic bounded projection with omission counts and a full-row digest, and `export-cache` rerenders the new revision so validation stays current.
+- **Injection/secret bypasses:** expanded token-prefix and instruction/exfiltration heuristics; documentation now explicitly treats every recalled value as untrusted data after filtering.
 
 ### Added
 
+- A conditional Business Analyst / requirements pass for unclear outcomes, actors, scope, business rules, stakeholder conflicts, and acceptance behavior. Quick work folds the check into PM; implementation-ready work skips it; no new state or human gate was added.
+- A compact requirement baseline in `WORKFLOW.md`, BA-aware role packets and router fixtures, plus the optional `requirements.spec` capability. Existing repository conventions win; OpenSpec and GitHub Spec Kit are optional backends, never hard dependencies or automatic installs.
+- An optional source-grounded `PROJECT-MAP.md` for complex-repository topology, domain vocabulary, module ownership, important flows, and external boundaries. `MEMORY.json` remains authority, `CONTEXT.md` remains generated, and no duplicate generic `KNOWLEDGE.md` is introduced.
 - Local oracles for memory evals M39 (identity-rebind and approval binding against git fingerprints, cross-project replay refusal), M40 (TTL/time/source-size/adapter-results/manifest bounds), and M41 (forget-restore truth, successor IDs, semantic-deletion honesty) — the eval matrix is now green on everything testable without a target model.
 - `race_tests.py`: permanent two-process regression suite — contention against a held lock, patient commit exactly-once, crash-orphan recovery without manual cleanup, concurrent writer storm with torn-read detection, path-alias convergence, permission-denied lock open, identity/digest binding (input byte flip, Project ID flip, foreign root commit), exact run ownership including close-run idempotency and cross-run leak prevention, recall budget ceilings. Validated on Windows/NTFS and real Linux kernels (WSL2) at both privilege levels.
 - `.github/workflows/ci.yml`: release gate running portability validation, the race suite, and memory evals on Ubuntu and Windows; eval failures are tolerated only for the not-yet-wired external-model oracles (M05/M06/M28/M31).
+- Python 3.12 is now the declared deterministic-core minimum so Windows junction checks are consistent across providers.
 
 ### Known-red by design
 

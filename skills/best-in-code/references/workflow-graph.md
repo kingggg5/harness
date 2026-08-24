@@ -9,11 +9,15 @@ flowchart TD
 	H[Human] <--> PM[Project Manager]
 	PM --> R{Route and capability preflight}
 	R -->|discovery trigger| D[Bounded discovery]
+	R -->|requirements trigger| BA[Business Analyst / requirements pass]
 	R -->|plan needed| P[Planner / Architect]
 	R -->|quick implementation-ready| C{Applicable work}
 	R -->|read-only review-ready| QA[Tester / Reviewer / QA]
 	D -->|material question| H
+	D -->|requirements evidence| BA
 	D -->|plan-ready| P
+	BA -->|material question| H
+	BA -->|baseline ready| P
 	P --> PG{Plan checkpoint or gate}
 	PG -->|revise| PM
 	PG -->|approved or not required| C{Applicable work}
@@ -36,7 +40,7 @@ flowchart TD
 	RH --> RD[Finish review without memory mutation]
 ```
 
-Researcher supports discovery, planning, design, and verification as a read-only evidence role. Inactive roles are `N/A`; do not create work merely to exercise all seven roles.
+Researcher supports requirements analysis, discovery, planning, design, and verification as a read-only evidence role. The Business Analyst pass runs inside `INTAKE` or `PLAN`; it adds no state or gate. Inactive roles and passes are `N/A`; do not create work merely to exercise all seven delivery roles or the conditional pass.
 
 ## States and legal transitions
 
@@ -68,6 +72,7 @@ Reject any other transition. A resume must restore exactly one `next_action`; if
 | Role | Responsibility | Default boundary |
 |---|---|---|
 | Project Manager | Scope, routing, state, ownership, gates, integration, memory, handoff | Sole shared-state writer |
+| Business Analyst (conditional pass) | Business outcome, actors, scope, rules, assumptions/questions, acceptance behavior, and shared vocabulary | Read-only; returns a requirement baseline and never invents stakeholder intent |
 | Planner / Architect | System map, contracts, tasks, dependencies, rollout, measurable DoD | Read-only until approval |
 | Researcher | Repository and external evidence, provenance, injection screening, unknowns | Read-only |
 | Product Designer | User outcome, flows, hierarchy, states, tokens, accessibility, motion and reference contract | Approved design scope |
@@ -75,7 +80,7 @@ Reject any other transition. A resume must restore exactly one `next_action`; if
 | Backend Engineer | APIs, domain logic, data, validation, authorization, concurrency, observability and tests | Assigned server/data files |
 | Tester / Reviewer / QA | Acceptance matrix, negative/boundary cases, final diff, regression and risk verification | Read-only; isolated when claimed independent |
 
-Roles are contracts, not processes. Map them to isolated agents, sequential isolated sessions, or labeled same-agent passes using [capability-contract.md](capability-contract.md). A same-context pass can verify work but is never called independent.
+Roles are contracts, not processes. Map them to isolated agents, sequential isolated sessions, or labeled same-agent passes using [capability-contract.md](capability-contract.md). The Business Analyst pass is not a mandatory eighth agent. A same-context pass can verify work but is never called independent.
 
 ## Role packet and ownership
 

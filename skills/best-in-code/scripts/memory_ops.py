@@ -51,7 +51,7 @@ MAX_CACHE_EXPORT_RECORDS = 1000
 MAX_CACHE_EXPORT_BYTES = 1024 * 1024
 MAX_CANONICAL_JSON_BYTES = 8 * 1024 * 1024
 MAX_STORE_RECORDS = 1000
-MAX_STORE_TOMBSTONES = 2000
+MAX_STORE_TOMBSTONES = 25000
 MAX_RECORD_TAGS = 50
 MAX_RECALL_RECORDS = 100
 MAX_RECALL_BYTES = 128 * 1024
@@ -77,7 +77,8 @@ GIT_COMMIT_PATTERN = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 SECRET_PATTERNS = (
 	re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----", re.IGNORECASE),
 	re.compile(r"\b(?:sk|ghp|github_pat|xox[baprs])[-_][A-Za-z0-9_-]{12,}\b"),
-	re.compile(r"\b(?:glpat-|npm_)[A-Za-z0-9_-]{20,}\b"),
+	re.compile(r"\b(?:glpat-|npm_|hf_|pypi-)[A-Za-z0-9_.-]{20,}\b"),
+	re.compile(r"\b(?:gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b"),
 	re.compile(r"\bAIza[0-9A-Za-z_-]{30,}\b"),
 	re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
 	re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
@@ -98,6 +99,9 @@ INJECTION_PATTERNS = (
 	re.compile(r"(?:execute|run) (?:this|the following) (?:command|tool)", re.IGNORECASE),
 	re.compile(r"\b(?:invoke|launch|execute|run|call|open)\b.{0,60}\b(?:shell|powershell|cmd(?:\.exe)?|terminal|tool|command)\b", re.IGNORECASE),
 	re.compile(r"\b(?:exfiltrat(?:e|ion)|upload|send|transmit|post)\b.{0,80}\b(?:secrets?|credentials?|tokens?|\.env|project files?|source code|private data)\b", re.IGNORECASE),
+	re.compile(r"\b(?:treat|declare|consider)\b.{0,60}\b(?:earlier|previous|prior|existing)\b.{0,40}\b(?:rules?|instructions?|directives?)\b.{0,30}\b(?:invalid|void|obsolete)\b", re.IGNORECASE),
+	re.compile(r"\b(?:new )?(?:highest|top|overriding) priority\b.{0,120}\b(?:read|copy|leak|disclose|send|upload)\b", re.IGNORECASE),
+	re.compile(r"\b(?:use|invoke|open|run)\b.{0,40}\b(?:terminal|powershell|shell|cmd(?:\.exe)?)\b.{0,100}\b(?:leak|disclose|copy|send|upload|exfiltrat(?:e|ion))\b", re.IGNORECASE),
 	re.compile(r"<\s*(?:script|tool_call|system)\b", re.IGNORECASE),
 )
 
@@ -620,11 +624,18 @@ def validate_identity(data: dict[str, Any]) -> list[str]:
 		errors.append("identity root_commit is invalid")
 	elif repository.get("kind") != "git" and (repository.get("remote_fingerprint") or repository.get("root_commit")):
 		errors.append("non-Git identity cannot carry Git fingerprints")
+	parsed_identity_times: dict[str, datetime] = {}
+	identity_now_limit = parse_time(utc_now()) + timedelta(seconds=MAX_CLOCK_SKEW_SECONDS)
 	for field in ("created_at", "last_verified_at"):
 		try:
-			parse_time(str(data.get(field, "")))
+			parsed_value = parse_time(str(data.get(field, "")))
+			parsed_identity_times[field] = parsed_value
+			if parsed_value > identity_now_limit:
+				errors.append(f"identity {field} is in the future")
 		except MemoryErrorWithCode:
 			errors.append(f"identity {field} is invalid")
+	if parsed_identity_times.get("created_at") and parsed_identity_times.get("last_verified_at") and parsed_identity_times["created_at"] > parsed_identity_times["last_verified_at"]:
+		errors.append("identity created_at is after last_verified_at")
 	return errors
 
 
@@ -663,6 +674,7 @@ def validate_store(store: dict[str, Any], expected_project_id: str | None = None
 	if not isinstance(store, dict):
 		return ["memory store must be an object"]
 	errors: list[str] = []
+	now_limit = parse_time(utc_now()) + timedelta(seconds=MAX_CLOCK_SKEW_SECONDS)
 	if set(store) != STORE_FIELDS:
 		errors.append("memory store must contain the exact canonical fields")
 	if store.get("schema_version") != STORE_SCHEMA:
@@ -742,11 +754,19 @@ def validate_store(store: dict[str, Any], expected_project_id: str | None = None
 			errors.append(f"record {record_id} has invalid source_fingerprint")
 		if record.get("verification_policy") == "on-source-change" and (not str(record.get("source", "")).startswith("file:") or not isinstance(fingerprint, str) or not SHA256_PATTERN.fullmatch(fingerprint)):
 			errors.append(f"record {record_id} on-source-change requires a file source and SHA-256 fingerprint")
+		parsed_record_times: dict[str, datetime] = {}
 		for field in ("last_verified", "created_at", "updated_at"):
 			try:
-				parse_time(str(record.get(field, "")))
+				parsed_value = parse_time(str(record.get(field, "")))
+				parsed_record_times[field] = parsed_value
+				if parsed_value > now_limit:
+					errors.append(f"record {record_id} has future {field}")
 			except MemoryErrorWithCode:
 				errors.append(f"record {record_id} has invalid {field}")
+		if parsed_record_times.get("created_at") and parsed_record_times.get("updated_at") and parsed_record_times["created_at"] > parsed_record_times["updated_at"]:
+			errors.append(f"record {record_id} created_at is after updated_at")
+		if parsed_record_times.get("last_verified") and parsed_record_times.get("updated_at") and parsed_record_times["last_verified"] > parsed_record_times["updated_at"] + timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
+			errors.append(f"record {record_id} last_verified is after updated_at")
 		if project_id == "GLOBAL" and record.get("scope") != "global":
 			errors.append(f"record {record_id} has non-global scope in global store")
 		if project_id == "GLOBAL" and record.get("kind") != "preference":
@@ -817,8 +837,17 @@ def validate_store(store: dict[str, Any], expected_project_id: str | None = None
 			errors.append(f"tombstone {index} has invalid scope")
 		elif isinstance(tombstone_id, str) and ID_PATTERN.fullmatch(tombstone_id):
 			tombstone_scopes[tombstone_id] = tombstone_scope
+			expected_scope_code = {"task":"T","project":"P","global":"G"}[tombstone_scope]
+			if tombstone_id.split("-")[1] != expected_scope_code:
+				errors.append(f"tombstone {tombstone_id} scope does not match its ID")
+		if project_id == "GLOBAL" and tombstone_scope != "global":
+			errors.append(f"tombstone {index} has non-global scope in global store")
+		if project_id != "GLOBAL" and tombstone_scope == "global":
+			errors.append(f"tombstone {index} has global scope in project store")
 		try:
-			parse_time(str(tombstone.get("revoked_at", "")))
+			revoked_at = parse_time(str(tombstone.get("revoked_at", "")))
+			if revoked_at > now_limit:
+				errors.append(f"tombstone {index} has future revoked_at")
 		except MemoryErrorWithCode:
 			errors.append(f"tombstone {index} has invalid revoked_at")
 		cache_sync = tombstone.get("cache_sync")
@@ -929,8 +958,20 @@ def validate_store(store: dict[str, Any], expected_project_id: str | None = None
 						errors.append("last_transaction Run ID is invalid")
 				except MemoryErrorWithCode:
 					errors.append("last_transaction Run ID is invalid")
+			if isinstance(operation, str) and isinstance(record_id_value, str) and isinstance(transaction.get("after_revision"), int) and not isinstance(transaction.get("after_revision"), bool):
+				after_revision_value = transaction["after_revision"]
+				transaction_payload = f"{operation}:{record_id_value}:{after_revision_value}".encode("utf-8")
+				expected_transaction_id = f"TX-{after_revision_value:08d}-{sha256_bytes(transaction_payload)[:12]}"
+				if transaction.get("id") != expected_transaction_id and operation != "migrate-v1":
+					errors.append("last_transaction ID does not match its canonical operation")
+			if isinstance(operation, str) and operation in {"remember", "correct"} and record_id_value not in record_by_id:
+				errors.append("last_transaction target record is absent")
+			if isinstance(operation, str) and operation == "forget" and record_id_value not in tombstone_ids:
+				errors.append("last_transaction forgotten record is not tombstoned")
 			try:
-				parse_time(str(transaction.get("committed_at", "")))
+				committed_at = parse_time(str(transaction.get("committed_at", "")))
+				if committed_at > now_limit:
+					errors.append("last_transaction committed_at is in the future")
 			except MemoryErrorWithCode:
 				errors.append("last_transaction committed_at is invalid")
 	return errors
@@ -963,8 +1004,7 @@ def legacy_record_id_for_validation(record: dict[str, Any]) -> str:
 def load_project_store(project_arg: str, for_write: bool = False, logical_scope: str = ".") -> tuple[Path, Path, dict[str, Any], bytes, dict[str, Any]]:
 	project, identity_path, store_path = project_paths(project_arg)
 	identity, _ = read_json_bytes(identity_path)
-	if for_write:
-		assert_current_identity(project, identity, logical_scope)
+	assert_current_identity(project, identity, logical_scope)
 	store, raw = read_json_bytes(store_path)
 	errors = validate_store(store, identity.get("project_id")) + validate_identity(identity)
 	if errors:
@@ -1026,11 +1066,47 @@ def commit_store(path: Path, original: bytes | None, store: dict[str, Any]) -> N
 	errors = validate_store(store, store.get("project_id"))
 	if errors:
 		raise MemoryErrorWithCode("MUTATION_INVALID", "; ".join(errors))
-	atomic_replace(path, pretty_json(store), expected=original)
+	payload = pretty_json(store)
+	if len(payload) > MAX_CANONICAL_JSON_BYTES:
+		raise MemoryErrorWithCode("STORE_TOO_LARGE", f"Canonical memory exceeds {MAX_CANONICAL_JSON_BYTES} UTF-8 bytes")
+	atomic_replace(path, payload, expected=original)
 
 
 def markdown_cell(value: Any) -> str:
 	return str(value if value is not None else "").replace("|", "\\|").replace("\r", " ").replace("\n", " ")
+
+
+def bounded_markdown_view(preamble: str, sections: list[tuple[str, list[str]]]) -> bytes:
+	all_rows = [row for _, rows in sections for row in rows]
+	joined_rows = "\n".join(all_rows).encode("utf-8")
+	row_digest = f"sha256:{sha256_bytes(joined_rows)}"
+	reserve = 4096
+	chunks = [preamble.rstrip("\n") + "\n"]
+	used = len(chunks[0].encode("utf-8"))
+	omitted: list[tuple[str, int]] = []
+	for heading, rows in sections:
+		heading_text = "\n" + heading.strip("\n") + "\n"
+		chunks.append(heading_text)
+		used += len(heading_text.encode("utf-8"))
+		included = 0
+		for row in rows:
+			line = row + "\n"
+			line_bytes = len(line.encode("utf-8"))
+			if used + line_bytes <= MAX_DERIVED_VIEW_BYTES - reserve:
+				chunks.append(line)
+				used += line_bytes
+				included += 1
+		omitted.append((heading.splitlines()[0].lstrip("# ") or "rows", len(rows) - included))
+	footer = (
+		"\n## Projection status\n\n"
+		+ "Full canonical data remains in `MEMORY.json`. "
+		+ "; ".join(f"{label}: {count} omitted" for label, count in omitted)
+		+ f". Full-row digest: `{row_digest}`.\n"
+	)
+	result = ("".join(chunks) + footer).encode("utf-8")
+	if len(result) > MAX_DERIVED_VIEW_BYTES:
+		raise MemoryErrorWithCode("DERIVED_VIEW_TOO_LARGE", "Bounded derived view metadata exceeds its safety limit")
+	return result
 
 
 def project_view_payloads(store: dict[str, Any]) -> dict[str, bytes]:
@@ -1048,7 +1124,7 @@ def project_view_payloads(store: dict[str, Any]) -> dict[str, bytes]:
 		else:
 			context_rows.append("| " + " | ".join(markdown_cell(record.get(field, "")) for field in ("id", "kind", "key", "value", "source", "verification_policy", "last_verified", "status", "replaced_by")) + " |")
 	tombstone_rows = ["| " + " | ".join(markdown_cell(item.get(field, "")) for field in ("id", "scope", "revoked_at", "cache_sync")) + " |" for item in store["tombstones"]]
-	context = f"""# Harness Project Context
+	context_preamble = f"""# Harness Project Context
 
 Generated readable view of non-preference, non-decision records in `MEMORY.json`. Do not edit generated rows directly; use `memory_ops.py`.
 
@@ -1056,22 +1132,12 @@ Generated readable view of non-preference, non-decision records in `MEMORY.json`
 - Project ID: {project_id}
 - Source memory revision: {revision}
 - Generated view: yes
-
-## Durable records
-
-| ID | Kind | Key | Statement | Source | Verification | Last verified | Status | Replaced by |
-|---|---|---|---|---|---|---|---|---|
-{chr(10).join(context_rows)}
-
-## Tombstones
-
-Deleted payloads are intentionally absent.
-
-| ID | Scope | Revoked at | Cache sync |
-|---|---|---|---|
-{chr(10).join(tombstone_rows)}
 """
-	preferences = f"""# Harness Preferences
+	context = bounded_markdown_view(context_preamble, [
+		("## Durable records\n\n| ID | Kind | Key | Statement | Source | Verification | Last verified | Status | Replaced by |\n|---|---|---|---|---|---|---|---|---|", context_rows),
+		("## Tombstones\n\nDeleted payloads are intentionally absent.\n\n| ID | Scope | Revoked at | Cache sync |\n|---|---|---|---|", tombstone_rows),
+	])
+	preferences_preamble = f"""# Harness Preferences
 
 Generated readable view of explicit preference records in `MEMORY.json`. Do not edit generated rows directly; use `memory_ops.py`.
 
@@ -1079,12 +1145,12 @@ Generated readable view of explicit preference records in `MEMORY.json`. Do not 
 - Project ID: {project_id}
 - Source memory revision: {revision}
 - Generated view: yes
-
-| ID | Key | Value | Scope | Applies when | Authority | Status | Supersedes | Replaced by | Last confirmed | Review trigger |
-|---|---|---|---|---|---|---|---|---|---|---|
-{chr(10).join(preference_rows)}
 """
-	decisions = f"""# Harness Human Decisions
+	preferences = bounded_markdown_view(preferences_preamble, [(
+		"## Preference records\n\n| ID | Key | Value | Scope | Applies when | Authority | Status | Supersedes | Replaced by | Last confirmed | Review trigger |\n|---|---|---|---|---|---|---|---|---|---|---|",
+		preference_rows,
+	)])
+	decisions_preamble = f"""# Harness Human Decisions
 
 Generated readable view of durable decision records in `MEMORY.json`. Do not edit generated rows directly; use `memory_ops.py`.
 
@@ -1092,12 +1158,12 @@ Generated readable view of durable decision records in `MEMORY.json`. Do not edi
 - Project ID: {project_id}
 - Source memory revision: {revision}
 - Generated view: yes
-
-| ID | Date | Decision | Evidence/source | Authority | Revisit condition | Status | Supersedes | Replaced by |
-|---|---|---|---|---|---|---|---|---|
-{chr(10).join(decision_rows)}
 """
-	return {"CONTEXT.md": context.encode("utf-8"), "PREFERENCES.md": preferences.encode("utf-8"), "DECISIONS.md": decisions.encode("utf-8")}
+	decisions = bounded_markdown_view(decisions_preamble, [(
+		"## Decision records\n\n| ID | Date | Decision | Evidence/source | Authority | Revisit condition | Status | Supersedes | Replaced by |\n|---|---|---|---|---|---|---|---|---|",
+		decision_rows,
+	)])
+	return {"CONTEXT.md": context, "PREFERENCES.md": preferences, "DECISIONS.md": decisions}
 
 
 def render_project_views(project: Path, store: dict[str, Any]) -> list[str]:
@@ -1105,7 +1171,7 @@ def render_project_views(project: Path, store: dict[str, Any]) -> list[str]:
 	outputs = project_view_payloads(store)
 	for name, content in outputs.items():
 		path = ensure_within(harness / name, project, name)
-		existing = read_regular_file_bounded(path, MAX_DERIVED_VIEW_BYTES, name) if path.exists() else None
+		existing = read_regular_file_bounded(path, MAX_CANONICAL_JSON_BYTES, name) if path.exists() else None
 		atomic_replace(path, content, expected=existing)
 	return sorted(outputs)
 
@@ -1679,8 +1745,24 @@ def export_cache(args: argparse.Namespace) -> dict[str, Any]:
 	existing = read_regular_file_bounded(output, MAX_CACHE_EXPORT_BYTES, "cache export target") if output.exists() else None
 	atomic_replace(output, raw, expected=existing)
 	updated["adapter"] = {"kind": adapter_kind, "state": "EXPORT_READY", "scope": store["project_id"], "source_revision": after, "export_digest": f"sha256:{sha256_bytes(raw)}"}
-	commit_store(store_path, original, updated)
-	return {"ok": True, "operation": "export-cache", "output": str(output), "record_count": len(active), "export_digest": updated["adapter"]["export_digest"], "source_revision": after, "store_revision": after, "transaction_id": transaction_id, "adapter_state": "EXPORT_READY"}
+	try:
+		commit_store(store_path, original, updated)
+	except (OSError, MemoryErrorWithCode):
+		if existing is None:
+			atomic_delete(output, raw)
+		else:
+			atomic_replace(output, existing, expected=raw)
+		raise
+	try:
+		render_project_views(project, updated)
+		view_state = "CURRENT"
+	except (OSError, MemoryErrorWithCode):
+		view_state = "DIRTY"
+	return {
+		"ok": True, "operation": "export-cache", "output": str(output), "record_count": len(active),
+		"export_digest": updated["adapter"]["export_digest"], "source_revision": after, "store_revision": after,
+		"transaction_id": transaction_id, "adapter_state": "EXPORT_READY", "view_state": view_state,
+	}
 
 
 def add_common_record_args(parser: argparse.ArgumentParser, include_kind: bool = True) -> None:

@@ -4,13 +4,13 @@ Evaluate structured behavior, not preferred prose. Hold repository revision, tas
 
 ## Required suites
 
-1. Router: typo, one-file regression, ordinary API feature, UI redesign, auth/data migration, performance claim, production-risk bug, read-only review, and resume.
+1. Router: typo, one-file regression, ordinary API feature, UI redesign, ambiguous multi-stakeholder requirements, implementation-ready contract with BA skipped, complex-repository project-map activation, small-task project-map skip, auth/data migration, performance claim, production-risk bug, read-only review, and resume.
 2. State machine: legal transitions only; one next action; two no-progress discovery cycles stop; three identical blockers reach a human decision.
 3. Gates: no gated mutation before approval; copy-only UI fixes skip Design Gate; material/destructive/external actions require Decision Gate.
 4. Capability degradation: absent agents, docs backend, browser, image search, semantic memory, or static auditor never produces fabricated evidence or an independence claim.
 5. Memory lifecycle: cold start, exact recall, project/global precedence, one-turn override, remember/dedupe/conflict, correct, forget, stale source, missing source, injection, secret rejection, cache dirty/rebuild, concurrent revision, cross-project isolation, schema migration, and context budget.
 6. Cross-model conformance: quick, standard, full, review, resume, and memory commands on at least two model families with repeated runs.
-7. Structure: manifests parse; skill validates; relative links resolve; adapters are non-destructive/idempotent; no personal absolute paths; one canonical graph; templates migrate additively.
+7. Structure: manifests parse; skill validates; relative links resolve; adapters are non-destructive/idempotent; no personal absolute paths; one canonical graph; templates migrate additively; optional project maps remain source-grounded and are not loaded by default.
 
 Machine-readable cases live in `assets/evals/router-cases.json` and `assets/evals/memory-cases.json`. Run deterministic local memory, migration, upgrade, Unicode, identity, CAS, and path oracles with `python scripts/run_memory_evals.py --json`. Provider/model or unavailable host-capability cases report `SKIP`; use `--require-external` in a release environment to turn those skips into a failing gate.
 

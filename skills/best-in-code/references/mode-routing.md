@@ -29,13 +29,21 @@ Standard covers normal multi-file bugs and features, cross-component work, and p
 
 Escalate only upward when evidence changes the classification. Record the trigger and continue from the current state; do not discard valid completed work.
 
+## Requirements-pass routing
+
+Trigger the Business Analyst pass when one material item is unresolved: business outcome, primary actor or stakeholder, in/out scope, source of a business rule, conflict between stakeholders or requirements, observable acceptance behavior, or a high-impact workflow such as payment, approval, permissions, regulated processing, or an external integration. Inspect repository evidence first; do not turn discoverable facts into human questions.
+
+Skip the pass for an implementation-ready bug, refactor, copy/style fix, or technical task with an approved contract and testable acceptance criteria. In `quick`, PM performs any tiny requirements check inline. In `standard`, run the pass only on trigger. In `full`, keep the pass conditional but isolate it when stakeholder or rule complexity makes independent analysis useful.
+
+The pass runs within `INTAKE` or `PLAN`, writes no shared state, and adds no gate. It returns a compact requirement baseline to PM. BA owns **what/why** and unresolved business intent; Planner/Architect owns **how** and technical contracts. Requirement decisions use the existing Plan or Decision checkpoint.
+
 ## Roles and gates
 
 | Scale | Typical active roles | Human checkpoints |
 |---|---|---|
-| quick | PM, one applicable implementer, deterministic QA pass; Researcher/Designer only on trigger | Decision when material; Acceptance summary for delivery |
-| standard | PM, Planner, applicable specialists, QA; Researcher/Designer conditional | Concise plan checkpoint for material scope; conditional Design/Decision; Acceptance for delivery |
-| full | PM, Planner, Researcher, every applicable specialist, isolated QA when available | Bounded discovery, Plan, conditional Design, Decision as needed, Acceptance for delivery |
+| quick | PM, one applicable implementer, deterministic QA pass; BA folded into PM; Researcher/Designer only on trigger | Decision when material; Acceptance summary for delivery |
+| standard | PM, Planner, applicable specialists, QA; BA/Researcher/Designer conditional | Concise plan checkpoint for material scope; conditional Design/Decision; Acceptance for delivery |
+| full | PM, Planner, Researcher, every applicable specialist, isolated QA when available; BA still conditional | Bounded discovery, Plan, conditional Design, Decision as needed, Acceptance for delivery |
 
 Do not activate a role or gate merely because its row exists. The Design Gate triggers only for a new or changed visual direction, flow/information architecture, design system, motion contract, or third-party asset choice.
 

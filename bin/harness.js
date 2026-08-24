@@ -49,7 +49,7 @@ Examples:
 function resolvePython() {
 	const candidates = [process.env.HARNESS_PYTHON, "python3", "python", "py"].filter(Boolean);
 	for (const candidate of candidates) {
-		const probe = spawnSync(candidate, ["-c", "print(1)"], { encoding: "utf8" });
+		const probe = spawnSync(candidate, ["-c", "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)"], { encoding: "utf8" });
 		if (probe.status === 0) return candidate;
 	}
 	return null;
@@ -78,7 +78,7 @@ function main() {
 
 	const python = resolvePython();
 	if (!python) {
-		console.error("Harness requires Python 3.10+ on PATH (tried HARNESS_PYTHON, python3, python, py).");
+		console.error("Harness requires Python 3.12+ on PATH (tried HARNESS_PYTHON, python3, python, py).");
 		process.exit(1);
 	}
 

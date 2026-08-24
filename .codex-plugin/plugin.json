@@ -1,61 +1,63 @@
 {
-	"name": "harness",
-	"version": "0.3.1",
-	"description": "An adaptive, model-neutral software-delivery harness with durable scoped memory, capability fallbacks, role contracts, bounded discovery, QA, and human gates.",
-	"author": {
-		"name": "Local developer"
-	},
-	"keywords": [
-		"coding",
-		"multi-model",
-		"multi-agent",
-		"adaptive-workflow",
-		"human-in-the-loop",
-		"project-memory",
-		"context",
-		"planning",
-		"research",
-		"design",
-		"frontend",
-		"backend",
-		"qa",
-		"performance",
-		"scalability",
-		"security",
-		"prompt-injection",
-		"shipproof",
-		"user-friendly"
-	],
-	"skills": "./skills/",
-	"interface": {
-		"displayName": "Harness",
-		"shortDescription": "Adaptive delivery, portable memory, QA, and human gates.",
-		"longDescription": "Harness routes each task to quick, standard, or full delivery; coordinates seven logical role contracts across parallel agents or sequential fallbacks; preserves scoped project knowledge in plain files; defends research and memory from prompt injection; and applies evidence-based QA plus human gates. Optional backends such as Context7, GitHub, Exa, Pinterest, MemPalace, and ShipProof are capability mappings rather than hard dependencies.",
-		"developerName": "Local developer",
-		"category": "Developer Tools",
-		"capabilities": [
-			"Adaptive Quick/Standard/Full Routing",
-			"Cross-Model Role Contracts",
-			"Canonical Project Memory",
-			"Remember/Correct/Forget/Recall",
-			"Preview-Bound Migration and Runtime Upgrades",
-			"Provider Capability Fallbacks",
-			"Bounded Discovery",
-			"Human Approval Gates",
-			"Prompt-Injection Defense",
-			"Frontend and UX Skill Routing",
-			"Bug, Performance, and Scale Evidence",
-			"Optional Semantic Memory and ShipProof",
-			"Cross-Model Conformance Fixtures"
-		],
-		"defaultPrompt": [
-			"Use Harness to choose the smallest safe workflow and implement this request.",
-			"Use Harness standard to plan, build, test, and hand off this feature.",
-			"Use Harness full to investigate and fix this production-risk bug.",
-			"Use Harness review to inspect the current changes without modifying them.",
-			"Use Harness resume to continue the validated active project run.",
-			"Use Harness init to add portable project memory and Codex, Claude, and Gemini adapters without overwriting existing instructions.",
-			"Preview and migrate this legacy Harness project without losing its existing memory or instructions."
-		]
-	}
+  "name": "harness",
+  "version": "0.3.1+codex.20260824083300",
+  "description": "An adaptive, model-neutral software-delivery harness with conditional business analysis, durable scoped memory, capability fallbacks, bounded discovery, QA, and human gates.",
+  "author": {
+    "name": "Local developer"
+  },
+  "keywords": [
+    "coding",
+    "multi-model",
+    "multi-agent",
+    "adaptive-workflow",
+    "human-in-the-loop",
+    "project-memory",
+    "context",
+    "planning",
+    "research",
+    "design",
+    "frontend",
+    "backend",
+    "qa",
+    "performance",
+    "scalability",
+    "security",
+    "prompt-injection",
+    "shipproof",
+    "user-friendly"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Harness",
+    "shortDescription": "Adaptive delivery, portable memory, QA, and human gates.",
+    "longDescription": "Harness routes each task to quick, standard, or full delivery; coordinates seven delivery roles plus a conditional Business Analyst pass across parallel agents or sequential fallbacks; preserves scoped memory and optional source-grounded project maps in plain files; defends research and memory from prompt injection; and applies evidence-based QA plus human gates. Optional backends such as Context7, GitHub, Exa, Pinterest, MemPalace, OpenSpec, Spec Kit, and ShipProof are capability mappings rather than hard dependencies.",
+    "developerName": "Local developer",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Adaptive Quick/Standard/Full Routing",
+      "Cross-Model Role Contracts",
+      "Conditional Business Analysis and Requirement Baselines",
+      "Canonical Project Memory",
+      "Optional Source-Grounded Project Maps",
+      "Remember/Correct/Forget/Recall",
+      "Preview-Bound Migration and Runtime Upgrades",
+      "Provider Capability Fallbacks",
+      "Bounded Discovery",
+      "Human Approval Gates",
+      "Prompt-Injection Defense",
+      "Frontend and UX Skill Routing",
+      "Bug, Performance, and Scale Evidence",
+      "Optional Semantic Memory and ShipProof",
+      "Cross-Model Conformance Fixtures"
+    ],
+    "defaultPrompt": [
+      "Use Harness to choose the smallest safe workflow and implement this request.",
+      "Use Harness standard to plan, build, test, and hand off this feature.",
+      "Use Harness full to investigate and fix this production-risk bug.",
+      "Use Harness review to inspect the current changes without modifying them.",
+      "Use Harness resume to continue the validated active project run.",
+      "Use Harness init to add portable project memory and Codex, Claude, and Gemini adapters without overwriting existing instructions.",
+      "Preview and migrate this legacy Harness project without losing its existing memory or instructions."
+    ]
+  }
 }

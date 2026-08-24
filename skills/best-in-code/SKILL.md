@@ -1,11 +1,11 @@
 ---
 name: best-in-code
-description: Run an adaptive, reusable software-delivery harness across AI models with project management, planning, research, design, frontend, backend, QA, durable scoped memory, capability fallbacks, bounded discovery, and human approval gates. Use when the user invokes Harness or asks for an end-to-end build, review, bug investigation, production-readiness workflow, or project resume; do not use for a quick explanation with no project work.
+description: Run an adaptive, reusable software-delivery harness across AI models with conditional business analysis, project management, planning, research, design, frontend, backend, QA, durable scoped memory, capability fallbacks, bounded discovery, and human approval gates. Use when the user invokes Harness or asks for an end-to-end build, review, bug investigation, production-readiness workflow, or project resume; do not use for a quick explanation with no project work.
 ---
 
 # Best in Code
 
-Deliver a software task from request to verified outcome while keeping the human in control and portable project knowledge in plain files. The seven roles are logical contracts, not a requirement for any particular model, vendor, or subagent API.
+Deliver a software task from request to verified outcome while keeping the human in control and portable project knowledge in plain files. The seven delivery roles and conditional Business Analyst pass are logical contracts, not a requirement for any particular model, vendor, or subagent API.
 
 ## Invocation
 
@@ -24,7 +24,7 @@ Direct `remember`, `correct`, `forget`, `recall`, `memory status`, and `close ru
 2. Resolve repository identity. If `.harness/INDEX.md` exists, load it, `STATE.json`, and only the active canonical files it names. Validate the stored Project ID against the current root before a project-scoped write. If identity is ambiguous after inspection, ask; do not guess.
 3. If a recorded run is unfinished, resume it only when requested explicitly, when no new task was supplied, or when the new request clearly continues the recorded objective. A clearly new task uses `start`; an ambiguous overlap requires one bundled human choice so the active run is not silently replaced. Explicit `review` remains read-only; explicit `full` is never downgraded.
 4. For `init`, or a standard/full run without canonical files, copy missing files from `assets/templates/` without overwriting existing content. Existing `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` requires a proposed merge or the non-destructive initializer; never replace it silently. See [provider-adapters.md](references/provider-adapters.md).
-5. Never mix Harness schemas. For the supported Markdown v1 layout, use `scripts/migrate_project.py --dry-run`, show its exact digest/archive/import plan, and apply only a matching human-approved digest. It preserves byte-exact legacy inputs and ID mappings, validates transactionally, and stops on active runs, conflicts, unsafe data, or unsupported rows. Other layouts require an explicit human-reviewed migration.
+5. Never mix Harness schemas. For the supported Markdown v1 layout, run `skills/best-in-code/scripts/migrate_project.py --dry-run` from a trusted full Harness package, show its exact digest/archive/import plan, and apply only a matching human-approved digest. The pinned runtime copy intentionally lacks sibling package manifests/adapters and is not a lifecycle launcher. Migration preserves byte-exact legacy inputs and ID mappings, validates transactionally, and stops on active runs, conflicts, unsafe data, or unsupported rows. Other layouts require an explicit human-reviewed migration.
 6. Run the abstract capability preflight in [capability-contract.md](references/capability-contract.md). Record capability IDs, actual backends, permissions, and isolation. Missing optional tools change the evidence route, not the truth of what ran.
 7. Apply `Recall -> Verify -> Work -> Consolidate` from [memory-loop.md](references/memory-loop.md). Only verified, in-scope canonical records may drive the plan. Native model memory and semantic tools are hints or rebuildable caches.
 8. Classify material information as **Known**, **Assumption**, or **Open question**. Investigate accessible sources first. Ask the human when an unresolved answer can change requirements, architecture, safety, cost, authorization, or external effects.
@@ -32,7 +32,7 @@ Direct `remember`, `correct`, `forget`, `recall`, `memory status`, and `close ru
 
 ## Orchestrate
 
-Read [workflow-graph.md](references/workflow-graph.md), the only canonical graph and state-transition source. The roles are Project Manager, Planner/Architect, Researcher, Product Designer, Frontend Engineer, Backend Engineer, and Tester/Reviewer/QA.
+Read [workflow-graph.md](references/workflow-graph.md), the only canonical graph and state-transition source. The delivery roles are Project Manager, Planner/Architect, Researcher, Product Designer, Frontend Engineer, Backend Engineer, and Tester/Reviewer/QA. Run the Business Analyst / requirements pass from [requirements-analysis.md](references/requirements-analysis.md) only when its trigger applies; fold a tiny check into PM for quick work.
 
 - The primary agent is Project Manager and the only writer of shared Harness state and memory.
 - Prefer isolated parallel role agents when available and useful. Otherwise run labeled sequential role passes automatically. Call QA **independent** only when it is isolated from implementation context and ownership.
@@ -46,6 +46,8 @@ Read [workflow-graph.md](references/workflow-graph.md), the only canonical graph
 Load only the references needed for the selected scale and active lane:
 
 - Always for project work: [engineering-standards.md](references/engineering-standards.md), [workflow-graph.md](references/workflow-graph.md), and [memory-loop.md](references/memory-loop.md).
+- Multi-module onboarding or reusable domain/architecture knowledge: activate the optional source-grounded `PROJECT-MAP.md` described in [memory-loop.md](references/memory-loop.md); skip it for small or one-off work.
+- Unclear outcomes, actors, scope, business rules, or acceptance behavior: [requirements-analysis.md](references/requirements-analysis.md).
 - Current library, API, ecosystem, repository, or community evidence: [research-routing.md](references/research-routing.md).
 - Bugs, performance, scale, security, architecture, or uncertainty: [discovery-loop.md](references/discovery-loop.md).
 - UI/design: [frontend-skill-routing.md](references/frontend-skill-routing.md) and [ux-laws-and-visual-discovery.md](references/ux-laws-and-visual-discovery.md). Pinterest is optional read-only inspiration, never design truth or reuse permission.
@@ -58,7 +60,7 @@ Skills are conditional tools. Use the smallest trusted set that covers the role.
 
 Apply the mode-aware gate matrix in [mode-routing.md](references/mode-routing.md):
 
-- Plan: scope, exclusions, acceptance criteria, task graph, and material contracts.
+- Plan: approved requirement baseline when triggered, scope, exclusions, acceptance criteria, task graph, and material contracts.
 - Design: only a new or changed visual direction, user flow/information architecture, design system, motion contract, or third-party asset choice. Copy corrections and fixes that preserve an approved design do not need a new Design Gate.
 - Decision: ambiguous durable behavior, architecture/schema change, breaking or destructive action, credential or paid-service use, production mutation, or external communication.
 - Acceptance: completed matrix, checks actually run, residual risks, and limitations. Only the human accepts a delivery run. A read-only review instead ends with a findings handoff unless the user explicitly asks to turn findings into an accepted remediation run.

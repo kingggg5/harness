@@ -17,9 +17,10 @@ Harness depends on capabilities, not vendor or model names. At intake, record on
 | `browser.interactive` | Inspect or exercise a running interface. |
 | `image.search` | Find public visual references with domain/source controls. |
 | `memory.semantic` | Retrieve scoped candidates from a semantic index. |
+| `requirements.spec` | Create or reconcile repository-native requirement/spec artifacts from an approved baseline. |
 | `evidence.static` / `evidence.runtime` | Produce deterministic static or runtime evidence. |
 
-Tool and skill names are backend bindings. Examples include Context7 for `docs.versioned`, GitHub for `repository.remote`, Exa or another search service for `web.search`, Pinterest/domain-filtered image search for `image.search`, MemPalace for `memory.semantic`, and ShipProof for `evidence.static`. Never require or claim a named backend when only the capability matters.
+Tool and skill names are backend bindings. Examples include Context7 for `docs.versioned`, GitHub for `repository.remote`, Exa or another search service for `web.search`, Pinterest/domain-filtered image search for `image.search`, MemPalace for `memory.semantic`, OpenSpec or GitHub Spec Kit for `requirements.spec`, and ShipProof for `evidence.static`. Never require or claim a named backend when only the capability matters.
 
 ## Fallback order
 
@@ -30,6 +31,7 @@ Tool and skill names are backend bindings. Examples include Context7 for `docs.v
 | Remote repository | Connector → local Git → official web source → user-provided evidence |
 | Browser/UI verification | Browser automation → repository E2E → manual screenshot/walkthrough evidence → `Not verified` |
 | Semantic memory | Scoped memory adapter → exact scan of canonical `.harness/` files → ask human |
+| Requirement/spec artifacts | Existing repository convention → compact Harness baseline → approved optional spec backend → human clarification |
 | Human question | Interactive question tool → set `WAITING_DECISION` and return a gate packet |
 | File mutation unavailable | Return a patch/artifact and state that it was not applied |
 | Static audit | Selected trusted auditor → project linters/scanners → targeted manual review → `Not verified` |

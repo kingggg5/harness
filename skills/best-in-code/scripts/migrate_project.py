@@ -368,7 +368,8 @@ def build_store(project_id: str, specs: list[dict[str, str]], legacy_tombstones:
 		store["tombstones"].append({"id":canonical_id,"scope":"project","revoked_at":safe_time(item.get("revoked at", ""),utc_now()),"cache_sync":"NOT_CONFIGURED"})
 	if records or legacy_tombstones:
 		store["revision"] = 1
-		store["last_transaction"] = {"id":f"TX-00000001-{sha256_bytes(('migration:'+plan_digest).encode('utf-8'))[:12]}","operation":"migrate-v1","record_id":"MIGRATION","before_revision":0,"after_revision":1,"committed_at":utc_now()}
+		transaction_payload = b"migrate-v1:MIGRATION:1"
+		store["last_transaction"] = {"id":f"TX-00000001-{sha256_bytes(transaction_payload)[:12]}","operation":"migrate-v1","record_id":"MIGRATION","before_revision":0,"after_revision":1,"committed_at":utc_now()}
 	errors = validate_store(store, project_id)
 	if errors:
 		raise MemoryErrorWithCode("MIGRATION_INVALID", "; ".join(errors))
@@ -583,6 +584,8 @@ def main() -> int:
 			raise MemoryErrorWithCode("APPROVAL_REQUIRED", f"Re-run with --approve {digest} after reviewing the dry-run")
 		applied: list[tuple[Path, bytes, bytes | None]] = []
 		installed_runtime = None
+		transaction_lock = target_file_lock(harness / "MEMORY.json")
+		transaction_lock.__enter__()
 		try:
 			with target_file_lock(harness / "MEMORY.json"):
 				if runtime:
@@ -607,6 +610,8 @@ def main() -> int:
 			if rollback_errors:
 				raise MemoryErrorWithCode("ROLLBACK_FAILED", f"{exc}; rollback issues: {'; '.join(rollback_errors)}") from exc
 			raise
+		finally:
+			transaction_lock.__exit__(None,None,None)
 		print(json.dumps(result,ensure_ascii=False,indent=2) if args.json else f"Harness migration completed: {digest}")
 		return 0
 	except (OSError, UnicodeDecodeError, MemoryErrorWithCode, json.JSONDecodeError) as exc:

@@ -2,9 +2,11 @@
 
 ![release-gate](https://github.com/kingggg5/harness/actions/workflows/ci.yml/badge.svg)
 
-Harness is an adaptive software-delivery skill for Codex, Claude Code, Gemini CLI, and filesystem-capable AI agents. One portable skill routes each task through quick, standard, or full delivery; coordinates seven logical role contracts; keeps durable, scoped project memory in plain files; defends research from prompt injection; applies evidence-based QA; and pauses only at real human gates.
+Harness is an adaptive software-delivery skill for Codex, Claude Code, Gemini CLI, and filesystem-capable AI agents. One portable skill routes each task through quick, standard, or full delivery; coordinates seven delivery roles plus a conditional Business Analyst pass; keeps durable, scoped project memory in plain files; defends research from prompt injection; applies evidence-based QA; and pauses only at real human gates.
 
 Everything canonical lives in plain Markdown/JSON under `.harness/` — any model can resume the same project.
+
+`MEMORY.json` is durable authority; `CONTEXT.md` is its generated readable knowledge view. Complex repositories may activate one optional source-grounded `PROJECT-MAP.md` for topology, glossary, ownership, and cross-system flows. It is not created by `init`; Harness activates it only when the map will be reused. Harness deliberately does not create a second generic `KNOWLEDGE.md`.
 
 ## Demo
 
@@ -63,7 +65,7 @@ npx github:kingggg5/harness evals       # M01-M41 memory evaluation matrix
 npx github:kingggg5/harness portability # package structure gate
 ```
 
-Requires Node 18+ (for the launcher) and Python 3.10+ (for the deterministic core). No npm registry needed — `npx github:kingggg5/harness` runs straight from this repository.
+Requires Node 18+ (for the launcher) and Python 3.12+ (for consistent symlink/junction defenses). No npm registry needed — `npx github:kingggg5/harness` runs straight from this repository.
 
 ### Provider setup
 
@@ -76,6 +78,18 @@ Requires Node 18+ (for the launcher) and Python 3.10+ (for the deterministic cor
 
 Restart the provider session after installing so skill discovery reloads.
 
+### Common invocations
+
+```text
+Harness quick: fix this proven one-file regression
+Harness standard: add this feature and verify it
+Harness full: investigate this production-risk performance issue
+Harness review
+Harness resume
+Harness remember project: API pagination uses cursors
+Harness standard: map this multi-service repository for reusable cross-service planning
+```
+
 ## Workflow
 
 The delivery graph is canonical in [`skills/best-in-code/references/workflow-graph.md`](skills/best-in-code/references/workflow-graph.md); `STATE.json` is its machine-readable authority. Shape of one run:
@@ -83,6 +97,7 @@ The delivery graph is canonical in [`skills/best-in-code/references/workflow-gra
 ```text
 Human ↔ Project Manager → route + capability preflight
   ├─ Bounded discovery ──┐
+  ├─ Conditional BA → requirement baseline
   ├─ Planner/Architect → plan gate
   │                      ├─ Product Designer → design gate
   ├─ Frontend + Backend Engineers (parallel, disjoint file ownership)
@@ -104,7 +119,7 @@ graph LR
 		GEN[Generic agent]
 	end
 	Providers --> AD[Adapter fragments<br/>AGENTS / CLAUDE / GEMINI / GENERIC]
-	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + 13 references"]
+	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + 14 references"]
 	SKILL --> OPS["Deterministic core (Python)<br/>memory_ops · init · migrate · upgrade"]
 	OPS --> STORE[(".harness/<br/>IDENTITY · MEMORY · STATE<br/>runtime pin · derived views")]
 	OPS -. cross-process writer lock + CAS + digests .-> STORE
@@ -119,7 +134,8 @@ Safety properties enforced by the core, not by prompts:
 - **CAS commits** — every write re-checks expected bytes before an atomic replace; transient Windows share violations retry instead of corrupting.
 - **Digest-bound migration** — legacy migration applies only after a human approves the exact preview digest bound to input bytes, repository identity, adapter fragments, and runtime pin.
 - **Exact run ownership** — task records require the current `run_id`; wrong ID is refused, `close-run` is idempotent, nothing leaks across runs.
-- **Bounded everywhere** — recall budgets, store/caches/export sizes, source-read caps, clock-skew windows all have explicit ceilings.
+- **Bounded everywhere** — recall budgets, canonical store/caches/exports, source reads, clock skew, and generated Markdown projections all have explicit ceilings.
+- **Fail-closed recall identity** — a changed Git root/remote or logical scope blocks recall as well as writes until a human reviews an identity rebind.
 
 ## Agents and skills
 
@@ -135,13 +151,27 @@ Portable forms: `Harness: <task>`, `Harness full: <task>`, `Harness review`, `Ha
 | Role | Contract |
 |---|---|
 | Project Manager | Routes work; the *only* writer of shared state and memory |
+| Business Analyst (conditional pass) | Clarifies outcome, actors, scope, rules, questions, and acceptance behavior; never invents stakeholder intent or chooses architecture |
 | Planner / Architect | Produces the plan through the plan gate |
 | Researcher | Read-only evidence gathering; supports every phase |
 | Product Designer | Design output through the design gate |
 | Frontend / Backend Engineer | Bounded `ROLE-PACKET.md`: objective, verified record IDs, file ownership, stop condition |
 | Tester / Reviewer / QA | Independent only when isolated from implementation context |
 
-**Reference modules** loaded on demand: `workflow-graph`, `memory-loop`, `mode-routing`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+The BA pass is folded into PM for quick work, activated only when requirements are materially unclear, and skipped for implementation-ready tasks. It adds no workflow state or human gate.
+
+**Reference modules** loaded on demand: `workflow-graph`, `memory-loop`, `mode-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+
+Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
+
+| Need | Candidate backends |
+|---|---|
+| Current library/API documentation | Context7 → official versioned docs/repository |
+| Repository and current-web evidence | GitHub, Exa, official sources; Reddit/community sources are secondary evidence only |
+| UI/UX and motion | design-taste, Impeccable, UI UX Pro Max, transitions.dev; Pinterest is read-only inspiration; Caveman is opt-in |
+| Semantic recall | MemPalace over a sanitized project-scoped export; canonical files remain authority |
+| Repository-native specifications | Existing convention, then optional OpenSpec or GitHub Spec Kit; never both as the same source of truth |
+| Static/runtime evidence | ShipProof or repository checks; unavailable evidence is reported `Not verified` |
 
 **Agent manifests:** `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `gemini-extension.json`, and `agents/openai.yaml` (Codex policy: implicit invocation allowed).
 
@@ -161,12 +191,28 @@ memory_ops.py status | validate | render | export-cache --output PATH | doctor
 ```bash
 python skills/best-in-code/scripts/migrate_project.py --project P --models all --dry-run --json
 python skills/best-in-code/scripts/migrate_project.py --project P --models all --approve <sha256-from-preview>
+python skills/best-in-code/scripts/init_project.py --project P --rebind-identity --dry-run --json
+python skills/best-in-code/scripts/init_project.py --project P --rebind-identity --approve <sha256-from-preview> --json
+python skills/best-in-code/scripts/upgrade_project.py --project P --models all --dry-run --json
+python skills/best-in-code/scripts/upgrade_project.py --project P --models all --approve <sha256-from-preview> --json
 ```
 
 - Refuses legacy/mixed schemas instead of half-upgrading; active runs, conflicts, unsafe rows stop for human review.
 - Archives original inputs byte-for-byte under `.harness/migrations/`, maps legacy IDs in `MIGRATION.json`, rolls back on failure.
 - The approval digest covers reviewed inputs + repository identity + adapter fragments + runtime pin — moving/forking the repo invalidates it.
 - Runtime upgrades use the same preview→approve flow; prior pinned runtimes stay recoverable under `.harness/runtime-history/`.
+- Updating the installed plugin and opening a new provider session reloads plugin discovery. A project with `.harness/runtime/` remains pinned until its separately reviewed `upgrade_project.py` plan is approved.
+- `--rebind-identity` preserves the Project ID and is only for the same logical project. A true fork needs an externally archived old `.harness/` followed by a fresh initialization and new Project ID.
+- Run init/migrate/upgrade from a trusted full Harness package (or the `npx` launcher). The project-pinned runtime is self-contained for workflow policy and `memory_ops.py`, but intentionally does not duplicate package manifests and provider adapter sources required by lifecycle commands.
+
+## Common recovery
+
+| Symptom | Safe next action |
+|---|---|
+| Legacy or mixed schema | Run migration `--dry-run`; review and approve its exact digest |
+| Repository identity mismatch | Inspect the root/remote/scope; use preview-bound rebind only for the same logical project |
+| Unfinished run | Use `Harness resume` or close the exact Run ID; never silently replace it |
+| Optional backend unavailable | Use the documented fallback and report reduced or `Not verified` evidence |
 
 ## Development
 

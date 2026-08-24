@@ -23,6 +23,18 @@ These expire with this run and do not mutate durable memory.
 | Key | Override | Conflicting record ID | Reason | Future action |
 |---|---|---|---|---|
 
+## Requirement baseline
+
+- Requirements pass: N/A | folded into PM | active
+- Business outcome and success signal:
+- Primary actors/stakeholders:
+- In scope:
+- Out of scope:
+- Business-rule owners/sources:
+
+| Req/rule ID | Known / Assumption / Open question | Requirement or business rule | Evidence/owner | Acceptance link/status |
+|---|---|---|---|---|
+
 ## Acceptance criteria
 
 | ID | Criterion | Verification | Status |
