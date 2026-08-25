@@ -19,6 +19,10 @@ jobs:
           python-version: "3.12"
       - name: Portability validation
         run: python skills/best-in-code/scripts/validate_portability.py
+      - name: Task-graph invariant suite
+        run: python skills/best-in-code/scripts/graph_tests.py
+      - name: Graph runtime integration suite
+        run: python skills/best-in-code/scripts/graph_runtime_tests.py
       - name: Two-process race regression suite
         run: python skills/best-in-code/scripts/race_tests.py
       - name: Memory evals (external-model cases tolerated until wired)

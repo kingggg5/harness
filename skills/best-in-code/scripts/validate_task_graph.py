@@ -17,9 +17,13 @@ sys.dont_write_bytecode = True
 MAX_BYTES = 256 * 1024
 MAX_NODES = 64
 MAX_EDGES = 128
+MAX_LIST_ITEMS = 64
+MAX_ARTIFACTS = 512
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+ARTIFACT_PATTERN = re.compile(r"^[a-z][a-z0-9._-]{0,63}$")
 PROJECT_ID_PATTERN = re.compile(r"^project-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$")
+IDEMPOTENCY_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,256}$")
 ROOT_FIELDS = {
 	"schema_version", "graph_id", "project_id", "run_id", "coordinator",
 	"isolation_strategy", "base_revision", "max_parallel", "max_transitions",
@@ -53,6 +57,9 @@ def check_string_list(value: Any, field: str, errors: list[str], *, allow_empty:
 	if not isinstance(value, list) or (not allow_empty and not value):
 		errors.append(f"{field} must be {'a non-empty' if not allow_empty else 'an'} array of unique strings")
 		return []
+	if len(value) > MAX_LIST_ITEMS:
+		errors.append(f"{field} must contain at most {MAX_LIST_ITEMS} entries")
+		return []
 	if any(not isinstance(item, str) or not item.strip() or len(item.encode("utf-8")) > 256 for item in value):
 		errors.append(f"{field} entries must be non-empty strings of at most 256 UTF-8 bytes")
 		return []
@@ -75,6 +82,14 @@ def scope_overlaps(left: str, right: str) -> bool:
 	right_parts = PurePosixPath(right).parts
 	shorter = min(len(left_parts), len(right_parts))
 	return left_parts[:shorter] == right_parts[:shorter]
+
+
+def scope_contains(container: str, child: str) -> bool:
+	if container == ".":
+		return True
+	container_parts = PurePosixPath(container).parts
+	child_parts = PurePosixPath(child).parts
+	return len(container_parts) <= len(child_parts) and container_parts == child_parts[:len(container_parts)]
 
 
 def reachable(start: str, target: str, adjacency: dict[str, set[str]]) -> bool:
@@ -174,6 +189,10 @@ def validate_graph(data: Any) -> list[str]:
 			errors.append(f"{label}.objective must be 1 to 1024 UTF-8 bytes")
 		for field in ("inputs", "optional_inputs", "outputs", "read_scope", "write_scope", "success_criteria"):
 			check_string_list(node[field], f"{label}.{field}", errors, allow_empty=field not in {"outputs", "success_criteria"})
+		for field in ("inputs", "optional_inputs", "outputs"):
+			for artifact in node[field] if isinstance(node[field], list) else []:
+				if isinstance(artifact, str) and not ARTIFACT_PATTERN.fullmatch(artifact):
+					errors.append(f"{label}.{field} contains invalid artifact name: {artifact!r}")
 		for field in ("read_scope", "write_scope"):
 			for scope in node[field] if isinstance(node[field], list) else []:
 				if isinstance(scope, str) and not valid_scope(scope):
@@ -184,8 +203,8 @@ def validate_graph(data: Any) -> list[str]:
 			errors.append(f"{label}.timeout_seconds must be an integer from 1 to 3600")
 		if node["side_effect"] not in SIDE_EFFECTS:
 			errors.append(f"{label}.side_effect must be one of {sorted(SIDE_EFFECTS)}")
-		if "idempotency_key" in node and (not isinstance(node["idempotency_key"], str) or not node["idempotency_key"].strip() or len(node["idempotency_key"].encode("utf-8")) > 256):
-			errors.append(f"{label}.idempotency_key must be 1 to 256 UTF-8 bytes when present")
+		if "idempotency_key" in node and (not isinstance(node["idempotency_key"], str) or not IDEMPOTENCY_PATTERN.fullmatch(node["idempotency_key"])):
+			errors.append(f"{label}.idempotency_key must use 1 to 256 safe identifier characters when present")
 		if "join" in node and node["join"] not in {"all", "any"}:
 			errors.append(f"{label}.join must be all or any")
 
@@ -200,10 +219,19 @@ def validate_graph(data: Any) -> list[str]:
 	for node_id in entry_nodes:
 		if node_id not in node_by_id:
 			errors.append(f"entry node does not exist: {node_id}")
+	external_inputs = {
+		artifact
+		for node_id in entry_nodes if node_id in node_by_id
+		for artifact in (*node_by_id[node_id]["inputs"], *node_by_id[node_id]["optional_inputs"])
+		if artifact not in producers
+	}
+	if len(producers) + len(external_inputs) > MAX_ARTIFACTS:
+		errors.append(f"graph declares more than {MAX_ARTIFACTS} produced/external artifacts")
 
 	adjacency: dict[str, set[str]] = defaultdict(set)
 	reverse: dict[str, set[str]] = defaultdict(set)
 	delivered_initial: dict[str, set[str]] = defaultdict(set)
+	delivered_by_source: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
 	loop_edges: list[dict[str, Any]] = []
 	seen_edges: set[tuple[str, str, str, str]] = set()
 	for index, edge in enumerate(edges):
@@ -261,6 +289,7 @@ def validate_graph(data: Any) -> list[str]:
 			reverse[target].add(source)
 			if edge_type == "data":
 				delivered_initial[target].update(consumes)
+				delivered_by_source[target][source].update(consumes)
 
 	if errors:
 		return errors
@@ -287,6 +316,11 @@ def validate_graph(data: Any) -> list[str]:
 		missing_inputs = set(node["inputs"]) - delivered_initial[node_id]
 		if missing_inputs:
 			errors.append(f"node {node_id} has required inputs with no incoming non-loop data edge: {sorted(missing_inputs)}")
+		if node.get("join") == "any":
+			for source in reverse[node_id]:
+				branch_missing = set(node["inputs"]) - delivered_by_source[node_id][source]
+				if branch_missing:
+					errors.append(f"join=any node {node_id} source {source} cannot independently provide required inputs: {sorted(branch_missing)}")
 	visible = set(entry_nodes)
 	queue = deque(entry_nodes)
 	while queue:
@@ -304,9 +338,19 @@ def validate_graph(data: Any) -> list[str]:
 			errors.append(f"fan-in node {node_id} must declare join=all or join=any")
 		if len(incoming) <= 1 and "join" in node:
 			errors.append(f"node {node_id} declares join without multiple incoming non-loop edges")
+		if node["kind"] == "merge":
+			for source in incoming:
+				for source_scope in node_by_id[source]["write_scope"]:
+					if not any(scope_contains(merge_scope, source_scope) for merge_scope in node["write_scope"]):
+						errors.append(f"merge node {node_id} write_scope does not contain input owner {source} scope {source_scope!r}")
 		if node["side_effect"] == "consequential":
 			if "idempotency_key" not in node:
 				errors.append(f"consequential node {node_id} requires an idempotency_key bound to the run and approved artifact")
+			elif isinstance(node["idempotency_key"], str):
+				if data["run_id"] and data["run_id"] not in node["idempotency_key"]:
+					errors.append(f"consequential node {node_id} idempotency_key must include the active run_id")
+				if node["inputs"] and not any(artifact in node["idempotency_key"] for artifact in node["inputs"]):
+					errors.append(f"consequential node {node_id} idempotency_key must include an approved input artifact name")
 			if node["max_attempts"] != 1:
 				errors.append(f"consequential node {node_id} must set max_attempts to 1; retries require a new human-reviewed attempt")
 			approved = any(
@@ -333,7 +377,7 @@ def validate_graph(data: Any) -> list[str]:
 			if any(scope_overlaps(left, right) for left in left_scopes for right in right_scopes):
 				errors.append(f"unordered nodes {left_id} and {right_id} have overlapping write_scope")
 
-	minimum_transitions = max(1, len(node_by_id) - len(entry_nodes)) + sum(edge["max_rounds"] for edge in loop_edges)
+	minimum_transitions = len(node_by_id) + sum(edge["max_rounds"] for edge in loop_edges)
 	if data["max_transitions"] < minimum_transitions:
 		errors.append(f"max_transitions must be at least {minimum_transitions} for this graph")
 	return errors

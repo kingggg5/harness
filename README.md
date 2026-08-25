@@ -15,6 +15,8 @@ Everything canonical lives in plain Markdown/JSON under `.harness/` — any mode
 
 Complex runs may also compile an optional `TASK-GRAPH.json`: bounded jobs, real artifact dependencies, disjoint file ownership, one merge owner, evaluator limits, and human approval before expensive-to-undo actions. It is a run plan, never another memory or state authority.
 
+If that run must survive a process or session boundary, an optional local graph ledger records atomic claims, commit-scoped results, content-addressed artifacts, timeouts, and resume checks under `.harness/.cache/`. It is evidence and coordination state, not an autonomous executor or durable team-memory source.
+
 <p align="center">
 	<img src="assets/brand/harness-workflow.png" alt="Harness workflow: state the goal, plan, bring in the right roles, build and test, pause for human approval, then retain useful context for the next round">
 </p>
@@ -75,6 +77,7 @@ npx github:kingggg5/harness race        # two-process concurrency regression sui
 npx github:kingggg5/harness evals       # M01-M41 memory evaluation matrix
 npx github:kingggg5/harness portability # package structure gate
 npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
+npx github:kingggg5/harness graph-run status --project . --graph .harness/TASK-GRAPH.json
 ```
 
 Requires Node 18+ (for the launcher) and Python 3.12+ (for consistent symlink/junction defenses). No npm registry needed — `npx github:kingggg5/harness` runs straight from this repository.
@@ -142,6 +145,14 @@ Harness keeps sequential work with one owner. When two or more jobs are genuinel
 
 This is conditional, not another permanent agent. Google Research's 2026 evaluation found large gains on a parallelizable task but 39–70% degradation across tested sequential planning configurations, so “more agents” is not the default. Read the [design and research basis](skills/best-in-code/references/graph-engineering.md) or copy the [working example](examples/graph-engineering-feature.md). No LangGraph, ADK, AutoGen, or other runtime is installed automatically.
 
+### Durable graph receipts, only when needed
+
+For a run that must resume after a process/session loss, the bundled `graph-run` ledger binds the approved graph to its exact Git baseline and active Project/Run IDs. Project Manager claims ready nodes with compare-and-swap revisions, gives each worker an ephemeral lease token, and accepts results only when required artifacts still match their SHA-256 receipts. Successful writing nodes must return an exact commit whose diff stays inside their declared `write_scope`.
+
+A matching hash proves that bytes did not change; it does not prove that worker output is correct or safe. Project Manager still treats artifact contents as untrusted data and applies the destination node's schema, evidence, prompt-injection, and authorization checks.
+
+`resume` re-verifies the graph digest, Git ancestry, source commits, and every current artifact. Timed-out claims can be requeued, failed, or blocked, but recovery never stops a process, deletes a worktree, or cleans files. Use the [graph runtime guide](skills/best-in-code/references/graph-runtime.md) for `start`, `claim`, `finish`, `status`, `resume`, and `recover`. Short sequential work keeps the static graph or skips it entirely.
+
 ### Isolated execution and long-running work
 
 Concurrent writers never share one mutable checkout: each uses a verified provider workspace or Git worktree created from the graph's exact base commit, while Project Manager alone integrates. Worktrees isolate checked-out files but not ports, databases, caches, credentials, processes, or external services, so those resources are named separately or the nodes run sequentially.
@@ -160,12 +171,12 @@ graph LR
 	end
 	Providers --> AD[Adapter fragments<br/>AGENTS / CLAUDE / GEMINI / GENERIC]
 	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + focused references"]
-	SKILL --> OPS["Deterministic core (Python)<br/>memory · lifecycle · graph validation"]
+	SKILL --> OPS["Deterministic core (Python)<br/>memory · lifecycle · graph validation + receipts"]
 	OPS --> STORE[(".harness/<br/>IDENTITY · MEMORY · STATE<br/>runtime pin · derived views")]
 	OPS -. cross-process writer lock + CAS + digests .-> STORE
 	SKILL --> GATES[Human gates<br/>plan · design · decision · acceptance]
 	GATES --> HUMAN((Human))
-	QA2[race_tests · evals M01-M41 · portability] -. release gate .-> OPS
+	QA2[graph/runtime tests · race tests · evals M01-M41 · portability] -. release gate .-> OPS
 ```
 
 Safety properties enforced by the core, not by prompts:
@@ -178,6 +189,7 @@ Safety properties enforced by the core, not by prompts:
 - **Fail-closed recall identity** — a changed Git root/remote or logical scope blocks recall as well as writes until a human reviews an identity rebind.
 - **Isolated concurrent writers** — one exact base revision and one verified workspace/branch per writer; shared runtime resources remain explicit and one Project Manager owns integration.
 - **Bounded long runs** — iteration/time/token/cost/failure limits, progress receipts, cancellation and stall/no-progress terminal states are declared before dispatch.
+- **Content-addressed graph receipts** — graph digest, node lease, exact commit ancestry, write scope, artifact SHA-256, loop/attempt limits, and stale-claim recovery are checked by the optional local runtime.
 
 ## Agents and skills
 
@@ -192,7 +204,7 @@ Portable forms: `Harness: <task>`, `Harness full: <task>`, `Harness review`, `Ha
 
 | Role | Contract |
 |---|---|
-| Project Manager | Routes work; the *only* writer of shared state and memory |
+| Project Manager | Routes work; the *only* writer of shared state, memory, and optional graph runtime ledger |
 | Business Analyst (conditional pass) | Clarifies outcome, actors, scope, rules, questions, and acceptance behavior; never invents stakeholder intent or chooses architecture |
 | Planner / Architect | Produces the plan through the plan gate |
 | Researcher | Read-only evidence gathering; supports every phase |
@@ -214,7 +226,7 @@ Harness routes model **profiles**, then binds them to models available in the ac
 
 Quick normally avoids switching. Standard defaults to `balanced` and escalates only material planning/review. Full uses `reasoning` for plan/high-risk review, `balanced` for implementation, and `fast` only after contracts and file ownership are stable. A user-pinned model wins. Missing selection support falls back to the current model with labeled passes; Harness never claims a switch from the request alone. See [official OpenAI model guidance](https://developers.openai.com/api/docs/models).
 
-**Reference modules** loaded on demand: `workflow-graph`, `graph-engineering`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+**Reference modules** loaded on demand: `workflow-graph`, `graph-engineering`, `graph-runtime`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
 
 Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
 
@@ -267,18 +279,20 @@ python skills/best-in-code/scripts/upgrade_project.py --project P --models all -
 | Legacy or mixed schema | Run migration `--dry-run`; review and approve its exact digest |
 | Repository identity mismatch | Inspect the root/remote/scope; use preview-bound rebind only for the same logical project |
 | Unfinished run | Use `Harness resume` or close the exact Run ID; never silently replace it |
+| Graph receipt will not resume | Inspect the reported graph/identity/Git/artifact mismatch; restore or supersede evidence deliberately, never edit the ledger |
 | Optional backend unavailable | Use the documented fallback and report reduced or `Not verified` evidence |
 
 ## Development
 
 ```bash
-python skills/best-in-code/scripts/validate_portability.py   # structure gate (12 groups)
-python skills/best-in-code/scripts/graph_tests.py             # graph invariant suite
+python skills/best-in-code/scripts/validate_portability.py   # structure gate (13 groups)
+python skills/best-in-code/scripts/graph_tests.py            # static graph invariant suite
+python skills/best-in-code/scripts/graph_runtime_tests.py    # real Git/claim/artifact/resume integration
 python skills/best-in-code/scripts/race_tests.py             # two-process concurrency suite
 python skills/best-in-code/scripts/run_memory_evals.py --json # M01-M41 matrix (36-37 PASS locally)
 ```
 
-CI runs all three on Ubuntu and Windows. Eval cases M05/M06/M28/M31 require a live target model; M34 requires POSIX for symlink coverage. See [CHANGELOG.md](CHANGELOG.md).
+CI runs all deterministic suites on Ubuntu and Windows. Eval cases M05/M06/M28/M31 require a live target model; M34 requires POSIX for symlink coverage. See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

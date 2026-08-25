@@ -18,9 +18,12 @@ Validate before execution:
 npx github:kingggg5/harness graph-validate --graph examples/graph-engineering-feature.json
 ```
 
+The example IDs and zero base commit are placeholders. Copy the graph into the active project's `.harness/`, replace them with the exact Project ID, Run ID, current commit, and run-bound idempotency key, then validate again. If the run must survive a session boundary, start the optional [graph runtime ledger](../skills/best-in-code/references/graph-runtime.md) with real entry-input evidence files; Project Manager then uses `claim`, `finish`, and `resume` rather than asking workers to edit shared state.
+
 Why this shape:
 
 - `plan → frontend/backend → merge` is a centralized diamond because the two implementations are independent only after the contract is approved.
+- The merge node declares both child scopes plus integration paths because its result commit contains both worker commits; the runtime also verifies both input commits are ancestors of that result.
 - `isolation_strategy=git-worktree` plus `base_revision` prevents concurrent writers from sharing one checkout or starting from different code; ports, databases, caches, and other shared resources still need separate allocation.
 - `qa → repair → qa` is a bounded evaluator loop, not an open-ended retry.
 - `acceptance → publish` is a human gate immediately before a consequential effect.

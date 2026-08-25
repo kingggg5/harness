@@ -44,7 +44,7 @@ Researcher supports requirements analysis, discovery, planning, design, and veri
 
 ## Optional per-run task graph
 
-The macro graph above remains canonical. For a run with real independent branches, fan-in, a bounded evaluator loop, or a consequential effect, Planner/Architect may compile the optional `.harness/TASK-GRAPH.json` described in [graph-engineering.md](graph-engineering.md). It is a run-scoped scheduling contract, not another state machine: Project Manager still advances `STATE.json`, owns merge and gates, and records only macro checkpoints in `WORKFLOW.md`.
+The macro graph above remains canonical. For a run with real independent branches, fan-in, a bounded evaluator loop, or a consequential effect, Planner/Architect may compile the optional `.harness/TASK-GRAPH.json` described in [graph-engineering.md](graph-engineering.md). The graph file is a run-scoped scheduling contract, not another lifecycle authority: Project Manager still advances `STATE.json`, owns merge and gates, and records only macro checkpoints in `WORKFLOW.md`. When session-resilient node receipts are justified, the optional local [graph runtime ledger](graph-runtime.md) records task-level execution under `.harness/.cache/` without replacing those authorities.
 
 Draw an edge only when the target consumes a named source artifact or a real control decision. Keep sequential work with one owner; parallel workers require disjoint write scopes and a stable interface; one merge owner integrates their outputs. Every loop and fan-out is bounded before execution. A provider without isolated agents executes the same contract as labeled sequential passes.
 

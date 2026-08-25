@@ -82,7 +82,10 @@ const requiredFiles = [
 	"skills/best-in-code/assets/templates/TASK-GRAPH.json",
 	"skills/best-in-code/references/execution-isolation.md",
 	"skills/best-in-code/references/graph-engineering.md",
+	"skills/best-in-code/references/graph-runtime.md",
 	"skills/best-in-code/scripts/graph_tests.py",
+	"skills/best-in-code/scripts/graph_runtime.py",
+	"skills/best-in-code/scripts/graph_runtime_tests.py",
 	"skills/best-in-code/scripts/validate_task_graph.py",
 ];
 const requiredPrefixes = [

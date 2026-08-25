@@ -228,6 +228,20 @@
 			"required_gates": ["Plan checkpoint", "Acceptance"],
 			"expected_isolation_strategy": "same-worktree-sequential",
 			"forbidden_claims": ["concurrent writers in one shared worktree", "parallel capability proves filesystem isolation"]
+		},
+		{
+			"id": "R24",
+			"request": "Harness standard with Graph Engineering: run independent frontend and backend work across sessions, preserve verifiable receipts, and resume safely after the provider restarts.",
+			"available_capabilities": ["agents.parallel", "agents.isolated", "vcs.worktree", "graph.ledger"],
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Planner / Architect", "Frontend Engineer", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Acceptance"],
+			"required_artifacts": [".harness/TASK-GRAPH.json"],
+			"expected_graph_shape": "centralized-diamond",
+			"expected_isolation_strategy": "git-worktree",
+			"expected_graph_runtime": {"writer": "Project Manager", "artifact_digests": "sha256", "resume": "fail-closed", "worker_token_storage": "ephemeral"},
+			"forbidden_claims": ["worker writes shared graph state", "claim token committed to the repository", "graph runtime launches or authorizes agents"]
 		}
 	]
 }

@@ -16,6 +16,7 @@ Harness depends on capabilities, not vendor or model names. At intake, record on
 | `docs.versioned` | Retrieve current version-aware official documentation. |
 | `repository.local` / `repository.remote` | Inspect local or hosted repository evidence. |
 | `vcs.worktree` | Create, identify, and safely retire one isolated version-control workspace per concurrent writer. |
+| `graph.ledger` | Persist bounded node claims, receipts, artifact digests, and resume checks without executing nodes. |
 | `web.search` / `web.fetch` | Find and inspect current external evidence. |
 | `browser.interactive` | Inspect or exercise a running interface. |
 | `image.search` | Find public visual references with domain/source controls. |
@@ -32,6 +33,7 @@ Tool and skill names are backend bindings. Examples include Context7 for `docs.v
 | Role execution | Parallel isolated agent → sequential isolated session → fresh-session review → labeled same-agent pass |
 | Concurrent writer workspace | Verified provider-isolated workspace → native Git worktree → sequential execution in one workspace |
 | Long-running supervision | Event-driven supervisor with status/cancel/stall detection → one bounded interactive iteration → handoff |
+| Durable graph receipts | Bundled local Git-backed ledger → Project Manager records the same evidence manually in `WORKFLOW.md` → static graph only |
 | Model selection | Exact user-pinned available model → verified profile binding → current model with supported effort → labeled same-model pass |
 | Current documentation | Versioned-doc tool → official versioned docs → official repository/tag → installed local source → ask human |
 | Remote repository | Connector → local Git → official web source → user-provided evidence |

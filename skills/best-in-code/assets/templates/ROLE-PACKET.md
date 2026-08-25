@@ -16,6 +16,8 @@
 
 - Workspace isolation/backend or `N/A`:
 - Exact base revision and branch/worktree owner:
+- Graph node/activation and claim ID or `N/A`:
+- Claim token delivery: ephemeral trusted channel only; never persist the token here:
 - Iteration/time/token/cost/external-call limits:
 - Status/receipt channel, stall deadline, and cancel path:
 - Cleanup owner and clean-state condition:

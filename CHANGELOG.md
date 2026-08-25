@@ -10,6 +10,8 @@
 - A 2026 research synthesis covering centralized coordination, the sequential-work penalty, context budgets, compiled knowledge layers, prompt-injection boundaries, and optional runtime adapters.
 - A conditional execution-isolation contract for concurrent writers and long-running work: exact base revision, one worktree/workspace per writer, shared-resource allocation, one integration owner, status receipts, cancellation/stall detection, and fixed iteration/time/token/cost/failure limits.
 - Portable `vcs.worktree` and `agents.supervise` capabilities with sequential/interactive fallbacks. Firstmate, Treehouse, GNHF, and No-Mistakes remain optional reviewed backends rather than dependencies.
+- An optional dependency-free `graph-run` ledger with atomic claim/finish receipts, Project/Run/graph binding, exact Git baseline and ancestry checks, SHA-256 artifacts, commit diff containment by `write_scope`, bounded retry/loop transitions, timeout recovery, and fail-closed resume.
+- Graph runtime integration tests covering real concurrent claims, human-gated fan-out, isolated worker commits, scope violations, artifact drift, stale recovery, and graph-digest tampering; stricter graph fixtures now cover safe artifact IDs, bounded lists, sound `join=any` inputs, and idempotency binding.
 
 ### Changed
 

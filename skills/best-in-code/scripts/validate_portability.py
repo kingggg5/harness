@@ -29,6 +29,7 @@ REQUIRED_FILES = (
 	".codex-plugin/plugin.json",
 	".claude-plugin/plugin.json",
 	"gemini-extension.json",
+	"bin/harness.js",
 	"README.md",
 	"adapters/project/AGENTS.md.fragment",
 	"adapters/project/CLAUDE.md.fragment",
@@ -39,6 +40,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/references/mode-routing.md",
 	"skills/best-in-code/references/workflow-graph.md",
 	"skills/best-in-code/references/graph-engineering.md",
+	"skills/best-in-code/references/graph-runtime.md",
 	"skills/best-in-code/references/execution-isolation.md",
 	"skills/best-in-code/references/model-routing.md",
 	"skills/best-in-code/references/requirements-analysis.md",
@@ -50,6 +52,8 @@ REQUIRED_FILES = (
 	"skills/best-in-code/scripts/memory_ops.py",
 	"skills/best-in-code/scripts/migrate_project.py",
 	"skills/best-in-code/scripts/graph_tests.py",
+	"skills/best-in-code/scripts/graph_runtime.py",
+	"skills/best-in-code/scripts/graph_runtime_tests.py",
 	"skills/best-in-code/scripts/run_memory_evals.py",
 	"skills/best-in-code/scripts/upgrade_project.py",
 	"skills/best-in-code/scripts/validate_portability.py",
@@ -274,6 +278,16 @@ def check_adapters(root: Path, errors: list[str]) -> None:
 			errors.append(f"Adapter missing required canonical pointer: {name}")
 
 
+def check_cli(root: Path, errors: list[str]) -> None:
+	path = root / "bin" / "harness.js"
+	if not path.is_file():
+		return
+	content = path.read_text(encoding="utf-8")
+	for marker in ('"graph-validate": "validate_task_graph.py"', '"graph-run": "graph_runtime.py"'):
+		if marker not in content:
+			errors.append(f"CLI launcher is missing mapping: {marker}")
+
+
 def check_fixtures(root: Path, errors: list[str]) -> None:
 	eval_root = root / "skills" / "best-in-code" / "assets" / "evals"
 	router = load_json(eval_root / "router-cases.json", errors)
@@ -314,6 +328,8 @@ def check_fixtures(root: Path, errors: list[str]) -> None:
 			errors.append("Router fixtures need a bounded long-running execution case")
 		if not any("concurrent writers in one shared worktree" in case.get("forbidden_claims", []) for case in cases):
 			errors.append("Router fixtures need a shared-worktree concurrency fallback case")
+		if not any(isinstance(case.get("expected_graph_runtime"), dict) and case["expected_graph_runtime"].get("resume") == "fail-closed" for case in cases):
+			errors.append("Router fixtures need a session-resilient graph-ledger case")
 	memory = load_json(eval_root / "memory-cases.json", errors)
 	if isinstance(memory, dict):
 		cases = memory.get("cases", [])
@@ -487,11 +503,12 @@ def main() -> int:
 		check_one_graph(root, errors)
 		check_templates(root, errors)
 		check_adapters(root, errors)
+		check_cli(root, errors)
 		check_fixtures(root, errors)
 		check_manifests(root, errors)
 	if args.project:
 		check_project(Path(args.project), args.require_adapters, errors)
-	result = {"ok": not errors, "root": str(root), "errors": errors, "checks": (0 if args.project_only else 12) + int(bool(args.project))}
+	result = {"ok": not errors, "root": str(root), "errors": errors, "checks": (0 if args.project_only else 13) + int(bool(args.project))}
 	if args.json:
 		print(json.dumps(result, ensure_ascii=False, indent=2))
 	elif errors:

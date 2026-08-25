@@ -94,6 +94,39 @@ def main() -> int:
 	active_graph_without_base["base_revision"] = ""
 	cases.append(("active-sequential-graph-without-exact-base-refused", active_graph_without_base, "active graph requires an exact base_revision"))
 
+	invalid_artifact = copy.deepcopy(base)
+	invalid_artifact["nodes"][0]["outputs"] = ["Plan Candidate"]
+	cases.append(("unsafe-artifact-name-refused", invalid_artifact, "invalid artifact name"))
+
+	oversized_criteria = copy.deepcopy(base)
+	oversized_criteria["nodes"][0]["success_criteria"] = [f"criterion-{index}" for index in range(65)]
+	cases.append(("oversized-node-list-refused", oversized_criteria, "must contain at most 64 entries"))
+
+	unsafe_any_join = copy.deepcopy(base)
+	unsafe_any_join["nodes"][4]["join"] = "any"
+	cases.append(("join-any-must-have-complete-branch-inputs", unsafe_any_join, "cannot independently provide required inputs"))
+
+	unbound_run_key = copy.deepcopy(base)
+	unbound_run_key["nodes"][8]["idempotency_key"] = "another-run:publish:accepted-result"
+	cases.append(("consequential-key-must-bind-run", unbound_run_key, "must include the active run_id"))
+
+	unbound_artifact_key = copy.deepcopy(base)
+	unbound_artifact_key["nodes"][8]["idempotency_key"] = "RUN-example:publish"
+	cases.append(("consequential-key-must-bind-artifact", unbound_artifact_key, "must include an approved input artifact name"))
+
+	incomplete_merge_scope = copy.deepcopy(base)
+	incomplete_merge_scope["nodes"][4]["write_scope"] = ["src/integration", "tests/integration"]
+	cases.append(("merge-scope-must-contain-input-owner-scopes", incomplete_merge_scope, "does not contain input owner"))
+
+	too_many_artifacts = copy.deepcopy(base)
+	for node_index, node in enumerate(too_many_artifacts["nodes"]):
+		node["outputs"] = [f"artifact-{node_index}-{artifact_index}" for artifact_index in range(64)]
+	cases.append(("graph-artifact-budget-is-bounded", too_many_artifacts, "produced/external artifacts"))
+
+	insufficient_transition_budget = copy.deepcopy(base)
+	insufficient_transition_budget["max_transitions"] = len(base["nodes"]) + 1
+	cases.append(("transition-budget-covers-nodes-and-loops", insufficient_transition_budget, "max_transitions must be at least"))
+
 	results = [expect(*case)[0] for case in cases]
 	passed = sum(results)
 	print(f"Graph tests: {passed}/{len(results)} passed")

@@ -15,6 +15,7 @@ Evaluate structured behavior, not preferred prose. Hold repository revision, tas
 9. Execution isolation: concurrent writers start from the same exact revision in separate verified workspaces; mutable ports/databases/caches are isolated or serialized; missing isolation falls back to sequential work; dirty or unknown worktrees are preserved rather than force-cleaned.
 10. Long-running work: objective/verifier and iteration/time/token/cost/external-call/failure limits are fixed before dispatch; status receipts, cancellation, stall and no-progress stops work; a passing worker cannot push, merge, deploy, or publish without the applicable human gate.
 11. Harness ablation: compare focused skill/role/evaluator/graph/supervisor routes against the same model with that component removed and against the simplest single-owner baseline. Keep complexity only when repeated isolated trials show task-distribution lift without unacceptable policy, cost, latency, or maintenance regression.
+12. Graph runtime: real concurrent claims have one winner; revision conflicts preserve state; graph/Project/Run/base bindings fail closed; required artifact drift blocks consumption/resume; successful commits descend from the claim revision and stay inside `write_scope`; attempts/loops/transitions remain bounded; only timed-out exact claims recover; recovery never deletes worker state or authorizes an external action.
 
 Machine-readable cases live in `assets/evals/router-cases.json` and `assets/evals/memory-cases.json`. Run deterministic local memory, migration, upgrade, Unicode, identity, CAS, and path oracles with `python scripts/run_memory_evals.py --json`. Provider/model or unavailable host-capability cases report `SKIP`; use `--require-external` in a release environment to turn those skips into a failing gate.
 
@@ -42,5 +43,6 @@ For memory, compute a stable-selection digest from ordered selected IDs plus ver
 - Isolated trials with shared mutable service/cache identity: 0.
 - Unbounded loop or stale-worker relaunch: 0.
 - Worker-initiated push, merge, deploy, publish, or force-clean without exact authority: 0.
+- Accepted graph receipts with a changed graph/artifact, foreign commit lineage, out-of-scope diff, stale revision, or wrong claim: 0.
 
-Use `scripts/validate_portability.py` for structural checks and `scripts/run_memory_evals.py` for executable local memory checks. Behavioral cross-model release claims still require running the provider-only fixtures through each target harness; structural or local deterministic validation is not model conformance evidence.
+Use `scripts/validate_portability.py` for structural checks, `scripts/graph_tests.py` and `scripts/graph_runtime_tests.py` for graph invariants/integration, and `scripts/run_memory_evals.py` for executable local memory checks. Behavioral cross-model release claims still require running the provider-only fixtures through each target harness; structural or local deterministic validation is not model conformance evidence.

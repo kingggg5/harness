@@ -12,6 +12,7 @@ const PROJECT_SCRIPTS = {
 	upgrade: "upgrade_project.py",
 	portability: "validate_portability.py",
 	"graph-validate": "validate_task_graph.py",
+	"graph-run": "graph_runtime.py",
 	evals: "run_memory_evals.py",
 	race: "race_tests.py",
 };
@@ -32,6 +33,7 @@ Project lifecycle:
   upgrade     Preview/apply runtime pin upgrade       (--dry-run, --approve SHA256)
   portability Validate the installed package layout
   graph-validate Validate a bounded TASK-GRAPH.json     (--graph PATH, --json)
+  graph-run   Record/resume graph node receipts         (start|status|resume|claim|finish|recover)
 
 Memory operations (memory_ops.py):
   remember | correct | forget | recall | status | render
@@ -47,6 +49,7 @@ Examples:
   npx github:kingggg5/harness init --project . --models all
   npx github:kingggg5/harness doctor --project .
   npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
+  npx github:kingggg5/harness graph-run status --project . --graph .harness/TASK-GRAPH.json
   npx github:kingggg5/harness close-run --project . --run-id RUN-7f3a`;
 
 function resolvePython() {

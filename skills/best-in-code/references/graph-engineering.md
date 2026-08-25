@@ -35,9 +35,11 @@ Copy the task-graph template without overwriting an existing graph, populate the
 npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
 ```
 
-Each node must declare one meaningful owner, objective, required/optional artifact inputs, unique outputs, repository-relative read/write scopes, attempts, timeout, side-effect class, and observable success criteria. Every data or loop edge must name an artifact produced by its source and consumed by its target. A fan-in declares `join`; a loop declares `max_rounds`; a consequential node has an incoming human `on_approve` control edge, one attempt, and an idempotency key bound to the run and exact approved artifact.
+Each node must declare one meaningful owner, objective, required/optional artifact inputs, unique outputs, repository-relative read/write scopes, attempts, timeout, side-effect class, and observable success criteria. Every data or loop edge must name an artifact produced by its source and consumed by its target. A fan-in declares `join`; a merge node's write scope contains the input owners' scopes it integrates; a loop declares `max_rounds`; a consequential node has an incoming human `on_approve` control edge, one attempt, and an idempotency key bound to the run and exact approved artifact.
 
 The validator rejects unknown fields, ambiguous/escaping scopes, non-loop cycles, unbounded loops, fake data edges, unreachable nodes, conflicting unordered write scopes, and consequential effects without a human gate. Passing validates structure only; it does not prove a prompt, implementation, model, tool, or result is safe or correct.
+
+For a complex run that must survive process/session loss, use the optional Project Manager-owned [graph runtime ledger](graph-runtime.md). It adds atomic claim/finish receipts, graph and artifact digests, Git ancestry and write-scope verification, bounded loop activations, timeout reporting, and fail-closed resume. It remains a ledger, not an autonomous executor.
 
 At run completion, remove the graph from active annexes and archive it with the workflow only when its plan/evidence is useful. Do not load an old task graph as current intent.
 
@@ -45,7 +47,7 @@ At run completion, remove the graph from active annexes and archive it with the 
 
 The Project Manager emits one minimal role packet per scheduled node: objective, verified memory/source IDs, exact input artifact names, exclusions, read/write scope, capabilities, checks, and stop condition. Pass artifacts, not whole conversations. Re-verify stale project-map, web, retrieved-memory, or previous-node claims before they can drive code or a gate.
 
-Parallel execution requires verified isolated-worker capability, disjoint ownership, one exact base revision, and the workspace/shared-resource contract in [execution-isolation.md](execution-isolation.md). A task graph with `max_parallel > 1` must select `provider-isolated` or `git-worktree`; otherwise preserve the same graph as labeled sequential passes. Worktrees do not isolate ports, databases, caches, credentials, processes, or external services. A different model does not make a verifier independent. A model may perform work inside a node; it must not silently rewrite routing, add nodes, extend limits, or authorize side effects.
+Parallel execution requires verified isolated-worker capability, disjoint ownership, one exact base revision, and the workspace/shared-resource contract in [execution-isolation.md](execution-isolation.md). A task graph with `max_parallel > 1` must select `provider-isolated` or `git-worktree`; otherwise preserve the same graph as labeled sequential passes. Worktrees do not isolate ports, databases, caches, credentials, processes, or external services. A different model does not make a verifier independent. A model may perform work inside a node; it must not silently rewrite routing, add nodes, extend limits, authorize side effects, or write the shared runtime ledger.
 
 ## Knowledge graph boundary
 
@@ -71,6 +73,7 @@ The design above is an evidence-informed synthesis, not a claim that one framewo
 | Runtime | Choose when | Required proof before adoption |
 |---|---|---|
 | Harness JSON contract + provider passes | Default; portability, auditability, or graph execution does not need to survive a process restart | Validator pass, truthful capability mapping, and recorded node evidence |
+| Bundled local graph ledger | An approved Git-backed run must survive provider/process restarts or reconcile concurrent worker receipts | Exact baseline, active Project/Run binding, atomic ledger tests, content-addressed artifacts, commit ancestry/scope checks, and Project Manager-only writes |
 | Custom deterministic scheduler | Product already has a trusted queue/state engine and only model nodes are nondeterministic | Atomic state transitions, leases/timeouts, idempotency, bounded retries, receipts, recovery and observability tests |
 | LangGraph adapter | A Python/JavaScript service genuinely needs persisted checkpoints, pause/resume, replay, and human interrupts | Current official API check, durable checkpointer, stable thread identity, serializable state, migrations, and side-effect replay tests |
 

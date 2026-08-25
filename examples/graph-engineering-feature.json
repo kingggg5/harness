@@ -79,7 +79,7 @@
 			"optional_inputs": [],
 			"outputs": ["integrated-change"],
 			"read_scope": ["."],
-			"write_scope": ["src/integration", "tests/integration"],
+			"write_scope": ["src/client", "tests/client", "src/server", "tests/server", "src/integration", "tests/integration"],
 			"max_attempts": 2,
 			"timeout_seconds": 1200,
 			"side_effect": "reversible",
