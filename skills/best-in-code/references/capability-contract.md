@@ -9,6 +9,8 @@ Harness depends on capabilities, not vendor or model names. At intake, record on
 | `agents.parallel` | Run bounded role contracts concurrently. |
 | `agents.isolated` | Verify with context and ownership isolated from implementation. |
 | `agents.supervise` | Observe, cancel, and reconcile bounded long-running workers without continuous model polling. |
+| `automation.schedule` | Wake a bounded run on a verified cadence with status, pause/cancel, overlap, expiry, and run-count controls. |
+| `events.subscribe` | Receive authenticated bounded events with target validation, replay protection, and deduplication. |
 | `models.select` | Select and launch a verified model/effort profile for a bounded role pass. |
 | `human.ask` | Pause for a material human decision. |
 | `filesystem.read` / `filesystem.write` | Inspect or mutate project files. |
@@ -33,6 +35,7 @@ Tool and skill names are backend bindings. Examples include Context7 for `docs.v
 | Role execution | Parallel isolated agent → sequential isolated session → fresh-session review → labeled same-agent pass |
 | Concurrent writer workspace | Verified provider-isolated workspace → native Git worktree → sequential execution in one workspace |
 | Long-running supervision | Event-driven supervisor with status/cancel/stall detection → one bounded interactive iteration → handoff |
+| Scheduled/event loop | Verified scheduler/subscription with dedupe and cancellation → one bounded interactive iteration → reusable handoff command |
 | Durable graph receipts | Bundled local Git-backed ledger → Project Manager records the same evidence manually in `WORKFLOW.md` → static graph only |
 | Model selection | Exact user-pinned available model → verified profile binding → current model with supported effort → labeled same-model pass |
 | Current documentation | Versioned-doc tool → official versioned docs → official repository/tag → installed local source → ask human |

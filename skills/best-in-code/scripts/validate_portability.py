@@ -14,6 +14,7 @@ from typing import Any
 sys.dont_write_bytecode = True
 
 from memory_ops import PROJECT_ID_PATTERN, MemoryErrorWithCode, configure_utf8_stdio, parse_time, path_is_link_or_junction, validate_project_memory
+from validate_loop_contract import validate_contract
 from validate_task_graph import validate_graph
 
 
@@ -41,6 +42,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/references/workflow-graph.md",
 	"skills/best-in-code/references/graph-engineering.md",
 	"skills/best-in-code/references/graph-runtime.md",
+	"skills/best-in-code/references/loop-engineering.md",
 	"skills/best-in-code/references/execution-isolation.md",
 	"skills/best-in-code/references/model-routing.md",
 	"skills/best-in-code/references/requirements-analysis.md",
@@ -54,10 +56,12 @@ REQUIRED_FILES = (
 	"skills/best-in-code/scripts/graph_tests.py",
 	"skills/best-in-code/scripts/graph_runtime.py",
 	"skills/best-in-code/scripts/graph_runtime_tests.py",
+	"skills/best-in-code/scripts/loop_tests.py",
 	"skills/best-in-code/scripts/run_memory_evals.py",
 	"skills/best-in-code/scripts/upgrade_project.py",
 	"skills/best-in-code/scripts/validate_portability.py",
 	"skills/best-in-code/scripts/validate_task_graph.py",
+	"skills/best-in-code/scripts/validate_loop_contract.py",
 	"skills/best-in-code/assets/evals/router-cases.json",
 	"skills/best-in-code/assets/evals/memory-cases.json",
 	"skills/best-in-code/assets/templates/IDENTITY.json",
@@ -66,6 +70,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/assets/templates/CONFIG.md",
 	"skills/best-in-code/assets/templates/CONTEXT.md",
 	"skills/best-in-code/assets/templates/PROJECT-MAP.md",
+	"skills/best-in-code/assets/templates/LOOP-CONTRACT.json",
 	"skills/best-in-code/assets/templates/TASK-GRAPH.json",
 	"skills/best-in-code/assets/templates/PREFERENCES.md",
 	"skills/best-in-code/assets/templates/DECISIONS.md",
@@ -76,6 +81,8 @@ REQUIRED_FILES = (
 	"skills/best-in-code/assets/templates/EVALUATION.md",
 	"examples/graph-engineering-feature.json",
 	"examples/graph-engineering-feature.md",
+	"examples/loop-engineering-performance.json",
+	"examples/loop-engineering-performance.md",
 )
 
 SCHEMA_EXPECTATIONS = {
@@ -255,6 +262,14 @@ def check_templates(root: Path, errors: list[str]) -> None:
 		if memory.get("records") != [] or memory.get("tombstones") != []:
 			errors.append("MEMORY.json template must start empty")
 	for relative in (
+		"skills/best-in-code/assets/templates/LOOP-CONTRACT.json",
+		"examples/loop-engineering-performance.json",
+	):
+		contract = load_json(root / relative, errors)
+		if contract is not None:
+			for error in validate_contract(contract):
+				errors.append(f"Invalid loop contract {relative}: {error}")
+	for relative in (
 		"skills/best-in-code/assets/templates/TASK-GRAPH.json",
 		"examples/graph-engineering-feature.json",
 	):
@@ -283,7 +298,7 @@ def check_cli(root: Path, errors: list[str]) -> None:
 	if not path.is_file():
 		return
 	content = path.read_text(encoding="utf-8")
-	for marker in ('"graph-validate": "validate_task_graph.py"', '"graph-run": "graph_runtime.py"'):
+	for marker in ('"loop-validate": "validate_loop_contract.py"', '"graph-validate": "validate_task_graph.py"', '"graph-run": "graph_runtime.py"'):
 		if marker not in content:
 			errors.append(f"CLI launcher is missing mapping: {marker}")
 
@@ -330,6 +345,12 @@ def check_fixtures(root: Path, errors: list[str]) -> None:
 			errors.append("Router fixtures need a shared-worktree concurrency fallback case")
 		if not any(isinstance(case.get("expected_graph_runtime"), dict) and case["expected_graph_runtime"].get("resume") == "fail-closed" for case in cases):
 			errors.append("Router fixtures need a session-resilient graph-ledger case")
+		if not any(".harness/LOOP-CONTRACT.json" in case.get("required_artifacts", []) for case in cases):
+			errors.append("Router fixtures need a bounded loop-contract activation case")
+		if not any("LOOP-CONTRACT.json required" in case.get("forbidden_claims", []) for case in cases):
+			errors.append("Router fixtures need a short-task loop-contract skip case")
+		if not any(case.get("expected_loop_level") == "scheduled" and case.get("expected_loop_fallback") for case in cases):
+			errors.append("Router fixtures need an unavailable scheduler fallback case")
 	memory = load_json(eval_root / "memory-cases.json", errors)
 	if isinstance(memory, dict):
 		cases = memory.get("cases", [])

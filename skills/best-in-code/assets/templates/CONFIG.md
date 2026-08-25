@@ -54,6 +54,8 @@ Leave backend blank until preflight proves it ready. Do not treat installation a
 | agents.parallel | | sequential role passes | UNAVAILABLE |
 | agents.isolated | | labeled self-review | UNAVAILABLE |
 | agents.supervise | | one bounded interactive iteration | UNAVAILABLE |
+| automation.schedule | | one bounded interactive iteration and handoff | UNAVAILABLE |
+| events.subscribe | | human-provided event and one bounded iteration | UNAVAILABLE |
 | models.select | | current model with labeled pass | UNAVAILABLE |
 | vcs.worktree | | sequential execution in current workspace | UNAVAILABLE |
 | graph.ledger | bundled local runtime after Git/identity probe | manual Project Manager receipts | UNAVAILABLE |

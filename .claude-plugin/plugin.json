@@ -3,13 +3,14 @@
 	"name": "harness",
 	"displayName": "Harness",
 	"version": "0.5.0",
-	"description": "Adaptive cross-model software delivery with validated graph receipts, model routing, scoped memory, QA, and human gates.",
+	"description": "Adaptive cross-model software delivery with bounded loop contracts, validated graph receipts, scoped memory, QA, and human gates.",
 	"author": {
 		"name": "Local developer"
 	},
 	"keywords": [
 		"software-delivery",
 		"multi-agent",
+		"loop-engineering",
 		"graph-engineering",
 		"graph-runtime",
 		"git-worktree",

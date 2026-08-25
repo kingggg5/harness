@@ -15,6 +15,8 @@ Everything canonical lives in plain Markdown/JSON under `.harness/` — any mode
 
 Complex runs may also compile an optional `TASK-GRAPH.json`: bounded jobs, real artifact dependencies, disjoint file ownership, one merge owner, evaluator limits, and human approval before expensive-to-undo actions. It is a run plan, never another memory or state authority.
 
+Repeated, scheduled, or proactive work may add one optional `LOOP-CONTRACT.json`: trigger, observable outcome, deterministic-first verification, fixed budgets, rollback, evidence, and human gates. It is a supervisor envelope, not permission to run forever.
+
 If that run must survive a process or session boundary, an optional local graph ledger records atomic claims, commit-scoped results, content-addressed artifacts, timeouts, and resume checks under `.harness/.cache/`. It is evidence and coordination state, not an autonomous executor or durable team-memory source.
 
 <p align="center">
@@ -76,6 +78,7 @@ npx github:kingggg5/harness close-run --run-id RUN-current-id
 npx github:kingggg5/harness race        # two-process concurrency regression suite
 npx github:kingggg5/harness evals       # M01-M41 memory evaluation matrix
 npx github:kingggg5/harness portability # package structure gate
+npx github:kingggg5/harness loop-validate --contract .harness/LOOP-CONTRACT.json
 npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
 npx github:kingggg5/harness graph-run status --project . --graph .harness/TASK-GRAPH.json
 ```
@@ -118,6 +121,7 @@ Start with one small example instead of learning the whole system first:
 | [Cross-model handoff](examples/cross-model-handoff.md) | Start in one provider and resume or review in another |
 | [Production review](examples/production-review.md) | Read-only security, performance, scale, and failure-path review |
 | [Graph Engineering feature](examples/graph-engineering-feature.md) | Centralized fan-out/fan-in, bounded QA repair, and a human-gated effect |
+| [Bounded performance loop](examples/loop-engineering-performance.md) | Goal, deterministic verifiers, budgets, rollback, evidence, and stop rules |
 
 See [all examples](examples/README.md) for the expected evidence and reusable prompt pattern.
 
@@ -138,6 +142,14 @@ Human ↔ Project Manager → route + capability preflight
 ```
 
 Run states live in `STATE.json`: `INTAKE → DISCOVERY → PLAN → DESIGN → BUILD → INTEGRATE → VERIFY → WAITING_ACCEPTANCE → DONE`, with `REWORK`, `WAITING_DECISION`, and `BLOCKED` as legal side-states. Task-scoped memory is bound to the exact `run_id` and dies with `close-run`.
+
+### Loop Engineering, only for repeated work
+
+A reusable loop is more than “keep going”: it is a trigger plus an observable goal, deterministic evidence, and a finite stop policy. Harness supports four portable levels—`turn`, `goal`, `scheduled`, and `proactive`—but starts at the lowest level that solves the task. Before the first iteration, `LOOP-CONTRACT.json` fixes run count, iterations, elapsed time, tokens, cost, external calls, parallelism, failure/no-progress stops, scope, rollback commit, overlap/dedupe policy, and human gates.
+
+Each iteration takes one attributable hypothesis through observe → change → verify → compare → record → decide. A judge model may score subjective quality only after deterministic checks and never authorizes a tool call. The validator proves the contract is safe to hand to a backend; the backend must meter and enforce every declared limit. Scheduled/proactive loops require a verified scheduling or event backend with pause/cancel and overlap controls; without one—or without reliable budget metering—Harness runs one bounded interactive iteration and returns a reusable handoff command.
+
+Read the [Loop Engineering contract](skills/best-in-code/references/loop-engineering.md), validate the [starter contract](skills/best-in-code/assets/templates/LOOP-CONTRACT.json), or copy the [performance example](examples/loop-engineering-performance.md). The loop contract may wrap a task graph, but it never replaces lifecycle state, graph receipts, or durable memory.
 
 ### Graph Engineering, only when the work splits
 
@@ -171,12 +183,12 @@ graph LR
 	end
 	Providers --> AD[Adapter fragments<br/>AGENTS / CLAUDE / GEMINI / GENERIC]
 	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + focused references"]
-	SKILL --> OPS["Deterministic core (Python)<br/>memory · lifecycle · graph validation + receipts"]
+	SKILL --> OPS["Deterministic core (Python)<br/>memory · lifecycle · loop/graph validation + receipts"]
 	OPS --> STORE[(".harness/<br/>IDENTITY · MEMORY · STATE<br/>runtime pin · derived views")]
 	OPS -. cross-process writer lock + CAS + digests .-> STORE
 	SKILL --> GATES[Human gates<br/>plan · design · decision · acceptance]
 	GATES --> HUMAN((Human))
-	QA2[graph/runtime tests · race tests · evals M01-M41 · portability] -. release gate .-> OPS
+	QA2[loop/graph/runtime tests · race tests · evals M01-M41 · portability] -. release gate .-> OPS
 ```
 
 Safety properties enforced by the core, not by prompts:
@@ -189,6 +201,7 @@ Safety properties enforced by the core, not by prompts:
 - **Fail-closed recall identity** — a changed Git root/remote or logical scope blocks recall as well as writes until a human reviews an identity rebind.
 - **Isolated concurrent writers** — one exact base revision and one verified workspace/branch per writer; shared runtime resources remain explicit and one Project Manager owns integration.
 - **Bounded long runs** — iteration/time/token/cost/failure limits, progress receipts, cancellation and stall/no-progress terminal states are declared before dispatch.
+- **Validated loop contracts** — level/trigger, deterministic verifier, run/iteration/resource budgets, dedupe/overlap, rollback, evidence paths, scope, and human gates fail closed before repeated work.
 - **Content-addressed graph receipts** — graph digest, node lease, exact commit ancestry, write scope, artifact SHA-256, loop/attempt limits, and stale-claim recovery are checked by the optional local runtime.
 
 ## Agents and skills
@@ -226,7 +239,7 @@ Harness routes model **profiles**, then binds them to models available in the ac
 
 Quick normally avoids switching. Standard defaults to `balanced` and escalates only material planning/review. Full uses `reasoning` for plan/high-risk review, `balanced` for implementation, and `fast` only after contracts and file ownership are stable. A user-pinned model wins. Missing selection support falls back to the current model with labeled passes; Harness never claims a switch from the request alone. See [official OpenAI model guidance](https://developers.openai.com/api/docs/models).
 
-**Reference modules** loaded on demand: `workflow-graph`, `graph-engineering`, `graph-runtime`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+**Reference modules** loaded on demand: `workflow-graph`, `loop-engineering`, `graph-engineering`, `graph-runtime`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
 
 Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
 
@@ -279,6 +292,8 @@ python skills/best-in-code/scripts/upgrade_project.py --project P --models all -
 | Legacy or mixed schema | Run migration `--dry-run`; review and approve its exact digest |
 | Repository identity mismatch | Inspect the root/remote/scope; use preview-bound rebind only for the same logical project |
 | Unfinished run | Use `Harness resume` or close the exact Run ID; never silently replace it |
+| Scheduled loop cannot start | Verify the scheduler/event capability; otherwise run one bounded interactive iteration and use its handoff command |
+| Loop contract is rejected | Fix the reported trigger/verifier/budget/scope/rollback/gate field; never delete a limit just to start |
 | Graph receipt will not resume | Inspect the reported graph/identity/Git/artifact mismatch; restore or supersede evidence deliberately, never edit the ledger |
 | Optional backend unavailable | Use the documented fallback and report reduced or `Not verified` evidence |
 
@@ -286,6 +301,7 @@ python skills/best-in-code/scripts/upgrade_project.py --project P --models all -
 
 ```bash
 python skills/best-in-code/scripts/validate_portability.py   # structure gate (13 groups)
+python skills/best-in-code/scripts/loop_tests.py             # loop-contract invariant suite
 python skills/best-in-code/scripts/graph_tests.py            # static graph invariant suite
 python skills/best-in-code/scripts/graph_runtime_tests.py    # real Git/claim/artifact/resume integration
 python skills/best-in-code/scripts/race_tests.py             # two-process concurrency suite

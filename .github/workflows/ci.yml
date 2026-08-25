@@ -19,6 +19,8 @@ jobs:
           python-version: "3.12"
       - name: Portability validation
         run: python skills/best-in-code/scripts/validate_portability.py
+      - name: Loop-contract invariant suite
+        run: python skills/best-in-code/scripts/loop_tests.py
       - name: Task-graph invariant suite
         run: python skills/best-in-code/scripts/graph_tests.py
       - name: Graph runtime integration suite

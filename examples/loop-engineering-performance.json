@@ -1,0 +1,61 @@
+{
+	"schema_version": 1,
+	"loop_id": "checkout-p95-improvement",
+	"project_id": "project-00000000-0000-0000-0000-000000000000",
+	"run_id": "RUN-loop-example",
+	"level": "goal",
+	"trigger": {
+		"type": "human",
+		"spec": "manual",
+		"dedupe_key": "checkout-p95-improvement:RUN-loop-example",
+		"overlap_policy": "reject",
+		"max_runs": 1
+	},
+	"objective": {
+		"outcome": "Reduce checkout benchmark p95 without correctness, memory, or error-rate regression.",
+		"done_when": [
+			"The fixed benchmark meets its approved p95 budget in three comparable runs.",
+			"Focused correctness and regression suites pass.",
+			"Peak memory and error rate stay inside their approved budgets."
+		]
+	},
+	"verifiers": [
+		{
+			"id": "performance-budget",
+			"kind": "deterministic",
+			"argv": ["python", "scripts/check_budget.py", "--baseline", "perf-baseline.json", "--current", "perf-current.json", "--budget", "perf-budget.json", "--format", "json"],
+			"success": "All approved latency, memory, and error-rate budgets pass in the machine-readable report.",
+			"evidence_path": ".harness/evidence/performance-budget.json"
+		},
+		{
+			"id": "checkout-regression",
+			"kind": "deterministic",
+			"argv": ["python", "-m", "pytest", "tests/checkout"],
+			"success": "The focused checkout regression suite exits successfully without changed expectations.",
+			"evidence_path": ".harness/evidence/checkout-regression.json"
+		}
+	],
+	"budgets": {
+		"max_iterations": 10,
+		"max_elapsed_seconds": 28800,
+		"max_tokens": 3000000,
+		"max_cost_microusd": 100000000,
+		"max_external_calls": 20,
+		"max_consecutive_failures": 3,
+		"no_progress_cycles": 2,
+		"max_parallel": 1
+	},
+	"control": {
+		"execution_strategy": "single-owner",
+		"graph_id": "",
+		"read_scope": ["src/checkout", "tests/checkout", "scripts", "perf-baseline.json", "perf-budget.json"],
+		"write_scope": ["src/checkout", "tests/checkout"],
+		"side_effect": "reversible",
+		"human_gates": ["scope-change", "budget-change", "consequential-action", "push", "merge", "deploy"],
+		"rollback_revision": "0000000000000000000000000000000000000000"
+	},
+	"evidence": {
+		"progress_path": ".harness/EVIDENCE.md",
+		"best_artifact_path": ".harness/evidence/checkout-loop-best.json"
+	}
+}

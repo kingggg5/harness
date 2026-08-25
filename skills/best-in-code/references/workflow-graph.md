@@ -50,6 +50,8 @@ Draw an edge only when the target consumes a named source artifact or a real con
 
 For concurrent writers, context isolation alone is insufficient. Apply [execution-isolation.md](execution-isolation.md): start each worker from the graph's exact base revision in a separate verified workspace, isolate mutable runtime resources, return a commit/evidence receipt, and let Project Manager alone integrate and clean up. Long-running nodes also require observable status, cancellation, stall detection, and fixed iteration/time/token/cost limits.
 
+For a repeated, scheduled, event-triggered, or proactive run, add the optional supervisor envelope from [loop-engineering.md](loop-engineering.md). `LOOP-CONTRACT.json` fixes trigger, verifiers, budgets, scope, rollback, and stop rules above the macro lifecycle; it does not create another state or memory authority.
+
 ## States and legal transitions
 
 Allowed states are `INTAKE`, `DISCOVERY`, `PLAN`, `WAITING_PLAN`, `DESIGN`, `WAITING_DESIGN`, `BUILD`, `INTEGRATE`, `VERIFY`, `REWORK`, `WAITING_DECISION`, `WAITING_ACCEPTANCE`, `DONE`, and `BLOCKED`.

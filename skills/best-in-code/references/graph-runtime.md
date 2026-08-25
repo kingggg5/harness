@@ -2,6 +2,8 @@
 
 Use this optional runtime only after `.harness/TASK-GRAPH.json` is approved and validated. It gives Project Manager a durable local record of node claims, outcomes, artifacts, loop rounds, timeouts, and resume checks. It never launches an agent, runs a node, creates a worktree, merges, pushes, deploys, or grants authority.
 
+When repeated iterations are supervised by `.harness/LOOP-CONTRACT.json`, that contract owns trigger, global goal, verifier order, budgets, and stop rules; this ledger owns only task-level execution receipts inside an iteration. Neither replaces `STATE.json` or `MEMORY.json`.
+
 ```text
 validate → start → claim → worker returns evidence → finish → next ready node
                          ↘ timed out → recover → requeue, fail, or block

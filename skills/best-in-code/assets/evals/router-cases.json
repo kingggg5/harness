@@ -204,7 +204,7 @@
 			"expected_scale": "quick",
 			"required_roles": ["Project Manager", "Frontend Engineer", "Tester / Reviewer / QA"],
 			"required_gates": ["Acceptance"],
-			"forbidden_claims": ["TASK-GRAPH.json required", "graph agent required"]
+			"forbidden_claims": ["TASK-GRAPH.json required", "LOOP-CONTRACT.json required", "graph agent required"]
 		},
 		{
 			"id": "R22",
@@ -242,6 +242,32 @@
 			"expected_isolation_strategy": "git-worktree",
 			"expected_graph_runtime": {"writer": "Project Manager", "artifact_digests": "sha256", "resume": "fail-closed", "worker_token_storage": "ephemeral"},
 			"forbidden_claims": ["worker writes shared graph state", "claim token committed to the repository", "graph runtime launches or authorizes agents"]
+		},
+		{
+			"id": "R25",
+			"request": "Harness full: run a goal-based optimization loop until the fixed correctness and performance verifiers pass, with at most eight iterations and no push, merge, or deploy.",
+			"available_capabilities": ["agents.supervise", "evidence.runtime", "vcs.worktree"],
+			"expected_operation": "start",
+			"expected_scale": "full",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan", "Acceptance"],
+			"required_artifacts": [".harness/LOOP-CONTRACT.json"],
+			"expected_loop_level": "goal",
+			"expected_execution_envelope": {"max_iterations": 8, "max_consecutive_failures": 3, "no_progress_cycles": 2, "push": false, "merge": false, "deploy": false},
+			"forbidden_claims": ["judge score replaces deterministic verification", "loop pass authorizes push", "loop may edit its own budget"]
+		},
+		{
+			"id": "R26",
+			"request": "Harness full: every 30 minutes inspect the local project and continue the bounded migration loop, but this host has no scheduler or event backend.",
+			"available_capabilities": ["evidence.runtime"],
+			"expected_operation": "start",
+			"expected_scale": "full",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan", "Acceptance"],
+			"required_artifacts": [".harness/LOOP-CONTRACT.json"],
+			"expected_loop_level": "scheduled",
+			"expected_loop_fallback": "one bounded interactive iteration plus reusable handoff command",
+			"forbidden_claims": ["scheduled task created", "background execution available", "computer will wake itself"]
 		}
 	]
 }

@@ -9,6 +9,7 @@ These examples are intentionally small. Copy a prompt into Codex, Claude Code, G
 | [Cross-model handoff](cross-model-handoff.md) | Different models should plan, build, or independently review |
 | [Production review](production-review.md) | You need evidence before deciding whether to change code |
 | [Graph Engineering feature](graph-engineering-feature.md) | A centralized diamond, bounded QA loop, and human-gated consequential edge |
+| [Bounded performance loop](loop-engineering-performance.md) | Repeated measured improvement with fixed budgets, rollback, and stop rules |
 
 Every useful Harness request contains four things:
 

@@ -21,7 +21,7 @@ An explicit operation wins. An unfinished run means `run_id` is non-empty and st
 3. Otherwise select `quick` only when every quick condition applies.
 4. Otherwise select `standard`.
 
-Full triggers: security, privacy, authentication/authorization, schema or data migration, concurrency correctness, production/external mutation, irreversible work, multi-service architecture, incident/release readiness, material dependency or supply-chain risk, performance/scale claims, or uncertainty that can change architecture or authorization.
+Full triggers: security, privacy, authentication/authorization, schema or data migration, concurrency correctness, production/external mutation, irreversible work, multi-service architecture, incident/release readiness, material dependency or supply-chain risk, performance/scale claims, unattended scheduled/event/proactive execution, or uncertainty that can change architecture or authorization.
 
 Quick requires all of these: one bounded domain, unambiguous acceptance, low risk, no material external effect, no durable architecture/schema choice, and a deterministic focused verification path. A typo, isolated style correction, or proven one-file regression often qualifies.
 
@@ -34,6 +34,12 @@ Escalate only upward when evidence changes the classification. Record the trigge
 Graph Engineering does not change the selected scale. Activate the optional per-run task graph only when one of these is true: the human explicitly requests it; two or more jobs can run independently after a stable contract and later fan in; the work crosses meaningful module/service ownership; a clear deterministic rubric justifies a bounded evaluator loop; or an expensive-to-undo effect needs an explicit human predecessor.
 
 Skip it for `quick`, a strictly sequential migration or reasoning chain, or a tool-dense task where every worker needs the same evolving context. Use a single-owner chain in those cases. For an active graph choose the smallest shape from [graph-engineering.md](graph-engineering.md), cap concurrency and transitions, and validate `.harness/TASK-GRAPH.json` before scheduling nodes.
+
+## Loop-contract routing
+
+Loop Engineering does not automatically require a task graph. Activate `.harness/LOOP-CONTRACT.json` when the user explicitly requests a loop/goal/schedule/proactive workflow, when the task must repeat across session boundaries, or when an evaluator-optimizer needs multiple measurable iterations. Skip it for normal one-turn work and short sequential tasks even if they contain an ordinary internal retry.
+
+Use `turn` or `goal` for human-started work. `scheduled` and `proactive` require verified schedule/event plus supervision capabilities; otherwise preserve the contract but run one bounded interactive iteration and return a handoff. Validate the contract with [loop-engineering.md](loop-engineering.md) before execution. A task graph is added inside the loop only when one iteration truly splits into independent jobs.
 
 ## Requirements-pass routing
 

@@ -1,5 +1,5 @@
 {
 	"name": "harness",
 	"version": "0.5.0",
-	"description": "Adaptive cross-model software delivery with validated graph receipts, model routing, scoped memory, QA, and human gates."
+	"description": "Adaptive cross-model software delivery with bounded loop contracts, validated graph receipts, scoped memory, QA, and human gates."
 }
