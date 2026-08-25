@@ -128,6 +128,16 @@ def main() -> int:
 	no_progress_exceeds_iterations["budgets"].update({"max_iterations": 1, "max_consecutive_failures": 1, "no_progress_cycles": 2})
 	cases.append(("no-progress-stop-within-iteration-budget", no_progress_exceeds_iterations, "cannot exceed max_iterations"))
 
+	iteration_exceeds_run = copy.deepcopy(base)
+	iteration_exceeds_run["budgets"]["max_iteration_seconds"] = iteration_exceeds_run["budgets"]["max_elapsed_seconds"] + 1
+	cases.append(("iteration-timeout-within-run-budget", iteration_exceeds_run, "max_iteration_seconds cannot exceed"))
+
+	excessive_runtime_events = copy.deepcopy(base)
+	excessive_runtime_events["level"] = "scheduled"
+	excessive_runtime_events["trigger"].update({"type": "schedule", "spec": "hourly", "overlap_policy": "skip", "max_runs": 1000})
+	excessive_runtime_events["budgets"]["max_iterations"] = 2
+	cases.append(("runtime-iteration-product-is-bounded", excessive_runtime_events, "cannot exceed 1000 runtime iterations"))
+
 	parallel_single_owner = copy.deepcopy(base)
 	parallel_single_owner["budgets"]["max_parallel"] = 2
 	cases.append(("parallel-loop-requires-task-graph", parallel_single_owner, "requires task-graph"))

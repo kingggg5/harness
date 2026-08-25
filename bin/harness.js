@@ -12,6 +12,7 @@ const PROJECT_SCRIPTS = {
 	upgrade: "upgrade_project.py",
 	portability: "validate_portability.py",
 	"loop-validate": "validate_loop_contract.py",
+	"loop-run": "loop_runtime.py",
 	"graph-validate": "validate_task_graph.py",
 	"graph-run": "graph_runtime.py",
 	evals: "run_memory_evals.py",
@@ -34,6 +35,7 @@ Project lifecycle:
   upgrade     Preview/apply runtime pin upgrade       (--dry-run, --approve SHA256)
   portability Validate the installed package layout
   loop-validate Validate a bounded LOOP-CONTRACT.json (--contract PATH, --json)
+  loop-run    Supervise bounded loop receipts          (start|status|trigger|claim|finish|pause|resume|cancel|recover)
   graph-validate Validate a bounded TASK-GRAPH.json     (--graph PATH, --json)
   graph-run   Record/resume graph node receipts         (start|status|resume|claim|finish|recover)
 
@@ -51,6 +53,7 @@ Examples:
   npx github:kingggg5/harness init --project . --models all
   npx github:kingggg5/harness doctor --project .
   npx github:kingggg5/harness loop-validate --contract .harness/LOOP-CONTRACT.json
+  npx github:kingggg5/harness loop-run status --project . --contract .harness/LOOP-CONTRACT.json
   npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
   npx github:kingggg5/harness graph-run status --project . --graph .harness/TASK-GRAPH.json
   npx github:kingggg5/harness close-run --project . --run-id RUN-7f3a`;

@@ -1,6 +1,6 @@
 {
   "name": "harness",
-  "version": "0.5.0+codex.20260825154809",
+  "version": "0.5.0+codex.20260825170429",
   "description": "An adaptive, model-neutral software-delivery harness with bounded loop contracts, validated graph receipts, model routing, durable scoped memory, QA, and human gates.",
   "author": {
     "name": "Local developer"
@@ -35,12 +35,13 @@
   "interface": {
     "displayName": "Harness",
     "shortDescription": "Adaptive delivery, portable memory, QA, and human gates.",
-    "longDescription": "Harness routes each task to quick, standard, or full delivery; validates provider-neutral turn, goal, scheduled, and proactive loop contracts; conditionally compiles bounded task graphs only when work truly splits; can record atomic node claims, commit-scoped results, artifact digests, timeout recovery, and fail-closed resume; isolates concurrent writers; selects provider-neutral model profiles; preserves scoped memory; defends research from prompt injection; and applies evidence-based QA plus human gates. Named models and optional tools are verified backend mappings rather than hard dependencies.",
+    "longDescription": "Harness routes each task to quick, standard, or full delivery; validates provider-neutral turn, goal, scheduled, and proactive loop contracts; can persist bounded delivery dedupe, iteration leases, accepted Git results, evidence and usage receipts, pause/cancel state, and timeout recovery; conditionally compiles task graphs only when work truly splits; can also record atomic graph-node claims and artifact digests; isolates concurrent writers; selects provider-neutral model profiles; preserves scoped memory; defends research from prompt injection; and applies evidence-based QA plus human gates. Named models and optional tools are verified backend mappings rather than hard dependencies.",
     "developerName": "Local developer",
     "category": "Developer Tools",
     "capabilities": [
       "Adaptive Quick/Standard/Full Routing",
       "Bounded Goal, Scheduled, and Proactive Loop Contracts",
+      "Durable Loop Delivery, Lease, Evidence, and Usage Receipts",
       "Conditional Graph Engineering and Validation",
       "Content-Addressed Graph Receipts and Resume",
       "Isolated Concurrent Writers and Bounded Long Runs",
@@ -65,6 +66,7 @@
       "Use Harness standard to plan, build, test, and hand off this feature.",
       "Use Harness full to investigate and fix this production-risk bug.",
       "Use Harness Loop Engineering for this repeated task: validate one observable goal, deterministic verifiers, fixed run and resource budgets, rollback, evidence, overlap controls, and human gates before starting.",
+      "Use Harness Loop Engineering with the local supervisor ledger: bind the active contract and accepted Git baseline, deduplicate deliveries, lease one iteration, record trusted verifier and usage receipts, and stop fail-closed.",
       "Use Harness standard with Graph Engineering for this feature: split only independent jobs, validate the task graph, merge through one owner, and gate consequential effects.",
       "Use Harness Graph Engineering with the local receipt ledger for this session-resilient run: bind the exact baseline, claim bounded nodes, verify artifacts and write scopes, and resume fail-closed.",
       "Use Harness full for this bounded long-running task: isolate the workspace, fix the verification contract and budgets, emit progress receipts, and do not push, merge, or deploy without approval.",

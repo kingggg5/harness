@@ -43,6 +43,7 @@
 	"budgets": {
 		"max_iterations": 10,
 		"max_elapsed_seconds": 28800,
+		"max_iteration_seconds": 3600,
 		"max_tokens": 3000000,
 		"max_cost_microusd": 100000000,
 		"max_external_calls": 20,

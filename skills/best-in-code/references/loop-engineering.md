@@ -4,6 +4,8 @@ Loop Engineering moves repeated prompting into a bounded supervisor contract. Us
 
 The portable contract is `.harness/LOOP-CONTRACT.json`. It describes intent and limits; it does not schedule work, meter usage, execute a verifier, launch agents, grant permissions, or authorize an external action. A backend that cannot truthfully report and enforce a declared budget is not ready for unattended use; fall back to one bounded iteration.
 
+When a validated loop needs durable local receipts across process or model restarts, Project Manager may add the optional [loop runtime ledger](loop-runtime.md). The ledger enforces contract binding, delivery dedupe, one lease, accepted Git lineage, evidence digests, received usage, and stop state; the host still supplies every real scheduler, worker, verifier, meter, and kill action.
+
 ```text
 trigger → select one bounded objective → act → verify → record evidence
    ↑                         stop ← decide ← compare with accepted best
@@ -66,7 +68,7 @@ When browser capability is unavailable, degrade through repository E2E, a human 
 
 ## Compose with task graphs and memory
 
-`LOOP-CONTRACT.json` is the supervisor envelope: trigger, goal, verifier order, budgets, scope, and stop rules. `TASK-GRAPH.json` is optional execution topology inside one iteration. The local graph runtime records node leases, artifacts, Git lineage, and resume checks. `STATE.json` remains lifecycle authority; `MEMORY.json` remains durable-memory authority.
+`LOOP-CONTRACT.json` is the supervisor envelope: trigger, goal, verifier order, budgets, scope, and stop rules. Its optional [loop runtime](loop-runtime.md) records outer deliveries, iteration leases, accepted best/source receipts, usage, and stop state. `TASK-GRAPH.json` is optional execution topology inside one iteration; the local graph runtime records inner node leases, artifacts, Git lineage, and resume checks. `STATE.json` remains lifecycle authority; `MEMORY.json` remains durable-memory authority.
 
 Only use `task-graph` execution when an iteration contains genuinely independent work. Parallel writers need isolated worktrees/workspaces and disjoint ownership. One Project Manager integrates results. Fresh evaluator context can reduce self-review bias, but a different model name alone does not prove independence.
 

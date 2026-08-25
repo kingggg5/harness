@@ -26,7 +26,7 @@ TRIGGER_FIELDS = {"type", "spec", "dedupe_key", "overlap_policy", "max_runs"}
 OBJECTIVE_FIELDS = {"outcome", "baseline", "done_when", "excluded_scope"}
 VERIFIER_FIELDS = {"id", "kind", "command_id", "success", "evidence_path"}
 BUDGET_FIELDS = {
-	"max_iterations", "max_elapsed_seconds", "max_tokens", "max_cost_microusd",
+	"max_iterations", "max_elapsed_seconds", "max_iteration_seconds", "max_tokens", "max_cost_microusd",
 	"max_external_calls", "max_consecutive_failures", "no_progress_cycles", "max_parallel",
 }
 CONTROL_FIELDS = {
@@ -230,6 +230,7 @@ def validate_contract(data: Any) -> list[str]:
 		ranges = {
 			"max_iterations": (1, 100),
 			"max_elapsed_seconds": (1, 604800),
+			"max_iteration_seconds": (1, 86400),
 			"max_tokens": (1, 1_000_000_000),
 			"max_cost_microusd": (0, 1_000_000_000_000),
 			"max_external_calls": (0, 10000),
@@ -245,6 +246,15 @@ def validate_contract(data: Any) -> list[str]:
 				errors.append("budgets.max_consecutive_failures cannot exceed max_iterations")
 			if isinstance(budgets["no_progress_cycles"], int) and budgets["no_progress_cycles"] > budgets["max_iterations"]:
 				errors.append("budgets.no_progress_cycles cannot exceed max_iterations")
+		if is_int(budgets["max_iteration_seconds"], 1, 86400) and is_int(budgets["max_elapsed_seconds"], 1, 604800) and budgets["max_iteration_seconds"] > budgets["max_elapsed_seconds"]:
+			errors.append("budgets.max_iteration_seconds cannot exceed max_elapsed_seconds")
+		if (
+			trigger is not None
+			and is_int(trigger.get("max_runs"), 1, 1000)
+			and is_int(budgets["max_iterations"], 1, 100)
+			and trigger["max_runs"] * budgets["max_iterations"] > 1000
+		):
+			errors.append("trigger.max_runs multiplied by budgets.max_iterations cannot exceed 1000 runtime iterations")
 
 	control = check_closed_object(root["control"], CONTROL_FIELDS, "control", errors)
 	if control is not None:

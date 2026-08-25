@@ -45,6 +45,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/references/graph-engineering.md",
 	"skills/best-in-code/references/graph-runtime.md",
 	"skills/best-in-code/references/loop-engineering.md",
+	"skills/best-in-code/references/loop-runtime.md",
 	"skills/best-in-code/references/execution-isolation.md",
 	"skills/best-in-code/references/model-routing.md",
 	"skills/best-in-code/references/requirements-analysis.md",
@@ -60,6 +61,8 @@ REQUIRED_FILES = (
 	"skills/best-in-code/scripts/graph_runtime.py",
 	"skills/best-in-code/scripts/graph_runtime_tests.py",
 	"skills/best-in-code/scripts/loop_tests.py",
+	"skills/best-in-code/scripts/loop_runtime.py",
+	"skills/best-in-code/scripts/loop_runtime_tests.py",
 	"skills/best-in-code/scripts/run_memory_evals.py",
 	"skills/best-in-code/scripts/upgrade_project.py",
 	"skills/best-in-code/scripts/validate_portability.py",
@@ -301,7 +304,7 @@ def check_cli(root: Path, errors: list[str]) -> None:
 	if not path.is_file():
 		return
 	content = path.read_text(encoding="utf-8")
-	for marker in ('"loop-validate": "validate_loop_contract.py"', '"graph-validate": "validate_task_graph.py"', '"graph-run": "graph_runtime.py"'):
+	for marker in ('"loop-validate": "validate_loop_contract.py"', '"loop-run": "loop_runtime.py"', '"graph-validate": "validate_task_graph.py"', '"graph-run": "graph_runtime.py"'):
 		if marker not in content:
 			errors.append(f"CLI launcher is missing mapping: {marker}")
 
@@ -354,6 +357,8 @@ def check_fixtures(root: Path, errors: list[str]) -> None:
 			errors.append("Router fixtures need a short-task loop-contract skip case")
 		if not any(case.get("expected_loop_level") == "scheduled" and case.get("expected_loop_fallback") for case in cases):
 			errors.append("Router fixtures need an unavailable scheduler fallback case")
+		if not any(isinstance(case.get("expected_loop_runtime"), dict) and case["expected_loop_runtime"].get("writer") == "Project Manager" for case in cases):
+			errors.append("Router fixtures need a durable loop-ledger case")
 	memory = load_json(eval_root / "memory-cases.json", errors)
 	if isinstance(memory, dict):
 		cases = memory.get("cases", [])

@@ -253,6 +253,7 @@
 			"required_gates": ["Plan", "Acceptance"],
 			"required_artifacts": [".harness/LOOP-CONTRACT.json"],
 			"expected_loop_level": "goal",
+			"expected_loop_runtime": {"writer": "Project Manager", "contract_digest": "sha256", "claim_token_storage": "ephemeral", "scheduler": "external"},
 			"expected_execution_envelope": {"max_iterations": 8, "max_consecutive_failures": 3, "no_progress_cycles": 2, "push": false, "merge": false, "deploy": false},
 			"forbidden_claims": ["judge score replaces deterministic verification", "loop pass authorizes push", "loop may edit its own budget", "loop may redesign the architecture without a human decision"]
 		},

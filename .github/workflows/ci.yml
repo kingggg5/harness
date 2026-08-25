@@ -31,6 +31,8 @@ jobs:
         run: python scripts/check_eval_results_tests.py
       - name: Loop-contract invariant suite
         run: python skills/best-in-code/scripts/loop_tests.py
+      - name: Loop runtime integration suite
+        run: python skills/best-in-code/scripts/loop_runtime_tests.py
       - name: Task-graph invariant suite
         run: python skills/best-in-code/scripts/graph_tests.py
       - name: Graph runtime integration suite

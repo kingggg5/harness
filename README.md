@@ -79,6 +79,7 @@ npx github:kingggg5/harness race        # two-process concurrency regression sui
 npx github:kingggg5/harness evals       # M01-M41 memory evaluation matrix
 npx github:kingggg5/harness portability # package structure gate
 npx github:kingggg5/harness loop-validate --contract .harness/LOOP-CONTRACT.json
+npx github:kingggg5/harness loop-run status --project . --contract .harness/LOOP-CONTRACT.json
 npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
 npx github:kingggg5/harness graph-run status --project . --graph .harness/TASK-GRAPH.json
 ```
@@ -151,6 +152,12 @@ Each iteration takes one attributable hypothesis through observe → change → 
 
 Read the [Loop Engineering contract](skills/best-in-code/references/loop-engineering.md), validate the [starter contract](skills/best-in-code/assets/templates/LOOP-CONTRACT.json), or copy the [performance example](examples/loop-engineering-performance.md). The loop contract may wrap a task graph, but it never replaces lifecycle state, graph receipts, or durable memory.
 
+### Durable loop supervision, only when needed
+
+For a goal or scheduled loop that must survive a model/process restart, the bundled `loop-run` ledger pins the validated contract to the active Project/Run IDs and accepted Git commit. It deduplicates host deliveries, grants one ephemeral iteration lease, hashes current verifier/best evidence, records host-reported usage, applies fixed failure/no-progress/resource stops, and supports pause, cancel, and exact stale-lease recovery. Passing writing iterations must return an exact commit whose diff stays inside `control.write_scope`; only an accepted commit can seed the next iteration.
+
+The ledger is deliberately not an autonomous agent platform: it does not schedule, launch or stop workers, execute verifier IDs, measure provider usage, modify source, or authorize an external effect. Those remain trusted host responsibilities, and scheduled/proactive work still stops at human gates. Read the [loop runtime guide](skills/best-in-code/references/loop-runtime.md) for `start`, `trigger`, `claim`, `finish`, `status`, `pause`, `resume`, `cancel`, and `recover`. Short interactive work skips the ledger.
+
 ### Graph Engineering, only when the work splits
 
 Harness keeps sequential work with one owner. When two or more jobs are genuinely independent after a stable contract, Planner/Architect can compile a centralized diamond: split into disjoint workers, merge through one Project Manager, verify in a separate pass, and stop at a human node before a consequential effect. Every node has named input/output artifacts, repo-relative scopes, attempts, timeout, success criteria, and a hard graph budget; every repair loop has a maximum round count. A consequential node gets one attempt plus an idempotency key bound to the run and approved artifact.
@@ -188,7 +195,7 @@ graph LR
 	OPS -. cross-process writer lock + CAS + digests .-> STORE
 	SKILL --> GATES[Human gates<br/>plan · design · decision · acceptance]
 	GATES --> HUMAN((Human))
-	QA2[loop/graph/runtime tests · race tests · evals M01-M41 · portability] -. release gate .-> OPS
+	QA2[loop + graph runtime tests · race tests · evals M01-M41 · portability] -. release gate .-> OPS
 ```
 
 Safety properties enforced by the core, not by prompts:
@@ -202,6 +209,7 @@ Safety properties enforced by the core, not by prompts:
 - **Isolated concurrent writers** — one exact base revision and one verified workspace/branch per writer; shared runtime resources remain explicit and one Project Manager owns integration.
 - **Bounded long runs** — iteration/time/token/cost/failure limits, progress receipts, cancellation and stall/no-progress terminal states are declared before dispatch.
 - **Validated loop contracts** — level/trigger, baseline/exclusions, deterministic verifier, run/iteration/resource budgets, dedupe/overlap, rollback, distinct progress/best/usage evidence, scope, and architecture/consequential human gates fail closed before repeated work.
+- **Durable loop receipts** — immutable contract digest, delivery dedupe, one lease, event hash chain, accepted Git baseline/write scope, current evidence digests, usage and timeout/no-progress stops are enforced by the optional local supervisor ledger.
 - **Content-addressed graph receipts** — graph digest, node lease, exact commit ancestry, write scope, artifact SHA-256, loop/attempt limits, and stale-claim recovery are checked by the optional local runtime.
 
 ## Agents and skills
@@ -239,7 +247,7 @@ Harness routes model **profiles**, then binds them to models available in the ac
 
 Quick normally avoids switching. Standard defaults to `balanced` and escalates only material planning/review. Full uses `reasoning` for plan/high-risk review, `balanced` for implementation, and `fast` only after contracts and file ownership are stable. A user-pinned model wins. Missing selection support falls back to the current model with labeled passes; Harness never claims a switch from the request alone. See [official OpenAI model guidance](https://developers.openai.com/api/docs/models).
 
-**Reference modules** loaded on demand: `workflow-graph`, `loop-engineering`, `graph-engineering`, `graph-runtime`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+**Reference modules** loaded on demand: `workflow-graph`, `loop-engineering`, `loop-runtime`, `graph-engineering`, `graph-runtime`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
 
 Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
 
@@ -294,6 +302,7 @@ python skills/best-in-code/scripts/upgrade_project.py --project P --models all -
 | Unfinished run | Use `Harness resume` or close the exact Run ID; never silently replace it |
 | Scheduled loop cannot start | Verify the scheduler/event capability; otherwise run one bounded interactive iteration and use its handoff command |
 | Loop contract is rejected | Fix the reported trigger/verifier/budget/scope/rollback/gate field; never delete a limit just to start |
+| Loop receipt will not resume | Inspect contract/identity/Git/evidence drift; restore or supersede deliberately, never edit the ledger or event chain |
 | Graph receipt will not resume | Inspect the reported graph/identity/Git/artifact mismatch; restore or supersede evidence deliberately, never edit the ledger |
 | Optional backend unavailable | Use the documented fallback and report reduced or `Not verified` evidence |
 
@@ -302,6 +311,7 @@ python skills/best-in-code/scripts/upgrade_project.py --project P --models all -
 ```bash
 python skills/best-in-code/scripts/validate_portability.py   # structure gate (13 groups)
 python skills/best-in-code/scripts/loop_tests.py             # loop-contract invariant suite
+python skills/best-in-code/scripts/loop_runtime_tests.py     # trigger/lease/evidence/budget/Git integration
 python skills/best-in-code/scripts/graph_tests.py            # static graph invariant suite
 python skills/best-in-code/scripts/graph_runtime_tests.py    # real Git/claim/artifact/resume integration
 python skills/best-in-code/scripts/race_tests.py             # two-process concurrency suite
