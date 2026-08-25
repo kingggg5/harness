@@ -145,7 +145,7 @@ Run states live in `STATE.json`: `INTAKE → DISCOVERY → PLAN → DESIGN → B
 
 ### Loop Engineering, only for repeated work
 
-A reusable loop is more than “keep going”: it is a trigger plus an observable goal, deterministic evidence, and a finite stop policy. Harness supports four portable levels—`turn`, `goal`, `scheduled`, and `proactive`—but starts at the lowest level that solves the task. Before the first iteration, `LOOP-CONTRACT.json` fixes run count, iterations, elapsed time, tokens, cost, external calls, parallelism, failure/no-progress stops, scope, rollback commit, overlap/dedupe policy, and human gates.
+A reusable loop is more than “keep going”: it is a trigger plus an observable goal, reproducible baseline, excluded scope, deterministic evidence, and a finite stop policy. Harness supports four portable levels—`turn`, `goal`, `scheduled`, and `proactive`—but starts at the lowest level that solves the task. Before the first iteration, `LOOP-CONTRACT.json` fixes run count, iterations, elapsed time, tokens, cost, external calls, parallelism, failure/no-progress stops, scope, rollback commit, overlap/dedupe policy, architecture/consequential human gates, and separate progress/best/usage receipts.
 
 Each iteration takes one attributable hypothesis through observe → change → verify → compare → record → decide. A judge model may score subjective quality only after deterministic checks and never authorizes a tool call. The validator proves the contract is safe to hand to a backend; the backend must meter and enforce every declared limit. Scheduled/proactive loops require a verified scheduling or event backend with pause/cancel and overlap controls; without one—or without reliable budget metering—Harness runs one bounded interactive iteration and returns a reusable handoff command.
 
@@ -201,7 +201,7 @@ Safety properties enforced by the core, not by prompts:
 - **Fail-closed recall identity** — a changed Git root/remote or logical scope blocks recall as well as writes until a human reviews an identity rebind.
 - **Isolated concurrent writers** — one exact base revision and one verified workspace/branch per writer; shared runtime resources remain explicit and one Project Manager owns integration.
 - **Bounded long runs** — iteration/time/token/cost/failure limits, progress receipts, cancellation and stall/no-progress terminal states are declared before dispatch.
-- **Validated loop contracts** — level/trigger, deterministic verifier, run/iteration/resource budgets, dedupe/overlap, rollback, evidence paths, scope, and human gates fail closed before repeated work.
+- **Validated loop contracts** — level/trigger, baseline/exclusions, deterministic verifier, run/iteration/resource budgets, dedupe/overlap, rollback, distinct progress/best/usage evidence, scope, and architecture/consequential human gates fail closed before repeated work.
 - **Content-addressed graph receipts** — graph digest, node lease, exact commit ancestry, write scope, artifact SHA-256, loop/attempt limits, and stale-claim recovery are checked by the optional local runtime.
 
 ## Agents and skills

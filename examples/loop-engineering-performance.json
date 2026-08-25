@@ -13,10 +13,15 @@
 	},
 	"objective": {
 		"outcome": "Reduce checkout benchmark p95 without correctness, memory, or error-rate regression.",
+		"baseline": "The approved perf-baseline.json reproduced under the workload and environment recorded by the performance-budget verifier.",
 		"done_when": [
 			"The fixed benchmark meets its approved p95 budget in three comparable runs.",
 			"Focused correctness and regression suites pass.",
 			"Peak memory and error rate stay inside their approved budgets."
+		],
+		"excluded_scope": [
+			"Checkout product behavior, public API shape, and deployment configuration.",
+			"Performance work outside the checkout workload."
 		]
 	},
 	"verifiers": [
@@ -51,11 +56,12 @@
 		"read_scope": ["src/checkout", "tests/checkout", "scripts", "perf-baseline.json", "perf-budget.json"],
 		"write_scope": ["src/checkout", "tests/checkout"],
 		"side_effect": "reversible",
-		"human_gates": ["scope-change", "budget-change", "consequential-action", "push", "merge", "deploy"],
+		"human_gates": ["scope-change", "budget-change", "architecture-change", "consequential-action", "push", "merge", "deploy"],
 		"rollback_revision": "0000000000000000000000000000000000000000"
 	},
 	"evidence": {
 		"progress_path": ".harness/EVIDENCE.md",
-		"best_artifact_path": ".harness/evidence/checkout-loop-best.json"
+		"best_artifact_path": ".harness/evidence/checkout-loop-best.json",
+		"usage_path": ".harness/evidence/checkout-loop-usage.json"
 	}
 }

@@ -13,8 +13,12 @@
 	},
 	"objective": {
 		"outcome": "Replace this with one observable outcome.",
+		"baseline": "Replace this with the current measured or reproducible state and its evidence source.",
 		"done_when": [
 			"Every required verifier passes against the same accepted candidate."
+		],
+		"excluded_scope": [
+			"Anything outside the approved outcome and control scopes."
 		]
 	},
 	"verifiers": [
@@ -42,11 +46,12 @@
 		"read_scope": ["."],
 		"write_scope": [],
 		"side_effect": "none",
-		"human_gates": ["scope-change", "budget-change", "consequential-action"],
+		"human_gates": ["scope-change", "budget-change", "architecture-change", "consequential-action"],
 		"rollback_revision": ""
 	},
 	"evidence": {
 		"progress_path": ".harness/EVIDENCE.md",
-		"best_artifact_path": ".harness/evidence/loop-best.json"
+		"best_artifact_path": ".harness/evidence/loop-best.json",
+		"usage_path": ".harness/evidence/loop-usage.json"
 	}
 }

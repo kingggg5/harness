@@ -23,7 +23,7 @@ ROOT_FIELDS = {
 	"objective", "verifiers", "budgets", "control", "evidence",
 }
 TRIGGER_FIELDS = {"type", "spec", "dedupe_key", "overlap_policy", "max_runs"}
-OBJECTIVE_FIELDS = {"outcome", "done_when"}
+OBJECTIVE_FIELDS = {"outcome", "baseline", "done_when", "excluded_scope"}
 VERIFIER_FIELDS = {"id", "kind", "argv", "success", "evidence_path"}
 BUDGET_FIELDS = {
 	"max_iterations", "max_elapsed_seconds", "max_tokens", "max_cost_microusd",
@@ -33,7 +33,7 @@ CONTROL_FIELDS = {
 	"execution_strategy", "graph_id", "read_scope", "write_scope", "side_effect",
 	"human_gates", "rollback_revision",
 }
-EVIDENCE_FIELDS = {"progress_path", "best_artifact_path"}
+EVIDENCE_FIELDS = {"progress_path", "best_artifact_path", "usage_path"}
 LEVELS = {"turn", "goal", "scheduled", "proactive"}
 TRIGGERS = {"human", "schedule", "event"}
 OVERLAP_POLICIES = {"reject", "skip", "queue-one"}
@@ -41,10 +41,10 @@ VERIFIER_KINDS = {"deterministic", "judge", "human"}
 EXECUTION_STRATEGIES = {"single-owner", "task-graph"}
 SIDE_EFFECTS = {"none", "reversible", "consequential"}
 HUMAN_GATES = {
-	"scope-change", "budget-change", "consequential-action", "push", "merge",
+	"scope-change", "budget-change", "architecture-change", "consequential-action", "push", "merge",
 	"deploy", "publish", "delete", "permission-change", "paid-call",
 }
-REQUIRED_GATES = {"scope-change", "budget-change", "consequential-action"}
+REQUIRED_GATES = {"scope-change", "budget-change", "architecture-change", "consequential-action"}
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
 PROJECT_ID_PATTERN = re.compile(r"^project-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$")
@@ -199,7 +199,9 @@ def validate_contract(data: Any) -> list[str]:
 	objective = check_closed_object(root["objective"], OBJECTIVE_FIELDS, "objective", errors)
 	if objective is not None:
 		check_text(objective["outcome"], "objective.outcome", errors)
+		check_text(objective["baseline"], "objective.baseline", errors)
 		check_string_list(objective["done_when"], "objective.done_when", errors, allow_empty=False)
+		check_string_list(objective["excluded_scope"], "objective.excluded_scope", errors, allow_empty=False)
 
 	verifiers = root["verifiers"]
 	verifier_ids: set[str] = set()

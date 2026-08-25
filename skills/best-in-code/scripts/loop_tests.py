@@ -45,6 +45,10 @@ def main() -> int:
 	del missing_field["budgets"]
 	cases.append(("missing-root-field-refused", missing_field, "missing fields"))
 
+	missing_baseline = copy.deepcopy(base)
+	del missing_baseline["objective"]["baseline"]
+	cases.append(("missing-baseline-refused", missing_baseline, "objective is missing fields"))
+
 	scheduled = copy.deepcopy(base)
 	scheduled["level"] = "scheduled"
 	scheduled["trigger"].update({"type": "schedule", "spec": "every 30 minutes", "overlap_policy": "skip", "max_runs": 48})
@@ -133,6 +137,10 @@ def main() -> int:
 	missing_gate["control"]["human_gates"].remove("budget-change")
 	cases.append(("mandatory-human-gates-preserved", missing_gate, "missing mandatory gates"))
 
+	missing_architecture_gate = copy.deepcopy(base)
+	missing_architecture_gate["control"]["human_gates"].remove("architecture-change")
+	cases.append(("architecture-remains-human-owned", missing_architecture_gate, "architecture-change"))
+
 	active_writer = copy.deepcopy(base)
 	active_writer.update({"project_id": "project-11111111-1111-4111-8111-111111111111", "run_id": "RUN-loop-test"})
 	active_writer["control"]["write_scope"] = ["src"]
@@ -158,6 +166,10 @@ def main() -> int:
 	mismatched_identity = copy.deepcopy(base)
 	mismatched_identity["project_id"] = "project-11111111-1111-4111-8111-111111111111"
 	cases.append(("project-and-run-bind-together", mismatched_identity, "either both be empty"))
+
+	usage_collision = copy.deepcopy(base)
+	usage_collision["evidence"]["usage_path"] = usage_collision["evidence"]["progress_path"]
+	cases.append(("usage-evidence-path-is-distinct", usage_collision, "evidence paths must be distinct"))
 
 	results = [expect(*case) for case in cases]
 	with tempfile.TemporaryDirectory(prefix="harness-loop-tests-") as temp_root:
