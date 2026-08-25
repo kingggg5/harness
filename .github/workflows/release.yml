@@ -4,9 +4,15 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag matching package.json, for example v0.5.0"
+        required: true
+        type: string
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -24,10 +30,30 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
-      - name: Match tag to package version
+      - name: Resolve and validate release tag
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: node -e "const p=require('./package.json'); const tag=process.argv[1]; if ('v'+p.version !== tag) throw new Error('tag must equal v'+p.version)" "$RELEASE_TAG"
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$GITHUB_REF_NAME" != "$DEFAULT_BRANCH" ]]; then
+            echo "::error::Manual releases must run from the default branch ($DEFAULT_BRANCH)"
+            exit 1
+          fi
+          node -e "const p=require('./package.json'); const tag=process.argv[1]; if ('v'+p.version !== tag) throw new Error('tag must equal v'+p.version)" "$REQUESTED_TAG"
+          echo "RELEASE_TAG=$REQUESTED_TAG" >> "$GITHUB_ENV"
+      - name: Ensure manual tag is new
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $RELEASE_TAG already exists"
+            exit 1
+          fi
       - name: Run deterministic release gates
         run: npm test
       - name: Verify package allowlist and version parity
@@ -43,6 +69,28 @@ jobs:
           npm install --ignore-scripts --no-audit --no-fund --prefix .release-smoke -- "$archive"
           node .release-smoke/node_modules/@kingggg5/harness/bin/harness.js --help >/dev/null
           (cd dist && sha256sum *.tgz > SHA256SUMS)
+      - name: Create annotated tag for manual release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tagged_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          tag_sha="$(
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/tags" \
+              -f "tag=$RELEASE_TAG" \
+              -f "message=Harness $RELEASE_TAG" \
+              -f "object=$GITHUB_SHA" \
+              -f "type=commit" \
+              -f "tagger[name]=github-actions[bot]" \
+              -f "tagger[email]=41898282+github-actions[bot]@users.noreply.github.com" \
+              -f "tagger[date]=$tagged_at" \
+              --jq '.sha'
+          )"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f "ref=refs/tags/$RELEASE_TAG" \
+            -f "sha=$tag_sha"
       - name: Publish immutable GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -50,9 +98,9 @@ jobs:
         run: |
           set -euo pipefail
           archive="$(find dist -maxdepth 1 -type f -name '*.tgz' -print -quit)"
-          gh release create "$GITHUB_REF_NAME" \
+          gh release create "$RELEASE_TAG" \
             "$archive#npm install archive" \
             "dist/SHA256SUMS#SHA-256 checksums" \
             --verify-tag \
             --generate-notes \
-            --title "Harness $GITHUB_REF_NAME"
+            --title "Harness $RELEASE_TAG"
