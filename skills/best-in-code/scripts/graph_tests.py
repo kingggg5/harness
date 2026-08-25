@@ -6,11 +6,12 @@ from __future__ import annotations
 import copy
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-from validate_task_graph import validate_graph
+from validate_task_graph import MAX_BYTES, load_graph, validate_graph
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -23,6 +24,13 @@ def expect(label: str, graph: dict, fragment: str | None = None) -> tuple[bool, 
 	detail = "valid" if not errors else " | ".join(errors)
 	print(f"[{'PASS' if passed else 'FAIL'}] {label}: {detail}")
 	return passed, detail
+
+
+def expect_load_failure(label: str, path: Path, fragment: str) -> bool:
+	_, errors = load_graph(path)
+	passed = any(fragment in error for error in errors)
+	print(f"[{'PASS' if passed else 'FAIL'}] {label}: {' | '.join(errors) if errors else 'unexpectedly valid'}")
+	return passed
 
 
 def main() -> int:
@@ -88,6 +96,24 @@ def main() -> int:
 	invalid_isolation_type["isolation_strategy"] = []
 	cases.append(("invalid-isolation-type-refused-without-crash", invalid_isolation_type, "isolation_strategy must be one of"))
 
+	malformed_node_types = copy.deepcopy(base)
+	malformed_node_types["nodes"][0]["kind"] = []
+	malformed_node_types["nodes"][0]["side_effect"] = []
+	malformed_node_types["nodes"][4]["join"] = []
+	cases.append(("malformed-node-types-refused-without-crash", malformed_node_types, "kind must be one of"))
+
+	malformed_edge_node = copy.deepcopy(base)
+	malformed_edge_node["edges"][0]["from"] = []
+	cases.append(("malformed-edge-node-refused-without-crash", malformed_edge_node, "must be node ID strings"))
+
+	malformed_edge_type = copy.deepcopy(base)
+	malformed_edge_type["edges"][0]["type"] = []
+	cases.append(("malformed-edge-type-refused-without-crash", malformed_edge_type, "type must be one of"))
+
+	malformed_edge_condition = copy.deepcopy(base)
+	malformed_edge_condition["edges"][0]["condition"] = []
+	cases.append(("malformed-edge-condition-refused-without-crash", malformed_edge_condition, "condition must be one of"))
+
 	active_graph_without_base = copy.deepcopy(base)
 	active_graph_without_base["isolation_strategy"] = "same-worktree-sequential"
 	active_graph_without_base["max_parallel"] = 1
@@ -128,6 +154,14 @@ def main() -> int:
 	cases.append(("transition-budget-covers-nodes-and-loops", insufficient_transition_budget, "max_transitions must be at least"))
 
 	results = [expect(*case)[0] for case in cases]
+	with tempfile.TemporaryDirectory(prefix="harness-graph-tests-") as temp_root:
+		root = Path(temp_root)
+		duplicate_key = root / "duplicate-key.json"
+		duplicate_key.write_text('{"schema_version": 1, "schema_version": 1}', encoding="utf-8")
+		results.append(expect_load_failure("duplicate-json-key-refused", duplicate_key, "duplicate JSON key"))
+		oversized = root / "oversized.json"
+		oversized.write_bytes(b" " * (MAX_BYTES + 1))
+		results.append(expect_load_failure("oversized-graph-refused-before-parse", oversized, "exceeds"))
 	passed = sum(results)
 	print(f"Graph tests: {passed}/{len(results)} passed")
 	return 0 if all(results) else 1

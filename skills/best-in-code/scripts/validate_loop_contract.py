@@ -5,14 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
-import stat
 import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 sys.dont_write_bytecode = True
+
+from bounded_json import load_bounded_json
 
 
 MAX_BYTES = 256 * 1024
@@ -24,7 +24,7 @@ ROOT_FIELDS = {
 }
 TRIGGER_FIELDS = {"type", "spec", "dedupe_key", "overlap_policy", "max_runs"}
 OBJECTIVE_FIELDS = {"outcome", "baseline", "done_when", "excluded_scope"}
-VERIFIER_FIELDS = {"id", "kind", "argv", "success", "evidence_path"}
+VERIFIER_FIELDS = {"id", "kind", "command_id", "success", "evidence_path"}
 BUDGET_FIELDS = {
 	"max_iterations", "max_elapsed_seconds", "max_tokens", "max_cost_microusd",
 	"max_external_calls", "max_consecutive_failures", "no_progress_cycles", "max_parallel",
@@ -50,10 +50,6 @@ PROJECT_ID_PATTERN = re.compile(r"^project-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$")
 DEDUPE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$")
 COMMIT_PATTERN = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
-SHELL_PROGRAMS = {"sh", "bash", "zsh", "fish", "cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh", "pwsh.exe"}
-INLINE_INTERPRETERS = {"python", "python3", "node", "node.exe", "ruby", "perl"}
-SHELL_FLAGS = {"-c", "/c", "-command", "-encodedcommand"}
-INLINE_FLAGS = {"-c", "-e", "--eval"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -116,10 +112,6 @@ def valid_harness_path(value: str) -> bool:
 	return not path.is_absolute() and ".." not in path.parts and len(value.encode("utf-8")) <= 512
 
 
-def executable_name(value: str) -> str:
-	return PurePosixPath(value.replace("\\", "/")).name.lower()
-
-
 def identifier_binds(key: str, identifier: str) -> bool:
 	return key == identifier or any(
 		key.startswith(f"{identifier}{separator}") or key.endswith(f"{separator}{identifier}") or f"{separator}{identifier}{separator}" in key
@@ -127,21 +119,15 @@ def identifier_binds(key: str, identifier: str) -> bool:
 	)
 
 
-def validate_argv(argv: Any, label: str, errors: list[str], kind: str) -> list[str]:
+def validate_command_id(command_id: Any, label: str, errors: list[str], kind: str) -> str:
 	if kind == "human":
-		if argv != []:
+		if command_id != "":
 			errors.append(f"{label} must be empty for a human verifier")
-		return []
-	items = check_string_list(argv, label, errors, allow_empty=False, unique=False)
-	if not items:
-		return []
-	program = executable_name(items[0])
-	flags = {item.lower() for item in items[1:]}
-	if program in SHELL_PROGRAMS and flags & SHELL_FLAGS:
-		errors.append(f"{label} cannot invoke a shell command string; call a reviewed script with argv")
-	if program in INLINE_INTERPRETERS and flags & INLINE_FLAGS:
-		errors.append(f"{label} cannot execute inline code; call a reviewed repository script")
-	return items
+		return ""
+	if not isinstance(command_id, str) or not ID_PATTERN.fullmatch(command_id):
+		errors.append(f"{label} must name a trusted verifier capability using a safe ID")
+		return ""
+	return command_id
 
 
 def validate_contract(data: Any) -> list[str]:
@@ -228,7 +214,7 @@ def validate_contract(data: Any) -> list[str]:
 				kind = ""
 			if kind == "deterministic":
 				deterministic_count += 1
-			validate_argv(verifier["argv"], f"{label}.argv", errors, kind)
+			validate_command_id(verifier["command_id"], f"{label}.command_id", errors, kind)
 			check_text(verifier["success"], f"{label}.success", errors, max_bytes=1024)
 			if not isinstance(verifier["evidence_path"], str) or not valid_harness_path(verifier["evidence_path"]):
 				errors.append(f"{label}.evidence_path must be a safe project-relative path under .harness")
@@ -314,52 +300,8 @@ def validate_contract(data: Any) -> list[str]:
 	return errors
 
 
-def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-	result: dict[str, Any] = {}
-	for key, value in pairs:
-		if key in result:
-			raise ValueError(f"duplicate JSON key: {key}")
-		result[key] = value
-	return result
-
-
 def load_contract(path: Path) -> tuple[Any, list[str]]:
-	errors: list[str] = []
-	try:
-		if path.is_symlink() or bool(getattr(path, "is_junction", lambda: False)()):
-			return None, [f"contract cannot be a symlink or junction: {path}"]
-		initial = path.lstat()
-		if not stat.S_ISREG(initial.st_mode) or initial.st_nlink > 1:
-			return None, [f"contract must be one regular non-hard-linked file: {path}"]
-		if initial.st_size > MAX_BYTES:
-			return None, [f"contract exceeds {MAX_BYTES} bytes"]
-		flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOINHERIT", 0) | getattr(os, "O_NOFOLLOW", 0)
-		descriptor = os.open(path, flags)
-		try:
-			metadata = os.fstat(descriptor)
-			if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink > 1:
-				return None, [f"contract must be one regular non-hard-linked file: {path}"]
-			if (initial.st_dev, initial.st_ino) != (metadata.st_dev, metadata.st_ino):
-				return None, [f"contract changed while opening: {path}"]
-			if metadata.st_size > MAX_BYTES:
-				return None, [f"contract exceeds {MAX_BYTES} bytes"]
-			chunks: list[bytes] = []
-			remaining = MAX_BYTES + 1
-			while remaining > 0:
-				chunk = os.read(descriptor, min(64 * 1024, remaining))
-				if not chunk:
-					break
-				chunks.append(chunk)
-				remaining -= len(chunk)
-			raw = b"".join(chunks)
-		finally:
-			os.close(descriptor)
-		if len(raw) > MAX_BYTES:
-			return None, [f"contract exceeds {MAX_BYTES} bytes"]
-		data = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_object)
-	except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError, MemoryError) as exc:
-		return None, [f"could not read contract: {exc}"]
-	return data, errors
+	return load_bounded_json(path, max_bytes=MAX_BYTES, label="contract")
 
 
 def main() -> int:

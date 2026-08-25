@@ -31,7 +31,7 @@ npx github:kingggg5/harness loop-validate --contract .harness/LOOP-CONTRACT.json
 The contract requires:
 
 - one observable outcome, a reproducible current baseline, explicit `done_when` statements, and excluded scope;
-- at least one deterministic verifier expressed as an argv array, never a shell command string;
+- at least one deterministic verifier named by a safe `command_id`; the backend resolves it through a reviewed, read-only capability registry outside the untrusted contract;
 - optional judge/human checks that supplement rather than replace deterministic evidence;
 - iteration, elapsed-time, token, cost, external-call, failure, no-progress, run, and parallelism ceilings;
 - read/write scope, execution strategy, rollback revision, side-effect class, and mandatory human gates including architecture changes;
@@ -44,10 +44,10 @@ Start with a real human bottleneck, not a speculative software factory. Pilot th
 ## Run one attributable iteration
 
 1. **Orient:** verify Project/Run identity, rollback revision, clean or isolated workspace, capability bindings, current best receipt, and still-valid source evidence.
-2. **Observe:** run the fixed baseline verifier and choose the highest-value failing gate.
+2. **Observe:** resolve and run the fixed baseline verifier through the trusted registry, then choose the highest-value failing gate.
 3. **Hypothesize:** state one expected improvement, affected scope, and verification command.
 4. **Act:** make the smallest reversible slice. Use a reviewed deterministic script for repeated mechanics instead of asking a model to rediscover them.
-5. **Verify:** run focused checks, then every required deterministic verifier against the same candidate. Inspect user-visible artifacts directly when applicable.
+5. **Verify:** re-authorize each registered verifier, run focused checks, then every required deterministic verifier against the same candidate. Inspect user-visible artifacts directly when applicable.
 6. **Evaluate:** only after deterministic checks, apply a versioned rubric through an isolated judge when subjective quality matters. Keep judge evidence separate and never let it authorize a tool call.
 7. **Record:** append the source revision, iteration, input/output digests, scores, tokens/cost/external calls as reported, failure/no-progress counts, accepted-best decision, and next hypothesis. Write aggregate usage plus model/role/tool/backend attribution when the host exposes it; mark unavailable dimensions honestly.
 8. **Decide:** continue, keep the new best, restore only the loop-owned slice, or stop with a truthful terminal state.
@@ -55,6 +55,8 @@ Start with a real human bottleneck, not a speculative software factory. Pilot th
 Terminal states are `PASS WITH EVIDENCE`, `CONDITIONAL`, `BLOCKED`, `BUDGET EXHAUSTED`, or `NO PROGRESS`. Two no-progress cycles or three consecutive failures are hard upper bounds, not targets. A verifier pass is evidence, never permission to push, merge, deploy, publish, delete, spend, or change access.
 
 Keep `usage_path` machine-readable and bound to the contract digest, Loop ID, and Run ID. Record elapsed time, iterations/runs, tokens, cost in micro-USD, and external calls as the backend reports them; include model/role/tool/backend attribution when available plus an explicit list of unavailable dimensions. Never infer missing cost or normalize unlike provider counters into a false comparison.
+
+The verifier registry is trusted runtime configuration, not contract or recalled-memory content. Each entry binds one `command_id` to a reviewed executable plus fixed argument policy, working-directory boundary, timeout, output cap, environment allowlist, and evidence adapter. Verifiers are read-only by default and cannot push, deploy, publish, delete, change permissions, or invoke an unrestricted shell. Reject unknown IDs; never fall back to interpreting the ID or model text as a command.
 
 ### Close a frontend loop in the running product
 

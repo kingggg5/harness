@@ -81,27 +81,35 @@ def main() -> int:
 	cases.append(("malformed-nested-types-refused-without-crash", malformed_types, "level must be one of"))
 
 	human_only = copy.deepcopy(base)
-	human_only["verifiers"] = [{"id": "review", "kind": "human", "argv": [], "success": "Human accepts evidence.", "evidence_path": ".harness/evidence/review.json"}]
+	human_only["verifiers"] = [{"id": "review", "kind": "human", "command_id": "", "success": "Human accepts evidence.", "evidence_path": ".harness/evidence/review.json"}]
 	cases.append(("human-review-cannot-replace-deterministic-check", human_only, "deterministic verifier"))
 
 	judge_only = copy.deepcopy(base)
 	judge_only["verifiers"][0]["kind"] = "judge"
 	cases.append(("judge-cannot-be-only-verifier", judge_only, "deterministic verifier"))
 
-	shell_command = copy.deepcopy(base)
-	shell_command["verifiers"][0]["argv"] = ["bash", "-c", "npm test && deploy"]
-	cases.append(("shell-command-string-refused", shell_command, "cannot invoke a shell command string"))
+	raw_command = copy.deepcopy(base)
+	raw_command["verifiers"][0]["argv"] = ["git", "push", "--force"]
+	cases.append(("raw-verifier-command-refused", raw_command, "unknown fields"))
 
-	inline_code = copy.deepcopy(base)
-	inline_code["verifiers"][0]["argv"] = ["python", "-c", "print('pass')"]
-	cases.append(("inline-verifier-code-refused", inline_code, "cannot execute inline code"))
+	unsafe_command_id = copy.deepcopy(base)
+	unsafe_command_id["verifiers"][0]["command_id"] = "git push --force"
+	cases.append(("unsafe-command-id-refused", unsafe_command_id, "trusted verifier capability"))
+
+	missing_command_id = copy.deepcopy(base)
+	del missing_command_id["verifiers"][0]["command_id"]
+	cases.append(("missing-command-id-refused", missing_command_id, "missing fields"))
+
+	human_command = copy.deepcopy(base)
+	human_command["verifiers"].append({"id": "review", "kind": "human", "command_id": "review-command", "success": "Human accepts evidence.", "evidence_path": ".harness/evidence/review.json"})
+	cases.append(("human-verifier-cannot-run-command", human_command, "must be empty for a human verifier"))
 
 	duplicate_verifier = copy.deepcopy(base)
 	duplicate_verifier["verifiers"].append(copy.deepcopy(duplicate_verifier["verifiers"][0]))
 	cases.append(("duplicate-verifier-id-refused", duplicate_verifier, "duplicate verifier id"))
 
 	duplicate_evidence = copy.deepcopy(base)
-	duplicate_evidence["verifiers"].append({"id": "second", "kind": "deterministic", "argv": ["python", "scripts/check.py"], "success": "The second check passes.", "evidence_path": duplicate_evidence["verifiers"][0]["evidence_path"]})
+	duplicate_evidence["verifiers"].append({"id": "second", "kind": "deterministic", "command_id": "second-check", "success": "The second check passes.", "evidence_path": duplicate_evidence["verifiers"][0]["evidence_path"]})
 	cases.append(("verifier-evidence-collision-refused", duplicate_evidence, "duplicates another verifier receipt"))
 
 	unsafe_evidence = copy.deepcopy(base)

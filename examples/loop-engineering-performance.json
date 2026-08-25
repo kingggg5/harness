@@ -28,14 +28,14 @@
 		{
 			"id": "performance-budget",
 			"kind": "deterministic",
-			"argv": ["python", "scripts/check_budget.py", "--baseline", "perf-baseline.json", "--current", "perf-current.json", "--budget", "perf-budget.json", "--format", "json"],
+			"command_id": "performance-budget",
 			"success": "All approved latency, memory, and error-rate budgets pass in the machine-readable report.",
 			"evidence_path": ".harness/evidence/performance-budget.json"
 		},
 		{
 			"id": "checkout-regression",
 			"kind": "deterministic",
-			"argv": ["python", "-m", "pytest", "tests/checkout"],
+			"command_id": "checkout-regression",
 			"success": "The focused checkout regression suite exits successfully without changed expectations.",
 			"evidence_path": ".harness/evidence/checkout-regression.json"
 		}

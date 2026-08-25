@@ -87,6 +87,7 @@ const requiredFiles = [
 	"skills/best-in-code/references/graph-engineering.md",
 	"skills/best-in-code/references/graph-runtime.md",
 	"skills/best-in-code/references/loop-engineering.md",
+	"skills/best-in-code/scripts/bounded_json.py",
 	"skills/best-in-code/scripts/loop_tests.py",
 	"skills/best-in-code/scripts/graph_tests.py",
 	"skills/best-in-code/scripts/graph_runtime.py",

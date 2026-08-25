@@ -5,9 +5,6 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: write
-
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -15,16 +12,22 @@ concurrency:
 jobs:
   package:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       - name: Match tag to package version
-        run: node -e "const p=require('./package.json'); if ('v'+p.version !== process.env.GITHUB_REF_NAME) throw new Error('tag must equal v'+p.version)"
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node -e "const p=require('./package.json'); const tag=process.argv[1]; if ('v'+p.version !== tag) throw new Error('tag must equal v'+p.version)" "$RELEASE_TAG"
       - name: Run deterministic release gates
         run: npm test
       - name: Verify package allowlist and version parity

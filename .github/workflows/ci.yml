@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   validation:
     strategy:
@@ -13,12 +16,19 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
       - name: Portability validation
         run: python skills/best-in-code/scripts/validate_portability.py
+      - name: CI policy regression suite
+        run: python scripts/check_eval_results_tests.py
       - name: Loop-contract invariant suite
         run: python skills/best-in-code/scripts/loop_tests.py
       - name: Task-graph invariant suite
@@ -27,9 +37,13 @@ jobs:
         run: python skills/best-in-code/scripts/graph_runtime_tests.py
       - name: Two-process race regression suite
         run: python skills/best-in-code/scripts/race_tests.py
-      - name: Memory evals (external-model cases tolerated until wired)
+      - name: Memory evals with explicit coverage policy
         shell: bash
+        env:
+          HARNESS_RUNNER_OS: ${{ runner.os }}
         run: |
-          set -o pipefail
-          python skills/best-in-code/scripts/run_memory_evals.py --json > evals.json || true
-          python -c "import json,sys; d=json.load(open('evals.json',encoding='utf-8')); allowed={'M05','M06','M28','M31'}; failed=[r['id'] for r in d['results'] if r.get('status')=='FAIL']; unexpected=[i for i in failed if i not in allowed]; print('counts:',d['counts'],'failed:',failed); sys.exit(1 if unexpected else 0)"
+          set -euo pipefail
+          python skills/best-in-code/scripts/run_memory_evals.py --json > evals.json
+          python scripts/check_eval_results.py --results evals.json --os "$HARNESS_RUNNER_OS"
+      - name: Verify release package allowlist
+        run: npm run pack:check

@@ -28,8 +28,9 @@
 		"harness": "bin/harness.js"
 	},
 	"scripts": {
-		"test": "npm run test:portability && npm run test:loop && npm run test:graph && npm run test:graph-runtime && npm run test:race && npm run test:memory",
+		"test": "npm run test:portability && npm run test:ci-policy && npm run test:loop && npm run test:graph && npm run test:graph-runtime && npm run test:race && npm run test:memory",
 		"test:portability": "python skills/best-in-code/scripts/validate_portability.py",
+		"test:ci-policy": "python scripts/check_eval_results_tests.py",
 		"test:loop": "python skills/best-in-code/scripts/loop_tests.py",
 		"test:graph": "python skills/best-in-code/scripts/graph_tests.py",
 		"test:graph-runtime": "python skills/best-in-code/scripts/graph_runtime_tests.py",

@@ -3,12 +3,14 @@
 This example improves one measured checkout workload without turning “keep optimizing” into an unlimited agent run.
 
 1. Copy `loop-engineering-performance.json` to `.harness/LOOP-CONTRACT.json`.
-2. Replace the Project ID, Run ID, rollback revision, baseline, excluded scope, paths, commands, and approved budgets with repository evidence.
+2. Replace the Project ID, Run ID, rollback revision, baseline, excluded scope, paths, trusted verifier IDs, and approved budgets with repository evidence.
 3. Capture the baseline under the same workload and environment used by the verifier.
 4. Run `harness loop-validate --contract .harness/LOOP-CONTRACT.json`.
 5. Let one owner make one hypothesis-driven change per iteration. Keep a candidate only when deterministic correctness and budget checks pass against comparable runs.
 6. Stop after the first terminal condition. Push, merge, and deploy remain human-gated even when the performance target passes.
 
 Begin with `max_runs=1` against one representative workload. Review the quality and usage receipt before increasing cadence, scope, concurrency, or model cost.
+
+Configure the two example IDs in the backend's human-reviewed verifier registry: `performance-budget` may map to the repository budget checker and `checkout-regression` to the focused test suite. Keep executable paths and fixed arguments in that trusted registry, not in `LOOP-CONTRACT.json`; reject an ID that is absent or maps to a write-capable command.
 
 Use a task graph inside the loop only when an iteration truly splits into independent work. Do not parallelize multiple performance edits against the same files or benchmark environment.

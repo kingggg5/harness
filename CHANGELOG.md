@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 — conditional Graph Engineering
+## 0.5.0 — bounded Graph and Loop Engineering
 
 ### Added
 
@@ -14,12 +14,15 @@
 - Graph runtime integration tests covering real concurrent claims, human-gated fan-out, isolated worker commits, scope violations, artifact drift, stale recovery, and graph-digest tampering; stricter graph fixtures now cover safe artifact IDs, bounded lists, sound `join=any` inputs, and idempotency binding.
 - A provider-neutral Loop Engineering contract and validator for turn, goal, scheduled, and proactive levels: trigger/dedupe/overlap rules, reproducible baseline and excluded scope, deterministic-first verification, fixed run/iteration/time/token/cost/external-call budgets, separate usage evidence, rollback binding, architecture/consequential human gates, and safe one-iteration fallbacks when supervision is unavailable.
 - Loop-contract regression fixtures, a bounded performance example, current primary-source guidance for Codex/Claude long-running work, and explicit separation between the supervisor envelope, task graph, graph receipt ledger, lifecycle state, and durable memory.
+- A shared bounded JSON loader for graph and loop control files, including duplicate-key rejection, link/hardlink refusal, descriptor identity checks, and size-capped reads. Malformed nested graph values now return validation errors instead of crashing.
 
 ### Changed
 
 - Planner/Architect now performs Graph Engineering only when the work shape warrants it; it is not another mandatory agent. Strictly sequential and quick work remain single-owner by default.
 - Task graphs with `max_parallel > 1` now require `provider-isolated` or `git-worktree` execution and an exact base commit; context isolation alone no longer qualifies concurrent writers as safe.
 - Knowledge graphs remain a separate product decision for measured multi-hop, temporal, entity-resolution, and provenance needs; Harness does not create a duplicate generic `KNOWLEDGE.md`.
+- Loop contracts now carry trusted verifier `command_id` values instead of executable argv. Backends must resolve IDs through reviewed read-only capability configuration and reject unknown IDs at execution time.
+- GitHub Actions now use least-privilege tokens, immutable full-SHA action pins, non-persisted checkout credentials, package verification on both CI platforms, and a regression-tested fail-closed policy for expected memory-eval skips.
 
 ## 0.4.1 — portable release smoke install
 

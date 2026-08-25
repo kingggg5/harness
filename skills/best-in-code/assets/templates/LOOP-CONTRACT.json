@@ -25,8 +25,8 @@
 		{
 			"id": "acceptance",
 			"kind": "deterministic",
-			"argv": ["replace-with-project-verifier"],
-			"success": "The command exits successfully without weakening its checks.",
+			"command_id": "project-acceptance",
+			"success": "The trusted verifier succeeds without weakening its checks.",
 			"evidence_path": ".harness/evidence/loop-acceptance.json"
 		}
 	],

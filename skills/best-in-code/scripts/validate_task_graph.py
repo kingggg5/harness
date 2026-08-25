@@ -13,6 +13,8 @@ from typing import Any
 
 sys.dont_write_bytecode = True
 
+from bounded_json import load_bounded_json
+
 
 MAX_BYTES = 256 * 1024
 MAX_NODES = 64
@@ -181,7 +183,7 @@ def validate_graph(data: Any) -> list[str]:
 			errors.append(f"duplicate node id: {node_id}")
 			continue
 		node_by_id[node_id] = node
-		if node["kind"] not in NODE_KINDS:
+		if not isinstance(node["kind"], str) or node["kind"] not in NODE_KINDS:
 			errors.append(f"{label}.kind must be one of {sorted(NODE_KINDS)}")
 		if not isinstance(node["owner"], str) or not node["owner"].strip():
 			errors.append(f"{label}.owner must be a non-empty string")
@@ -201,14 +203,16 @@ def validate_graph(data: Any) -> list[str]:
 			errors.append(f"{label}.max_attempts must be an integer from 1 to 3")
 		if not is_int(node["timeout_seconds"], 1, 3600):
 			errors.append(f"{label}.timeout_seconds must be an integer from 1 to 3600")
-		if node["side_effect"] not in SIDE_EFFECTS:
+		if not isinstance(node["side_effect"], str) or node["side_effect"] not in SIDE_EFFECTS:
 			errors.append(f"{label}.side_effect must be one of {sorted(SIDE_EFFECTS)}")
 		if "idempotency_key" in node and (not isinstance(node["idempotency_key"], str) or not IDEMPOTENCY_PATTERN.fullmatch(node["idempotency_key"])):
 			errors.append(f"{label}.idempotency_key must use 1 to 256 safe identifier characters when present")
-		if "join" in node and node["join"] not in {"all", "any"}:
+		if "join" in node and (not isinstance(node["join"], str) or node["join"] not in {"all", "any"}):
 			errors.append(f"{label}.join must be all or any")
 
 	entry_nodes = check_string_list(data["entry_nodes"], "entry_nodes", errors, allow_empty=False)
+	if errors:
+		return errors
 	producers: dict[str, str] = {}
 	for node_id, node in node_by_id.items():
 		for artifact in node["outputs"]:
@@ -249,6 +253,9 @@ def validate_graph(data: Any) -> list[str]:
 			continue
 		source = edge["from"]
 		target = edge["to"]
+		if not isinstance(source, str) or not isinstance(target, str):
+			errors.append(f"{label}.from and {label}.to must be node ID strings")
+			continue
 		if source not in node_by_id or target not in node_by_id:
 			errors.append(f"{label} references an unknown node")
 			continue
@@ -256,11 +263,12 @@ def validate_graph(data: Any) -> list[str]:
 			errors.append(f"{label} self-edges are not allowed")
 		edge_type = edge["type"]
 		condition = edge["condition"]
-		if edge_type not in EDGE_TYPES:
+		if not isinstance(edge_type, str) or edge_type not in EDGE_TYPES:
 			errors.append(f"{label}.type must be one of {sorted(EDGE_TYPES)}")
 			continue
-		if condition not in EDGE_CONDITIONS:
+		if not isinstance(condition, str) or condition not in EDGE_CONDITIONS:
 			errors.append(f"{label}.condition must be one of {sorted(EDGE_CONDITIONS)}")
+			continue
 		elif condition in {"on_approve", "on_reject"} and node_by_id[source]["kind"] != "human":
 			errors.append(f"{label}.{condition} must originate from a human node")
 		consumes = check_string_list(edge["consumes"], f"{label}.consumes", errors, allow_empty=edge_type == "control")
@@ -384,14 +392,7 @@ def validate_graph(data: Any) -> list[str]:
 
 
 def load_graph(path: Path) -> tuple[Any, list[str]]:
-	errors: list[str] = []
-	try:
-		if path.stat().st_size > MAX_BYTES:
-			return None, [f"graph exceeds {MAX_BYTES} bytes"]
-		data = json.loads(path.read_text(encoding="utf-8"))
-	except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-		return None, [f"could not read graph: {exc}"]
-	return data, errors
+	return load_bounded_json(path, max_bytes=MAX_BYTES, label="graph")
 
 
 def main() -> int:

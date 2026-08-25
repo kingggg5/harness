@@ -1,6 +1,6 @@
 {
   "name": "harness",
-  "version": "0.5.0+codex.20260825151751",
+  "version": "0.5.0+codex.20260825154809",
   "description": "An adaptive, model-neutral software-delivery harness with bounded loop contracts, validated graph receipts, model routing, durable scoped memory, QA, and human gates.",
   "author": {
     "name": "Local developer"
