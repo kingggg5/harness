@@ -4,6 +4,8 @@
 	"project_id": "project-00000000-0000-0000-0000-000000000000",
 	"run_id": "RUN-example",
 	"coordinator": "Project Manager",
+	"isolation_strategy": "git-worktree",
+	"base_revision": "0000000000000000000000000000000000000000",
 	"max_parallel": 2,
 	"max_transitions": 24,
 	"entry_nodes": ["plan"],

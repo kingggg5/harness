@@ -142,6 +142,12 @@ Harness keeps sequential work with one owner. When two or more jobs are genuinel
 
 This is conditional, not another permanent agent. Google Research's 2026 evaluation found large gains on a parallelizable task but 39–70% degradation across tested sequential planning configurations, so “more agents” is not the default. Read the [design and research basis](skills/best-in-code/references/graph-engineering.md) or copy the [working example](examples/graph-engineering-feature.md). No LangGraph, ADK, AutoGen, or other runtime is installed automatically.
 
+### Isolated execution and long-running work
+
+Concurrent writers never share one mutable checkout: each uses a verified provider workspace or Git worktree created from the graph's exact base commit, while Project Manager alone integrates. Worktrees isolate checked-out files but not ports, databases, caches, credentials, processes, or external services, so those resources are named separately or the nodes run sequentially.
+
+An “overnight” request is still bounded before it starts: fixed objective and verification, iteration/time/token/cost/external-call ceilings, three-failure and two-cycle no-progress stops, status receipts, stall detection, cancellation, and clean-worktree preservation. Workers cannot push, merge, deploy, publish, or force-clean on their own. See [execution isolation and supervision](skills/best-in-code/references/execution-isolation.md). Firstmate, Treehouse, GNHF, and No-Mistakes are optional reviewed backends, not Harness dependencies.
+
 ## Architecture
 
 ```mermaid
@@ -170,6 +176,8 @@ Safety properties enforced by the core, not by prompts:
 - **Exact run ownership** — task records require the current `run_id`; wrong ID is refused, `close-run` is idempotent, nothing leaks across runs.
 - **Bounded everywhere** — recall budgets, canonical store/caches/exports, source reads, clock skew, and generated Markdown projections all have explicit ceilings.
 - **Fail-closed recall identity** — a changed Git root/remote or logical scope blocks recall as well as writes until a human reviews an identity rebind.
+- **Isolated concurrent writers** — one exact base revision and one verified workspace/branch per writer; shared runtime resources remain explicit and one Project Manager owns integration.
+- **Bounded long runs** — iteration/time/token/cost/failure limits, progress receipts, cancellation and stall/no-progress terminal states are declared before dispatch.
 
 ## Agents and skills
 
@@ -206,7 +214,7 @@ Harness routes model **profiles**, then binds them to models available in the ac
 
 Quick normally avoids switching. Standard defaults to `balanced` and escalates only material planning/review. Full uses `reasoning` for plan/high-risk review, `balanced` for implementation, and `fast` only after contracts and file ownership are stable. A user-pinned model wins. Missing selection support falls back to the current model with labeled passes; Harness never claims a switch from the request alone. See [official OpenAI model guidance](https://developers.openai.com/api/docs/models).
 
-**Reference modules** loaded on demand: `workflow-graph`, `graph-engineering`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+**Reference modules** loaded on demand: `workflow-graph`, `graph-engineering`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
 
 Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
 
@@ -218,6 +226,7 @@ Optional tools are capability backends, not dependencies. Harness uses an existi
 | Semantic recall | MemPalace over a sanitized project-scoped export; canonical files remain authority |
 | Repository-native specifications | Existing convention, then optional OpenSpec or GitHub Spec Kit; never both as the same source of truth |
 | Static/runtime evidence | ShipProof or repository checks; unavailable evidence is reported `Not verified` |
+| Isolated writers/long runs | Native Git/provider workspace and bounded Harness loop first; Treehouse, GNHF, No-Mistakes, or Firstmate only after explicit review |
 
 **Agent manifests:** `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `gemini-extension.json`, and `agents/openai.yaml` (Codex policy: implicit invocation allowed).
 

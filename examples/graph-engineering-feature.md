@@ -1,6 +1,6 @@
 # Graph Engineering feature example
 
-Use this when a feature has genuinely independent work after one contract is stable. The companion [machine-readable graph](graph-engineering-feature.json) is intentionally explicit: a centralized Project Manager owns routing and merge, Frontend and Backend have disjoint write scopes, QA can request at most two repair rounds, and publication cannot run without human approval.
+Use this when a feature has genuinely independent work after one contract is stable. The companion [machine-readable graph](graph-engineering-feature.json) is intentionally explicit: a centralized Project Manager owns routing and merge, Frontend and Backend start from the same exact base revision in separate Git worktrees with disjoint write scopes, QA can request at most two repair rounds, and publication cannot run without human approval.
 
 ```text
 Harness standard with Graph Engineering:
@@ -21,6 +21,7 @@ npx github:kingggg5/harness graph-validate --graph examples/graph-engineering-fe
 Why this shape:
 
 - `plan → frontend/backend → merge` is a centralized diamond because the two implementations are independent only after the contract is approved.
+- `isolation_strategy=git-worktree` plus `base_revision` prevents concurrent writers from sharing one checkout or starting from different code; ports, databases, caches, and other shared resources still need separate allocation.
 - `qa → repair → qa` is a bounded evaluator loop, not an open-ended retry.
 - `acceptance → publish` is a human gate immediately before a consequential effect.
 - A strictly sequential migration, a one-file fix, or a tool-heavy task that needs one continuous reasoning chain should stay with one owner instead of copying this graph.

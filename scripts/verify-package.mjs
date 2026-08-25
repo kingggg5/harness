@@ -80,6 +80,7 @@ const requiredFiles = [
 	"package.json",
 	"skills/best-in-code/SKILL.md",
 	"skills/best-in-code/assets/templates/TASK-GRAPH.json",
+	"skills/best-in-code/references/execution-isolation.md",
 	"skills/best-in-code/references/graph-engineering.md",
 	"skills/best-in-code/scripts/graph_tests.py",
 	"skills/best-in-code/scripts/validate_task_graph.py",

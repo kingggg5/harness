@@ -1,6 +1,6 @@
 {
   "name": "harness",
-  "version": "0.5.0+codex.20260825072214",
+  "version": "0.5.0+codex.20260825074235",
   "description": "An adaptive, model-neutral software-delivery harness with conditional graph engineering, model/effort routing, durable scoped memory, bounded discovery, QA, and human gates.",
   "author": {
     "name": "Local developer"
@@ -11,6 +11,7 @@
     "model-routing",
     "multi-agent",
     "graph-engineering",
+    "git-worktree",
     "adaptive-workflow",
     "human-in-the-loop",
     "project-memory",
@@ -32,12 +33,13 @@
   "interface": {
     "displayName": "Harness",
     "shortDescription": "Adaptive delivery, portable memory, QA, and human gates.",
-    "longDescription": "Harness routes each task to quick, standard, or full delivery; conditionally compiles bounded task graphs only when work truly splits; selects provider-neutral reasoning, balanced, or fast model profiles at stable role boundaries; coordinates seven delivery roles plus a conditional Business Analyst pass; preserves scoped memory and optional source-grounded project maps; defends research from prompt injection; and applies evidence-based QA plus human gates. Named models and optional tools are verified backend mappings rather than hard dependencies.",
+    "longDescription": "Harness routes each task to quick, standard, or full delivery; conditionally compiles bounded task graphs only when work truly splits; isolates concurrent writers by exact base revision and verified workspace; bounds and supervises long-running loops; selects provider-neutral model profiles; preserves scoped memory; defends research from prompt injection; and applies evidence-based QA plus human gates. Named models and optional tools are verified backend mappings rather than hard dependencies.",
     "developerName": "Local developer",
     "category": "Developer Tools",
     "capabilities": [
       "Adaptive Quick/Standard/Full Routing",
       "Conditional Graph Engineering and Validation",
+      "Isolated Concurrent Writers and Bounded Long Runs",
       "Adaptive Model and Reasoning-Effort Routing",
       "Cross-Model Role Contracts",
       "Conditional Business Analysis and Requirement Baselines",
@@ -59,6 +61,7 @@
       "Use Harness standard to plan, build, test, and hand off this feature.",
       "Use Harness full to investigate and fix this production-risk bug.",
       "Use Harness standard with Graph Engineering for this feature: split only independent jobs, validate the task graph, merge through one owner, and gate consequential effects.",
+      "Use Harness full for this bounded long-running task: isolate the workspace, fix the verification contract and budgets, emit progress receipts, and do not push, merge, or deploy without approval.",
       "Use Harness full with adaptive model routing: reasoning for plan and deep review, balanced for implementation, and fast only for bounded low-risk shards.",
       "Use Harness review to inspect the current changes without modifying them.",
       "Use Harness resume to continue the validated active project run.",

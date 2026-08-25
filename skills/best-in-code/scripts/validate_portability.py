@@ -39,6 +39,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/references/mode-routing.md",
 	"skills/best-in-code/references/workflow-graph.md",
 	"skills/best-in-code/references/graph-engineering.md",
+	"skills/best-in-code/references/execution-isolation.md",
 	"skills/best-in-code/references/model-routing.md",
 	"skills/best-in-code/references/requirements-analysis.md",
 	"skills/best-in-code/references/capability-contract.md",
@@ -307,6 +308,12 @@ def check_fixtures(root: Path, errors: list[str]) -> None:
 			errors.append("Router fixtures need a quick-task graph skip case")
 		if not any(case.get("expected_graph_shape") == "single-owner-chain" for case in cases):
 			errors.append("Router fixtures need a sequential-work single-owner case")
+		if not any(case.get("expected_isolation_strategy") == "git-worktree" for case in cases):
+			errors.append("Router fixtures need an isolated concurrent-writer case")
+		if not any(isinstance(case.get("expected_execution_envelope"), dict) for case in cases):
+			errors.append("Router fixtures need a bounded long-running execution case")
+		if not any("concurrent writers in one shared worktree" in case.get("forbidden_claims", []) for case in cases):
+			errors.append("Router fixtures need a shared-worktree concurrency fallback case")
 	memory = load_json(eval_root / "memory-cases.json", errors)
 	if isinstance(memory, dict):
 		cases = memory.get("cases", [])

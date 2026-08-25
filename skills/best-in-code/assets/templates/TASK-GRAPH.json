@@ -4,6 +4,8 @@
 	"project_id": "",
 	"run_id": "",
 	"coordinator": "Project Manager",
+	"isolation_strategy": "same-worktree-sequential",
+	"base_revision": "",
 	"max_parallel": 1,
 	"max_transitions": 8,
 	"entry_nodes": ["plan"],

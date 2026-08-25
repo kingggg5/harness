@@ -76,6 +76,24 @@ def main() -> int:
 	missing_input_edge["nodes"][2]["inputs"].append("missing-contract")
 	cases.append(("required-input-without-edge-refused", missing_input_edge, "required inputs with no incoming"))
 
+	shared_workspace = copy.deepcopy(base)
+	shared_workspace["isolation_strategy"] = "same-worktree-sequential"
+	cases.append(("parallel-writers-without-workspace-isolation-refused", shared_workspace, "max_parallel greater than 1"))
+
+	missing_base = copy.deepcopy(base)
+	missing_base["base_revision"] = ""
+	cases.append(("isolated-execution-without-exact-base-refused", missing_base, "requires an exact base_revision"))
+
+	invalid_isolation_type = copy.deepcopy(base)
+	invalid_isolation_type["isolation_strategy"] = []
+	cases.append(("invalid-isolation-type-refused-without-crash", invalid_isolation_type, "isolation_strategy must be one of"))
+
+	active_graph_without_base = copy.deepcopy(base)
+	active_graph_without_base["isolation_strategy"] = "same-worktree-sequential"
+	active_graph_without_base["max_parallel"] = 1
+	active_graph_without_base["base_revision"] = ""
+	cases.append(("active-sequential-graph-without-exact-base-refused", active_graph_without_base, "active graph requires an exact base_revision"))
+
 	results = [expect(*case)[0] for case in cases]
 	passed = sum(results)
 	print(f"Graph tests: {passed}/{len(results)} passed")

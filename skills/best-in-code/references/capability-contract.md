@@ -8,12 +8,14 @@ Harness depends on capabilities, not vendor or model names. At intake, record on
 |---|---|
 | `agents.parallel` | Run bounded role contracts concurrently. |
 | `agents.isolated` | Verify with context and ownership isolated from implementation. |
+| `agents.supervise` | Observe, cancel, and reconcile bounded long-running workers without continuous model polling. |
 | `models.select` | Select and launch a verified model/effort profile for a bounded role pass. |
 | `human.ask` | Pause for a material human decision. |
 | `filesystem.read` / `filesystem.write` | Inspect or mutate project files. |
 | `shell.execute` | Run local diagnostics, tests, builds, and approved scripts. |
 | `docs.versioned` | Retrieve current version-aware official documentation. |
 | `repository.local` / `repository.remote` | Inspect local or hosted repository evidence. |
+| `vcs.worktree` | Create, identify, and safely retire one isolated version-control workspace per concurrent writer. |
 | `web.search` / `web.fetch` | Find and inspect current external evidence. |
 | `browser.interactive` | Inspect or exercise a running interface. |
 | `image.search` | Find public visual references with domain/source controls. |
@@ -28,6 +30,8 @@ Tool and skill names are backend bindings. Examples include Context7 for `docs.v
 | Need | Fallback order |
 |---|---|
 | Role execution | Parallel isolated agent → sequential isolated session → fresh-session review → labeled same-agent pass |
+| Concurrent writer workspace | Verified provider-isolated workspace → native Git worktree → sequential execution in one workspace |
+| Long-running supervision | Event-driven supervisor with status/cancel/stall detection → one bounded interactive iteration → handoff |
 | Model selection | Exact user-pinned available model → verified profile binding → current model with supported effort → labeled same-model pass |
 | Current documentation | Versioned-doc tool → official versioned docs → official repository/tag → installed local source → ask human |
 | Remote repository | Connector → local Git → official web source → user-provided evidence |

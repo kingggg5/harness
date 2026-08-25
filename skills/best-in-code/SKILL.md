@@ -1,6 +1,6 @@
 ---
 name: best-in-code
-description: Run an adaptive, reusable software-delivery harness across AI models with conditional graph engineering, business analysis, model/effort routing, project management, planning, research, design, frontend, backend, QA, durable scoped memory, capability fallbacks, bounded discovery, and human approval gates. Use when the user invokes Harness or asks for an end-to-end build, review, bug investigation, production-readiness workflow, or project resume; do not use for a quick explanation with no project work.
+description: Run an adaptive, reusable software-delivery harness across AI models with conditional graph engineering, isolated concurrent writers, bounded long-running loops, business analysis, model/effort routing, project management, planning, research, design, implementation, QA, durable scoped memory, capability fallbacks, and human approval gates. Use when the user invokes Harness or asks for an end-to-end build, review, bug investigation, production-readiness workflow, overnight iteration, or project resume; do not use for a quick explanation with no project work.
 ---
 
 # Best in Code
@@ -37,6 +37,7 @@ Read [workflow-graph.md](references/workflow-graph.md), the only canonical graph
 - The primary agent is Project Manager and the only writer of shared Harness state and memory.
 - When work has real independent branches, fan-in, a measurable evaluator loop, or an expensive-to-undo edge, run the conditional Graph Engineering pass in Planner/Architect using [graph-engineering.md](references/graph-engineering.md). Compile and validate the optional `.harness/TASK-GRAPH.json`; do not add a mandatory role, parallelize sequential work, or let a model silently change routing and bounds.
 - Prefer isolated parallel role agents when available and useful. Otherwise run labeled sequential role passes automatically. Call QA **independent** only when it is isolated from implementation context and ownership.
+- Concurrent writers also require the workspace and shared-resource contract in [execution-isolation.md](references/execution-isolation.md). Use one verified worktree/workspace per writer from the exact same base revision, or schedule them sequentially. Long-running work requires fixed budgets, observable receipts, cancellation/stall handling, and no-progress stops before dispatch.
 - When model selection is requested or multiple verified models are available, apply [model-routing.md](references/model-routing.md). User-pinned models win; switch only at stable pass boundaries; record the actual model/effort and fallback. A different model alone does not make QA independent.
 - Every role receives a bounded `ROLE-PACKET.md`: objective, verified record IDs, exclusions, owned files or read-only boundary, capabilities, required checks, stop condition, and return contract.
 - Never assign concurrent write ownership to the same file. Stabilize interfaces before parallel frontend/backend work.
@@ -50,13 +51,15 @@ Load only the references needed for the selected scale and active lane:
 - Always for project work: [engineering-standards.md](references/engineering-standards.md), [workflow-graph.md](references/workflow-graph.md), and [memory-loop.md](references/memory-loop.md).
 - Multi-module onboarding or reusable domain/architecture knowledge: activate the optional source-grounded `PROJECT-MAP.md` described in [memory-loop.md](references/memory-loop.md); skip it for small or one-off work.
 - Real fan-out/fan-in, multi-module execution, evaluator loops, consequential edges, or an explicit graph request: [graph-engineering.md](references/graph-engineering.md). Skip the optional task graph for quick or strictly sequential work.
+- Concurrent writers, Git worktrees, unattended/overnight loops, session supervision, or isolated pre-push validation: [execution-isolation.md](references/execution-isolation.md). Treat Firstmate, Treehouse, GNHF, and No-Mistakes as optional reviewed backends, never automatic installs.
 - Multiple model tiers, explicit model selection, cost/latency routing, or cross-model handoff: [model-routing.md](references/model-routing.md).
 - Unclear outcomes, actors, scope, business rules, or acceptance behavior: [requirements-analysis.md](references/requirements-analysis.md).
 - Current library, API, ecosystem, repository, or community evidence: [research-routing.md](references/research-routing.md).
 - Bugs, performance, scale, security, architecture, or uncertainty: [discovery-loop.md](references/discovery-loop.md).
 - UI/design: [frontend-skill-routing.md](references/frontend-skill-routing.md) and [ux-laws-and-visual-discovery.md](references/ux-laws-and-visual-discovery.md). Pinterest is optional read-only inspiration, never design truth or reuse permission.
 - ShipProof selected as an available backend: [shipproof-routing.md](references/shipproof-routing.md). It supplies evidence, never approval.
-- Harness benchmarking or cross-model conformance: [harness-evaluation.md](references/harness-evaluation.md).
+- Changing Harness architecture, skill policy, or evaluation design: [research-basis-2026.md](references/research-basis-2026.md) and [harness-evaluation.md](references/harness-evaluation.md).
+- Harness benchmarking or cross-model conformance only: [harness-evaluation.md](references/harness-evaluation.md).
 
 Skills are conditional tools. Use the smallest trusted set that covers the role. Existing repository rules and an approved design system outrank generic skill advice. Do not install or update a skill without authorization and supply-chain review. Keep `caveman` opt-in and never compress gates, requirements, warnings, commands, errors, evidence, or durable memory.
 

@@ -12,6 +12,14 @@
 - Model fallback/escalation condition:
 - State/gate at assignment:
 
+## Execution envelope (parallel or long-running only)
+
+- Workspace isolation/backend or `N/A`:
+- Exact base revision and branch/worktree owner:
+- Iteration/time/token/cost/external-call limits:
+- Status/receipt channel, stall deadline, and cancel path:
+- Cleanup owner and clean-state condition:
+
 ## Contract
 
 - Objective:

@@ -8,10 +8,13 @@
 - A dependency-free fail-closed graph validator that rejects unknown fields, fake data edges, unbounded loops, hidden cycles, unsafe paths, unordered write conflicts, and consequential actions without a human approval edge.
 - A reusable centralized-diamond example, graph invariant regression suite, CLI `graph-validate` command, router fixtures, and package checks.
 - A 2026 research synthesis covering centralized coordination, the sequential-work penalty, context budgets, compiled knowledge layers, prompt-injection boundaries, and optional runtime adapters.
+- A conditional execution-isolation contract for concurrent writers and long-running work: exact base revision, one worktree/workspace per writer, shared-resource allocation, one integration owner, status receipts, cancellation/stall detection, and fixed iteration/time/token/cost/failure limits.
+- Portable `vcs.worktree` and `agents.supervise` capabilities with sequential/interactive fallbacks. Firstmate, Treehouse, GNHF, and No-Mistakes remain optional reviewed backends rather than dependencies.
 
 ### Changed
 
 - Planner/Architect now performs Graph Engineering only when the work shape warrants it; it is not another mandatory agent. Strictly sequential and quick work remain single-owner by default.
+- Task graphs with `max_parallel > 1` now require `provider-isolated` or `git-worktree` execution and an exact base commit; context isolation alone no longer qualifies concurrent writers as safe.
 - Knowledge graphs remain a separate product decision for measured multi-hop, temporal, entity-resolution, and provenance needs; Harness does not create a duplicate generic `KNOWLEDGE.md`.
 
 ## 0.4.1 — portable release smoke install

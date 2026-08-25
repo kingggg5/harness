@@ -22,7 +22,8 @@ PROJECT_ID_PATTERN = re.compile(r"^project-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$")
 ROOT_FIELDS = {
 	"schema_version", "graph_id", "project_id", "run_id", "coordinator",
-	"max_parallel", "max_transitions", "entry_nodes", "nodes", "edges",
+	"isolation_strategy", "base_revision", "max_parallel", "max_transitions",
+	"entry_nodes", "nodes", "edges",
 }
 NODE_FIELDS = {
 	"id", "kind", "owner", "objective", "inputs", "optional_inputs", "outputs",
@@ -32,6 +33,7 @@ NODE_FIELDS = {
 EDGE_FIELDS = {"from", "to", "type", "condition", "consumes", "max_rounds"}
 NODE_KINDS = {"deterministic", "model", "human", "merge"}
 SIDE_EFFECTS = {"none", "reversible", "consequential"}
+ISOLATION_STRATEGIES = {"same-worktree-sequential", "provider-isolated", "git-worktree"}
 EDGE_TYPES = {"data", "control", "loop"}
 EDGE_CONDITIONS = {"always", "on_success", "on_failure", "on_approve", "on_reject"}
 
@@ -110,10 +112,26 @@ def validate_graph(data: Any) -> list[str]:
 		errors.append("project_id must be empty in the starter template or match the canonical Harness Project ID")
 	if not isinstance(data["run_id"], str) or (data["run_id"] and not RUN_ID_PATTERN.fullmatch(data["run_id"])):
 		errors.append("run_id must be empty in the starter template or a safe 1 to 200 character ID")
+	if isinstance(data["project_id"], str) and isinstance(data["run_id"], str) and bool(data["project_id"]) != bool(data["run_id"]):
+		errors.append("project_id and run_id must either both be empty in the starter template or both bind an active graph")
 	if not isinstance(data["coordinator"], str) or not data["coordinator"].strip():
 		errors.append("coordinator must be a non-empty string")
+	isolation_strategy = data["isolation_strategy"]
+	if not isinstance(isolation_strategy, str) or isolation_strategy not in ISOLATION_STRATEGIES:
+		errors.append(f"isolation_strategy must be one of {sorted(ISOLATION_STRATEGIES)}")
+	base_revision = data["base_revision"]
+	if not isinstance(base_revision, str):
+		errors.append("base_revision must be empty in the starter template or an exact 40/64-character lowercase commit ID")
+	elif base_revision and not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", base_revision):
+		errors.append("base_revision must be empty in the starter template or an exact 40/64-character lowercase commit ID")
+	if isinstance(data["run_id"], str) and data["run_id"] and not base_revision:
+		errors.append("an active graph requires an exact base_revision")
 	if not is_int(data["max_parallel"], 1, 8):
 		errors.append("max_parallel must be an integer from 1 to 8")
+	elif data["max_parallel"] > 1 and isolation_strategy == "same-worktree-sequential":
+		errors.append("max_parallel greater than 1 requires provider-isolated or git-worktree execution")
+	if isinstance(isolation_strategy, str) and isolation_strategy in {"provider-isolated", "git-worktree"} and not base_revision:
+		errors.append("isolated execution requires an exact base_revision")
 	if not is_int(data["max_transitions"], 1, 256):
 		errors.append("max_transitions must be an integer from 1 to 256")
 

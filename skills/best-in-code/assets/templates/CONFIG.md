@@ -53,7 +53,9 @@ Leave backend blank until preflight proves it ready. Do not treat installation a
 |---|---|---|---|
 | agents.parallel | | sequential role passes | UNAVAILABLE |
 | agents.isolated | | labeled self-review | UNAVAILABLE |
+| agents.supervise | | one bounded interactive iteration | UNAVAILABLE |
 | models.select | | current model with labeled pass | UNAVAILABLE |
+| vcs.worktree | | sequential execution in current workspace | UNAVAILABLE |
 | docs.versioned | | official docs/repo/local source | UNAVAILABLE |
 | repository.remote | | local Git/official web/user evidence | UNAVAILABLE |
 | browser.interactive | | E2E/manual evidence/Not verified | UNAVAILABLE |
