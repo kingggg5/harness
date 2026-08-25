@@ -42,6 +42,12 @@ flowchart TD
 
 Researcher supports requirements analysis, discovery, planning, design, and verification as a read-only evidence role. The Business Analyst pass runs inside `INTAKE` or `PLAN`; it adds no state or gate. Inactive roles and passes are `N/A`; do not create work merely to exercise all seven delivery roles or the conditional pass.
 
+## Optional per-run task graph
+
+The macro graph above remains canonical. For a run with real independent branches, fan-in, a bounded evaluator loop, or a consequential effect, Planner/Architect may compile the optional `.harness/TASK-GRAPH.json` described in [graph-engineering.md](graph-engineering.md). It is a run-scoped scheduling contract, not another state machine: Project Manager still advances `STATE.json`, owns merge and gates, and records only macro checkpoints in `WORKFLOW.md`.
+
+Draw an edge only when the target consumes a named source artifact or a real control decision. Keep sequential work with one owner; parallel workers require disjoint write scopes and a stable interface; one merge owner integrates their outputs. Every loop and fan-out is bounded before execution. A provider without isolated agents executes the same contract as labeled sequential passes.
+
 ## States and legal transitions
 
 Allowed states are `INTAKE`, `DISCOVERY`, `PLAN`, `WAITING_PLAN`, `DESIGN`, `WAITING_DESIGN`, `BUILD`, `INTEGRATE`, `VERIFY`, `REWORK`, `WAITING_DECISION`, `WAITING_ACCEPTANCE`, `DONE`, and `BLOCKED`.

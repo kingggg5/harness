@@ -11,6 +11,7 @@ const PROJECT_SCRIPTS = {
 	migrate: "migrate_project.py",
 	upgrade: "upgrade_project.py",
 	portability: "validate_portability.py",
+	"graph-validate": "validate_task_graph.py",
 	evals: "run_memory_evals.py",
 	race: "race_tests.py",
 };
@@ -20,7 +21,7 @@ const MEMORY_COMMANDS = new Set([
 	"render", "export-cache", "close-run", "mem-validate",
 ]);
 
-const USAGE = `Harness ${process.env.npm_package_version || "0.4.1"} — adaptive delivery skill with durable project memory
+const USAGE = `Harness ${process.env.npm_package_version || "0.5.0"} — adaptive delivery skill with durable project memory
 
 Usage:
   npx github:kingggg5/harness <command> [args...]
@@ -30,6 +31,7 @@ Project lifecycle:
   migrate     Preview/apply legacy v1 migration       (--dry-run, --approve SHA256)
   upgrade     Preview/apply runtime pin upgrade       (--dry-run, --approve SHA256)
   portability Validate the installed package layout
+  graph-validate Validate a bounded TASK-GRAPH.json     (--graph PATH, --json)
 
 Memory operations (memory_ops.py):
   remember | correct | forget | recall | status | render
@@ -44,6 +46,7 @@ All arguments are passed through unchanged to the underlying script.
 Examples:
   npx github:kingggg5/harness init --project . --models all
   npx github:kingggg5/harness doctor --project .
+  npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
   npx github:kingggg5/harness close-run --project . --run-id RUN-7f3a`;
 
 function resolvePython() {

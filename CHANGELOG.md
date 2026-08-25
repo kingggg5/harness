@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 — conditional Graph Engineering
+
+### Added
+
+- An optional, run-scoped `TASK-GRAPH.json` contract for real fan-out/fan-in, bounded evaluator loops, and human-gated consequential effects. It does not replace the canonical lifecycle graph, `STATE.json`, or `MEMORY.json`.
+- A dependency-free fail-closed graph validator that rejects unknown fields, fake data edges, unbounded loops, hidden cycles, unsafe paths, unordered write conflicts, and consequential actions without a human approval edge.
+- A reusable centralized-diamond example, graph invariant regression suite, CLI `graph-validate` command, router fixtures, and package checks.
+- A 2026 research synthesis covering centralized coordination, the sequential-work penalty, context budgets, compiled knowledge layers, prompt-injection boundaries, and optional runtime adapters.
+
+### Changed
+
+- Planner/Architect now performs Graph Engineering only when the work shape warrants it; it is not another mandatory agent. Strictly sequential and quick work remain single-owner by default.
+- Knowledge graphs remain a separate product decision for measured multi-hop, temporal, entity-resolution, and provenance needs; Harness does not create a duplicate generic `KNOWLEDGE.md`.
+
 ## 0.4.1 — portable release smoke install
 
 ### Fixed

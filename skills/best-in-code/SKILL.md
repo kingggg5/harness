@@ -1,6 +1,6 @@
 ---
 name: best-in-code
-description: Run an adaptive, reusable software-delivery harness across AI models with conditional business analysis, model/effort routing, project management, planning, research, design, frontend, backend, QA, durable scoped memory, capability fallbacks, bounded discovery, and human approval gates. Use when the user invokes Harness or asks for an end-to-end build, review, bug investigation, production-readiness workflow, or project resume; do not use for a quick explanation with no project work.
+description: Run an adaptive, reusable software-delivery harness across AI models with conditional graph engineering, business analysis, model/effort routing, project management, planning, research, design, frontend, backend, QA, durable scoped memory, capability fallbacks, bounded discovery, and human approval gates. Use when the user invokes Harness or asks for an end-to-end build, review, bug investigation, production-readiness workflow, or project resume; do not use for a quick explanation with no project work.
 ---
 
 # Best in Code
@@ -35,6 +35,7 @@ Direct `remember`, `correct`, `forget`, `recall`, `memory status`, and `close ru
 Read [workflow-graph.md](references/workflow-graph.md), the only canonical graph and state-transition source. The delivery roles are Project Manager, Planner/Architect, Researcher, Product Designer, Frontend Engineer, Backend Engineer, and Tester/Reviewer/QA. Run the Business Analyst / requirements pass from [requirements-analysis.md](references/requirements-analysis.md) only when its trigger applies; fold a tiny check into PM for quick work.
 
 - The primary agent is Project Manager and the only writer of shared Harness state and memory.
+- When work has real independent branches, fan-in, a measurable evaluator loop, or an expensive-to-undo edge, run the conditional Graph Engineering pass in Planner/Architect using [graph-engineering.md](references/graph-engineering.md). Compile and validate the optional `.harness/TASK-GRAPH.json`; do not add a mandatory role, parallelize sequential work, or let a model silently change routing and bounds.
 - Prefer isolated parallel role agents when available and useful. Otherwise run labeled sequential role passes automatically. Call QA **independent** only when it is isolated from implementation context and ownership.
 - When model selection is requested or multiple verified models are available, apply [model-routing.md](references/model-routing.md). User-pinned models win; switch only at stable pass boundaries; record the actual model/effort and fallback. A different model alone does not make QA independent.
 - Every role receives a bounded `ROLE-PACKET.md`: objective, verified record IDs, exclusions, owned files or read-only boundary, capabilities, required checks, stop condition, and return contract.
@@ -48,6 +49,7 @@ Load only the references needed for the selected scale and active lane:
 
 - Always for project work: [engineering-standards.md](references/engineering-standards.md), [workflow-graph.md](references/workflow-graph.md), and [memory-loop.md](references/memory-loop.md).
 - Multi-module onboarding or reusable domain/architecture knowledge: activate the optional source-grounded `PROJECT-MAP.md` described in [memory-loop.md](references/memory-loop.md); skip it for small or one-off work.
+- Real fan-out/fan-in, multi-module execution, evaluator loops, consequential edges, or an explicit graph request: [graph-engineering.md](references/graph-engineering.md). Skip the optional task graph for quick or strictly sequential work.
 - Multiple model tiers, explicit model selection, cost/latency routing, or cross-model handoff: [model-routing.md](references/model-routing.md).
 - Unclear outcomes, actors, scope, business rules, or acceptance behavior: [requirements-analysis.md](references/requirements-analysis.md).
 - Current library, API, ecosystem, repository, or community evidence: [research-routing.md](references/research-routing.md).

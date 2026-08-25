@@ -32,6 +32,7 @@
 | `PREFERENCES.md` | Generated project-preference view | Human inspection only |
 | `DECISIONS.md` | Generated decision view | Human inspection only |
 | `PROJECT-MAP.md` | Source-grounded topology, glossary, ownership and flows | Only when activated below and relevant sources are current |
+| `TASK-GRAPH.json` | Current run jobs, artifact dependencies, ownership, limits and human edges | Only when activated below for the exact Project ID and Run ID |
 | `DESIGN.md` | Approved UI/design contract | UI lane only |
 | `EVIDENCE.md` | Detailed bug/performance/security/UI/audit evidence | Activated lane only |
 | `EVALUATION.md` | Harness/model benchmark evidence | Benchmark only |

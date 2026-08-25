@@ -1,7 +1,7 @@
 {
 	"name": "@kingggg5/harness",
-	"version": "0.4.1",
-	"description": "Adaptive software-delivery harness for Codex, Claude Code, Gemini CLI, and filesystem-capable agents: model/effort routing, seven delivery roles, conditional business analysis, durable scoped memory, and human gates.",
+	"version": "0.5.0",
+	"description": "Adaptive software-delivery harness for Codex, Claude Code, Gemini CLI, and filesystem-capable agents: conditional graph engineering, model/effort routing, durable scoped memory, and human gates.",
 	"license": "MIT",
 	"homepage": "https://github.com/kingggg5/harness#readme",
 	"bugs": {
@@ -17,6 +17,7 @@
 		"codex",
 		"gemini-cli",
 		"harness",
+		"graph-engineering",
 		"project-memory",
 		"skills"
 	],
@@ -24,8 +25,9 @@
 		"harness": "bin/harness.js"
 	},
 	"scripts": {
-		"test": "npm run test:portability && npm run test:race && npm run test:memory",
+		"test": "npm run test:portability && npm run test:graph && npm run test:race && npm run test:memory",
 		"test:portability": "python skills/best-in-code/scripts/validate_portability.py",
+		"test:graph": "python skills/best-in-code/scripts/graph_tests.py",
 		"test:race": "python skills/best-in-code/scripts/race_tests.py",
 		"test:memory": "python skills/best-in-code/scripts/run_memory_evals.py",
 		"pack:check": "node scripts/verify-package.mjs"

@@ -8,6 +8,7 @@ These examples are intentionally small. Copy a prompt into Codex, Claude Code, G
 | [Full product feature](full-product-feature.md) | Product behavior, UX, frontend, backend, and QA must agree |
 | [Cross-model handoff](cross-model-handoff.md) | Different models should plan, build, or independently review |
 | [Production review](production-review.md) | You need evidence before deciding whether to change code |
+| [Graph Engineering feature](graph-engineering-feature.md) | A centralized diamond, bounded QA loop, and human-gated consequential edge |
 
 Every useful Harness request contains four things:
 

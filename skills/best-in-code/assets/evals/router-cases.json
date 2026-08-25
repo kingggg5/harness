@@ -172,6 +172,38 @@
 			"required_gates": ["Plan checkpoint", "Acceptance"],
 			"expected_user_pinned_model": "gpt-5.6-terra",
 			"forbidden_claims": ["automatic escalation to Sol", "Luna shard launched"]
+		},
+		{
+			"id": "R19",
+			"request": "Harness standard with Graph Engineering: add saved filters across an existing client and API after stabilizing one shared contract, then merge and verify before publish.",
+			"available_capabilities": ["agents.parallel", "agents.isolated"],
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Planner / Architect", "Frontend Engineer", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Acceptance"],
+			"required_artifacts": [".harness/TASK-GRAPH.json"],
+			"expected_graph_shape": "centralized-diamond",
+			"forbidden_claims": ["every role is a separate process", "publish authorized without a human gate", "unbounded repair loop"]
+		},
+		{
+			"id": "R20",
+			"request": "Harness full: perform an ordered data migration where every step consumes the exact verified output of the previous step.",
+			"available_capabilities": ["agents.parallel", "agents.isolated"],
+			"expected_operation": "start",
+			"expected_scale": "full",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan", "Decision", "Acceptance"],
+			"expected_graph_shape": "single-owner-chain",
+			"forbidden_claims": ["multi-agent fan-out improves sequential work", "parallel mutation authorized"]
+		},
+		{
+			"id": "R21",
+			"request": "Fix one proven one-file typo and run its focused check.",
+			"expected_operation": "start",
+			"expected_scale": "quick",
+			"required_roles": ["Project Manager", "Frontend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Acceptance"],
+			"forbidden_claims": ["TASK-GRAPH.json required", "graph agent required"]
 		}
 	]
 }

@@ -14,6 +14,7 @@ from typing import Any
 sys.dont_write_bytecode = True
 
 from memory_ops import PROJECT_ID_PATTERN, MemoryErrorWithCode, configure_utf8_stdio, parse_time, path_is_link_or_junction, validate_project_memory
+from validate_task_graph import validate_graph
 
 
 ALLOWED_OPERATIONS = {"start", "resume", "review", "init", "memory"}
@@ -37,6 +38,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/agents/openai.yaml",
 	"skills/best-in-code/references/mode-routing.md",
 	"skills/best-in-code/references/workflow-graph.md",
+	"skills/best-in-code/references/graph-engineering.md",
 	"skills/best-in-code/references/model-routing.md",
 	"skills/best-in-code/references/requirements-analysis.md",
 	"skills/best-in-code/references/capability-contract.md",
@@ -46,9 +48,11 @@ REQUIRED_FILES = (
 	"skills/best-in-code/scripts/init_project.py",
 	"skills/best-in-code/scripts/memory_ops.py",
 	"skills/best-in-code/scripts/migrate_project.py",
+	"skills/best-in-code/scripts/graph_tests.py",
 	"skills/best-in-code/scripts/run_memory_evals.py",
 	"skills/best-in-code/scripts/upgrade_project.py",
 	"skills/best-in-code/scripts/validate_portability.py",
+	"skills/best-in-code/scripts/validate_task_graph.py",
 	"skills/best-in-code/assets/evals/router-cases.json",
 	"skills/best-in-code/assets/evals/memory-cases.json",
 	"skills/best-in-code/assets/templates/IDENTITY.json",
@@ -57,6 +61,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/assets/templates/CONFIG.md",
 	"skills/best-in-code/assets/templates/CONTEXT.md",
 	"skills/best-in-code/assets/templates/PROJECT-MAP.md",
+	"skills/best-in-code/assets/templates/TASK-GRAPH.json",
 	"skills/best-in-code/assets/templates/PREFERENCES.md",
 	"skills/best-in-code/assets/templates/DECISIONS.md",
 	"skills/best-in-code/assets/templates/STATE.json",
@@ -64,6 +69,8 @@ REQUIRED_FILES = (
 	"skills/best-in-code/assets/templates/ROLE-PACKET.md",
 	"skills/best-in-code/assets/templates/EVIDENCE.md",
 	"skills/best-in-code/assets/templates/EVALUATION.md",
+	"examples/graph-engineering-feature.json",
+	"examples/graph-engineering-feature.md",
 )
 
 SCHEMA_EXPECTATIONS = {
@@ -202,7 +209,8 @@ def check_no_personal_paths(root: Path, errors: list[str]) -> None:
 
 
 def check_one_graph(root: Path, errors: list[str]) -> None:
-	owners = [path.relative_to(root).as_posix() for path in root.rglob("*.md") if re.search(r"^flowchart\s", path.read_text(encoding="utf-8"), re.MULTILINE)]
+	skill_root = root / "skills" / "best-in-code"
+	owners = [path.relative_to(root).as_posix() for path in skill_root.rglob("*.md") if re.search(r"^flowchart\s", path.read_text(encoding="utf-8"), re.MULTILINE)]
 	expected = ["skills/best-in-code/references/workflow-graph.md"]
 	if owners != expected:
 		errors.append(f"Canonical graph must exist only in workflow-graph.md; found {owners}")
@@ -241,6 +249,14 @@ def check_templates(root: Path, errors: list[str]) -> None:
 			errors.append("MEMORY.json must start at schema 1 revision 0")
 		if memory.get("records") != [] or memory.get("tombstones") != []:
 			errors.append("MEMORY.json template must start empty")
+	for relative in (
+		"skills/best-in-code/assets/templates/TASK-GRAPH.json",
+		"examples/graph-engineering-feature.json",
+	):
+		graph = load_json(root / relative, errors)
+		if graph is not None:
+			for error in validate_graph(graph):
+				errors.append(f"Invalid task graph {relative}: {error}")
 
 
 def check_adapters(root: Path, errors: list[str]) -> None:
@@ -285,6 +301,12 @@ def check_fixtures(root: Path, errors: list[str]) -> None:
 			errors.append("Router fixtures need an unavailable model-selector fallback case")
 		if not any(case.get("expected_user_pinned_model") for case in cases):
 			errors.append("Router fixtures need a user-pinned model preservation case")
+		if not any(".harness/TASK-GRAPH.json" in case.get("required_artifacts", []) for case in cases):
+			errors.append("Router fixtures need a graph-engineering activation case")
+		if not any("TASK-GRAPH.json required" in case.get("forbidden_claims", []) for case in cases):
+			errors.append("Router fixtures need a quick-task graph skip case")
+		if not any(case.get("expected_graph_shape") == "single-owner-chain" for case in cases):
+			errors.append("Router fixtures need a sequential-work single-owner case")
 	memory = load_json(eval_root / "memory-cases.json", errors)
 	if isinstance(memory, dict):
 		cases = memory.get("cases", [])

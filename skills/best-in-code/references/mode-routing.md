@@ -29,6 +29,12 @@ Standard covers normal multi-file bugs and features, cross-component work, and p
 
 Escalate only upward when evidence changes the classification. Record the trigger and continue from the current state; do not discard valid completed work.
 
+## Task-graph routing
+
+Graph Engineering does not change the selected scale. Activate the optional per-run task graph only when one of these is true: the human explicitly requests it; two or more jobs can run independently after a stable contract and later fan in; the work crosses meaningful module/service ownership; a clear deterministic rubric justifies a bounded evaluator loop; or an expensive-to-undo effect needs an explicit human predecessor.
+
+Skip it for `quick`, a strictly sequential migration or reasoning chain, or a tool-dense task where every worker needs the same evolving context. Use a single-owner chain in those cases. For an active graph choose the smallest shape from [graph-engineering.md](graph-engineering.md), cap concurrency and transitions, and validate `.harness/TASK-GRAPH.json` before scheduling nodes.
+
 ## Requirements-pass routing
 
 Trigger the Business Analyst pass when one material item is unresolved: business outcome, primary actor or stakeholder, in/out scope, source of a business rule, conflict between stakeholders or requirements, observable acceptance behavior, or a high-impact workflow such as payment, approval, permissions, regulated processing, or an external integration. Inspect repository evidence first; do not turn discoverable facts into human questions.
@@ -42,8 +48,8 @@ The pass runs within `INTAKE` or `PLAN`, writes no shared state, and adds no gat
 | Scale | Typical active roles | Human checkpoints |
 |---|---|---|
 | quick | PM, one applicable implementer, deterministic QA pass; BA folded into PM; Researcher/Designer only on trigger | Decision when material; Acceptance summary for delivery |
-| standard | PM, Planner, applicable specialists, QA; BA/Researcher/Designer conditional | Concise plan checkpoint for material scope; conditional Design/Decision; Acceptance for delivery |
-| full | PM, Planner, Researcher, every applicable specialist, isolated QA when available; BA still conditional | Bounded discovery, Plan, conditional Design, Decision as needed, Acceptance for delivery |
+| standard | PM, Planner, applicable specialists, QA; BA/Researcher/Designer and task graph conditional | Concise plan checkpoint for material scope; conditional Design/Decision; Acceptance for delivery |
+| full | PM, Planner, Researcher, every applicable specialist, isolated QA when available; BA and task graph still conditional | Bounded discovery, Plan, conditional Design, Decision as needed, Acceptance for delivery |
 
 Do not activate a role or gate merely because its row exists. The Design Gate triggers only for a new or changed visual direction, flow/information architecture, design system, motion contract, or third-party asset choice.
 

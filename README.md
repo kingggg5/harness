@@ -13,6 +13,8 @@ Everything canonical lives in plain Markdown/JSON under `.harness/` — any mode
 
 `MEMORY.json` is durable authority; `CONTEXT.md` is its generated readable knowledge view. Complex repositories may activate one optional source-grounded `PROJECT-MAP.md` for topology, glossary, ownership, and cross-system flows. It is not created by `init`; Harness activates it only when the map will be reused. Harness deliberately does not create a second generic `KNOWLEDGE.md`.
 
+Complex runs may also compile an optional `TASK-GRAPH.json`: bounded jobs, real artifact dependencies, disjoint file ownership, one merge owner, evaluator limits, and human approval before expensive-to-undo actions. It is a run plan, never another memory or state authority.
+
 <p align="center">
 	<img src="assets/brand/harness-workflow.png" alt="Harness workflow: state the goal, plan, bring in the right roles, build and test, pause for human approval, then retain useful context for the next round">
 </p>
@@ -31,7 +33,7 @@ One-shot project health report (`doctor`):
     { "check": "identity-valid", "ok": true, "detail": "project-8a5f6dfd-…" },
     { "check": "store-valid", "ok": true, "revision": 0 },
     { "check": "views-fresh", "ok": true, "detail": "all derived views match canonical memory" },
-    { "check": "runtime-pinned", "ok": true, "detail": "version=0.4.1" },
+    { "check": "runtime-pinned", "ok": true, "detail": "version=0.5.0" },
     { "check": "writer-lock-probe", "ok": true, "detail": "AVAILABLE" }
   ]
 }
@@ -72,6 +74,7 @@ npx github:kingggg5/harness close-run --run-id RUN-current-id
 npx github:kingggg5/harness race        # two-process concurrency regression suite
 npx github:kingggg5/harness evals       # M01-M41 memory evaluation matrix
 npx github:kingggg5/harness portability # package structure gate
+npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
 ```
 
 Requires Node 18+ (for the launcher) and Python 3.12+ (for consistent symlink/junction defenses). No npm registry needed — `npx github:kingggg5/harness` runs straight from this repository.
@@ -111,6 +114,7 @@ Start with one small example instead of learning the whole system first:
 | [Full product feature](examples/full-product-feature.md) | BA, planning, design, parallel build, QA, and human gates |
 | [Cross-model handoff](examples/cross-model-handoff.md) | Start in one provider and resume or review in another |
 | [Production review](examples/production-review.md) | Read-only security, performance, scale, and failure-path review |
+| [Graph Engineering feature](examples/graph-engineering-feature.md) | Centralized fan-out/fan-in, bounded QA repair, and a human-gated effect |
 
 See [all examples](examples/README.md) for the expected evidence and reusable prompt pattern.
 
@@ -132,6 +136,12 @@ Human ↔ Project Manager → route + capability preflight
 
 Run states live in `STATE.json`: `INTAKE → DISCOVERY → PLAN → DESIGN → BUILD → INTEGRATE → VERIFY → WAITING_ACCEPTANCE → DONE`, with `REWORK`, `WAITING_DECISION`, and `BLOCKED` as legal side-states. Task-scoped memory is bound to the exact `run_id` and dies with `close-run`.
 
+### Graph Engineering, only when the work splits
+
+Harness keeps sequential work with one owner. When two or more jobs are genuinely independent after a stable contract, Planner/Architect can compile a centralized diamond: split into disjoint workers, merge through one Project Manager, verify in a separate pass, and stop at a human node before a consequential effect. Every node has named input/output artifacts, repo-relative scopes, attempts, timeout, success criteria, and a hard graph budget; every repair loop has a maximum round count. A consequential node gets one attempt plus an idempotency key bound to the run and approved artifact.
+
+This is conditional, not another permanent agent. Google Research's 2026 evaluation found large gains on a parallelizable task but 39–70% degradation across tested sequential planning configurations, so “more agents” is not the default. Read the [design and research basis](skills/best-in-code/references/graph-engineering.md) or copy the [working example](examples/graph-engineering-feature.md). No LangGraph, ADK, AutoGen, or other runtime is installed automatically.
+
 ## Architecture
 
 ```mermaid
@@ -143,8 +153,8 @@ graph LR
 		GEN[Generic agent]
 	end
 	Providers --> AD[Adapter fragments<br/>AGENTS / CLAUDE / GEMINI / GENERIC]
-	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + 15 references"]
-	SKILL --> OPS["Deterministic core (Python)<br/>memory_ops · init · migrate · upgrade"]
+	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + focused references"]
+	SKILL --> OPS["Deterministic core (Python)<br/>memory · lifecycle · graph validation"]
 	OPS --> STORE[(".harness/<br/>IDENTITY · MEMORY · STATE<br/>runtime pin · derived views")]
 	OPS -. cross-process writer lock + CAS + digests .-> STORE
 	SKILL --> GATES[Human gates<br/>plan · design · decision · acceptance]
@@ -196,7 +206,7 @@ Harness routes model **profiles**, then binds them to models available in the ac
 
 Quick normally avoids switching. Standard defaults to `balanced` and escalates only material planning/review. Full uses `reasoning` for plan/high-risk review, `balanced` for implementation, and `fast` only after contracts and file ownership are stable. A user-pinned model wins. Missing selection support falls back to the current model with labeled passes; Harness never claims a switch from the request alone. See [official OpenAI model guidance](https://developers.openai.com/api/docs/models).
 
-**Reference modules** loaded on demand: `workflow-graph`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+**Reference modules** loaded on demand: `workflow-graph`, `graph-engineering`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
 
 Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
 
@@ -254,6 +264,7 @@ python skills/best-in-code/scripts/upgrade_project.py --project P --models all -
 
 ```bash
 python skills/best-in-code/scripts/validate_portability.py   # structure gate (12 groups)
+python skills/best-in-code/scripts/graph_tests.py             # graph invariant suite
 python skills/best-in-code/scripts/race_tests.py             # two-process concurrency suite
 python skills/best-in-code/scripts/run_memory_evals.py --json # M01-M41 matrix (36-37 PASS locally)
 ```

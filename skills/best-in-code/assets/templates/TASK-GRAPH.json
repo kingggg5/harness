@@ -1,0 +1,28 @@
+{
+	"schema_version": 1,
+	"graph_id": "replace-me",
+	"project_id": "",
+	"run_id": "",
+	"coordinator": "Project Manager",
+	"max_parallel": 1,
+	"max_transitions": 8,
+	"entry_nodes": ["plan"],
+	"nodes": [
+		{
+			"id": "plan",
+			"kind": "model",
+			"owner": "Planner / Architect",
+			"objective": "Replace this starter node with the first bounded job.",
+			"inputs": ["request", "repository-evidence"],
+			"optional_inputs": [],
+			"outputs": ["approved-plan-candidate"],
+			"read_scope": ["."],
+			"write_scope": [],
+			"max_attempts": 1,
+			"timeout_seconds": 900,
+			"side_effect": "none",
+			"success_criteria": ["The plan names dependencies, owners, verification, and stop conditions."]
+		}
+	],
+	"edges": []
+}

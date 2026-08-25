@@ -22,9 +22,12 @@ Do not add a second generic `KNOWLEDGE.md`. Use one destination per kind of cont
 - Current objective, assumptions, questions, overrides, gates, and evidence summary → `WORKFLOW.md`.
 - Approved UI direction → optional `DESIGN.md`; detailed lane evidence → optional `EVIDENCE.md`.
 - Reusable system topology, domain glossary, module ownership, important flows, and external boundaries for a complex repository → optional source-grounded `PROJECT-MAP.md`.
+- Current run jobs, real artifact dependencies, ownership, limits, and human edges → optional `TASK-GRAPH.json`; it is a plan contract, not memory or state authority.
 - Current library/API behavior → versioned documentation such as Context7 or official sources; store only a verified project-specific consequence, not copied documentation.
 
 Activate `PROJECT-MAP.md` only for a multi-package/service repository, repeated onboarding cost, cross-boundary planning, or an explicit human request. Copy `assets/templates/PROJECT-MAP.md` without overwriting an existing file, add it to `INDEX.md` under active optional annexes, and have PM own updates. Skip it for a small repository, a bounded bug, or knowledge already clear from maintained repository docs.
+
+Activate `TASK-GRAPH.json` only under [graph-engineering.md](graph-engineering.md), bind it to the current Project ID/Run ID, and remove it from active annexes at run close. Never recall an old graph as current intent or promote graph topology into durable memory. Promote only verified reusable contracts or risks through the normal memory operation.
 
 Every material project-map row needs a repository-relative source or approved document, a verification date, and a refresh trigger or source fingerprint when practical. Summarize and link; do not copy source code, third-party manuals, raw research, secrets, PII, or prompt-injection text. Load only the sections relevant to the current task. A stale or contradicted row is a lead, never truth; verify it, then update or mark it stale at a checkpoint. Promote only durable atomic conclusions to `MEMORY.json`.
 

@@ -72,11 +72,17 @@ const requiredFiles = [
 	"examples/README.md",
 	"examples/cross-model-handoff.md",
 	"examples/full-product-feature.md",
+	"examples/graph-engineering-feature.json",
+	"examples/graph-engineering-feature.md",
 	"examples/production-review.md",
 	"examples/quick-bug-fix.md",
 	"gemini-extension.json",
 	"package.json",
 	"skills/best-in-code/SKILL.md",
+	"skills/best-in-code/assets/templates/TASK-GRAPH.json",
+	"skills/best-in-code/references/graph-engineering.md",
+	"skills/best-in-code/scripts/graph_tests.py",
+	"skills/best-in-code/scripts/validate_task_graph.py",
 ];
 const requiredPrefixes = [
 	"skills/best-in-code/agents/",
