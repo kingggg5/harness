@@ -7,7 +7,7 @@
 [![release-gate](https://github.com/kingggg5/harness/actions/workflows/ci.yml/badge.svg)](https://github.com/kingggg5/harness/actions/workflows/ci.yml)
 [![GitHub release](https://img.shields.io/github/v/release/kingggg5/harness?display_name=tag)](https://github.com/kingggg5/harness/releases/latest)
 
-Harness is an adaptive software-delivery skill for Codex, Claude Code, Gemini CLI, and filesystem-capable AI agents. One portable skill routes each task through quick, standard, or full delivery; coordinates seven delivery roles plus a conditional Business Analyst pass; keeps durable, scoped project memory in plain files; defends research from prompt injection; applies evidence-based QA; and pauses only at real human gates.
+Harness is a provider-neutral software-delivery system for Codex, Claude Code, Gemini CLI, and filesystem-capable AI agents. One portable skill routes each task through quick, standard, or full delivery; coordinates seven delivery roles plus a conditional Business Analyst pass; keeps durable scoped memory; compiles only relevant context; defends tool use and research from prompt injection; measures behavior; and pauses at real human gates.
 
 Everything canonical lives in plain Markdown/JSON under `.harness/` — any model can resume the same project.
 
@@ -18,6 +18,8 @@ Complex runs may also compile an optional `TASK-GRAPH.json`: bounded jobs, real 
 Repeated, scheduled, or proactive work may add one optional `LOOP-CONTRACT.json`: trigger, observable outcome, deterministic-first verification, fixed budgets, rollback, evidence, and human gates. It is a supervisor envelope, not permission to run forever.
 
 If that run must survive a process or session boundary, an optional local graph ledger records atomic claims, commit-scoped results, content-addressed artifacts, timeouts, and resume checks under `.harness/.cache/`. It is evidence and coordination state, not an autonomous executor or durable team-memory source.
+
+When a reviewed plan needs an actual portable executor, the optional execution kernel runs a provider adapter behind a closed contract: model profiles, role graph, capability scopes, exact verifier commands, budgets, child-permission containment, action-bound human receipts, cancellation, crash guards, and a unified hash-chained trace. The bundled adapter is a deterministic protocol demo; real model access stays in a separately reviewed provider adapter.
 
 <p align="center">
 	<img src="assets/brand/harness-workflow.png" alt="Harness workflow: state the goal, plan, bring in the right roles, build and test, pause for human approval, then retain useful context for the next round">
@@ -37,7 +39,7 @@ One-shot project health report (`doctor`):
     { "check": "identity-valid", "ok": true, "detail": "project-8a5f6dfd-…" },
     { "check": "store-valid", "ok": true, "revision": 0 },
     { "check": "views-fresh", "ok": true, "detail": "all derived views match canonical memory" },
-    { "check": "runtime-pinned", "ok": true, "detail": "version=0.5.0" },
+    { "check": "runtime-pinned", "ok": true, "detail": "version=0.6.0" },
     { "check": "writer-lock-probe", "ok": true, "detail": "AVAILABLE" }
   ]
 }
@@ -78,13 +80,16 @@ npx github:kingggg5/harness close-run --run-id RUN-current-id
 npx github:kingggg5/harness race        # two-process concurrency regression suite
 npx github:kingggg5/harness evals       # M01-M41 memory evaluation matrix
 npx github:kingggg5/harness portability # package structure gate
+npx github:kingggg5/harness context-build --project . --task "Fix checkout race" --include src/checkout.ts
+npx github:kingggg5/harness tools-validate --registry .harness/runtime/assets/templates/TOOL-REGISTRY.json --json
+npx github:kingggg5/harness eval-matrix --suite .harness/runtime/assets/evals/BEHAVIOR-SUITE.json --variant full --json
 npx github:kingggg5/harness loop-validate --contract .harness/LOOP-CONTRACT.json
 npx github:kingggg5/harness loop-run status --project . --contract .harness/LOOP-CONTRACT.json
 npx github:kingggg5/harness graph-validate --graph .harness/TASK-GRAPH.json
 npx github:kingggg5/harness graph-run status --project . --graph .harness/TASK-GRAPH.json
 ```
 
-Requires Node 18+ (for the launcher) and Python 3.12+ (for consistent symlink/junction defenses). No npm registry needed — `npx github:kingggg5/harness` runs straight from this repository.
+Requires Node 18+ (for the launcher) and Python 3.12+ (for consistent symlink/junction defenses). The launcher resolves a canonical interpreter from absolute PATH entries; on locked-down hosts, set `HARNESS_PYTHON` to an absolute Python executable path. No npm registry needed — `npx github:kingggg5/harness` runs straight from this repository.
 
 For a pinned install, download the versioned `.tgz` and `SHA256SUMS` from [GitHub Releases](https://github.com/kingggg5/harness/releases), verify the checksum, then run `npm install --global ./kingggg5-harness-<version>.tgz`.
 
@@ -123,6 +128,7 @@ Start with one small example instead of learning the whole system first:
 | [Production review](examples/production-review.md) | Read-only security, performance, scale, and failure-path review |
 | [Graph Engineering feature](examples/graph-engineering-feature.md) | Centralized fan-out/fan-in, bounded QA repair, and a human-gated effect |
 | [Bounded performance loop](examples/loop-engineering-performance.md) | Goal, deterministic verifiers, budgets, rollback, evidence, and stop rules |
+| [Executable agent graph](examples/executable-agent-graph.md) | Provider-neutral adapter, contained delegation, durable approval, cancellation, and trace |
 
 See [all examples](examples/README.md) for the expected evidence and reusable prompt pattern.
 
@@ -143,6 +149,23 @@ Human ↔ Project Manager → route + capability preflight
 ```
 
 Run states live in `STATE.json`: `INTAKE → DISCOVERY → PLAN → DESIGN → BUILD → INTEGRATE → VERIFY → WAITING_ACCEPTANCE → DONE`, with `REWORK`, `WAITING_DECISION`, and `BLOCKED` as legal side-states. Task-scoped memory is bound to the exact `run_id` and dies with `close-run`.
+
+### Executable agent graph, when host orchestration is not enough
+
+The execution kernel turns an approved role graph into a durable run without handing policy to the model. `RUN-CONTRACT.json` fixes the Project/Run identity, role-to-model profiles, allowed child edges, per-role tools, read/write scopes, exact verifier argv, timeouts, token/cost/external-call/trace budgets, and approval expiry. The adapter can only return a final message or select one of five kernel tools: bounded project read, atomic scoped write, registered verifier, human request, or contained delegation.
+
+After a Harness task has an active Run ID, copy and edit the pinned templates:
+
+```bash
+cp .harness/runtime/assets/templates/RUN-CONTRACT.json .harness/RUN-CONTRACT.json
+cp .harness/runtime/assets/templates/ADAPTER-ARGV.json .harness/ADAPTER-ARGV.json
+npx github:kingggg5/harness run-validate --project . --contract .harness/RUN-CONTRACT.json --adapter-argv-file .harness/ADAPTER-ARGV.json --json
+npx github:kingggg5/harness run --project . --contract .harness/RUN-CONTRACT.json --adapter-argv-file .harness/ADAPTER-ARGV.json --json
+```
+
+`WAITING_APPROVAL` means the kernel stopped safely. Review its exact action and artifact digest, then use `run-approve`; use `run-cancel` to stop cooperatively. A completed kernel run still waits for the normal human Acceptance Gate. See the [execution runtime guide](skills/best-in-code/references/execution-runtime.md), [context compiler](skills/best-in-code/references/context-compiler.md), and [behavior/trace guide](skills/best-in-code/references/eval-runtime.md).
+
+For a portable Python adapter or verifier, start its argv with `@harness-python`; Harness resolves it to the interpreter that started the kernel. Any other executable must be an absolute path—bare PATH commands such as `python`, `python3`, or `node` are refused to prevent substitution from a project directory or changed PATH.
 
 ### Loop Engineering, only for repeated work
 
@@ -189,13 +212,19 @@ graph LR
 		GEN[Generic agent]
 	end
 	Providers --> AD[Adapter fragments<br/>AGENTS / CLAUDE / GEMINI / GENERIC]
-	AD --> SKILL["Skill: best-in-code<br/>SKILL.md + focused references"]
-	SKILL --> OPS["Deterministic core (Python)<br/>memory · lifecycle · loop/graph validation + receipts"]
+	AD --> SKILL["Skill: best-in-code<br/>routing + human gates"]
+	SKILL --> CTX["Context compiler<br/>provenance · budgets · quarantine"]
+	SKILL --> EXEC["Execution kernel<br/>roles · capabilities · approvals · cancellation"]
+	SKILL --> OPS["Deterministic core<br/>memory · lifecycle · loop/graph ledgers"]
+	CTX --> EXEC
+	EXEC --> TRACE["Unified trace<br/>validate · redact · dry-run replay"]
 	OPS --> STORE[(".harness/<br/>IDENTITY · MEMORY · STATE<br/>runtime pin · derived views")]
+	EXEC --> STORE
 	OPS -. cross-process writer lock + CAS + digests .-> STORE
 	SKILL --> GATES[Human gates<br/>plan · design · decision · acceptance]
 	GATES --> HUMAN((Human))
-	QA2[loop + graph runtime tests · race tests · evals M01-M41 · portability] -. release gate .-> OPS
+	QA2[behavior matrix · execution integration · loop/graph/race/memory tests] -. release gate .-> OPS
+	QA2 -. release gate .-> EXEC
 ```
 
 Safety properties enforced by the core, not by prompts:
@@ -211,6 +240,12 @@ Safety properties enforced by the core, not by prompts:
 - **Validated loop contracts** — level/trigger, baseline/exclusions, deterministic verifier, run/iteration/resource budgets, dedupe/overlap, rollback, distinct progress/best/usage evidence, scope, and architecture/consequential human gates fail closed before repeated work.
 - **Durable loop receipts** — immutable contract digest, delivery dedupe, one lease, event hash chain, accepted Git baseline/write scope, current evidence digests, usage and timeout/no-progress stops are enforced by the optional local supervisor ledger.
 - **Content-addressed graph receipts** — graph digest, node lease, exact commit ancestry, write scope, artifact SHA-256, loop/attempt limits, and stale-claim recovery are checked by the optional local runtime.
+- **Capability-bounded execution** — models select only declared tools; exact scopes, verifier argv, environment allowlists, budgets, role edges, and child capability subsets are enforced outside the model.
+- **Action-bound human receipts** — approval records bind Project/Run/agent/tool/action, request bytes, artifact digest, idempotency key, actor, decision, and expiry; byte tampering fails closed.
+- **Crash-aware side effects** — outstanding model calls are never guessed or silently replayed, completed atomic writes recover only by exact artifact digest, and indeterminate commands stop the run.
+- **Provenance-rich context** — selected inputs are bounded and content-addressed; high-confidence prompt injection in untrusted sources is quarantined and cannot authorize tools.
+- **Behavior and trace evidence** — full/single-owner/ablation trials report policy, routing, retention, latency, token, cost, retry, and context metrics; trace replay is evidence-only and never executes actions.
+- **Verifiable releases** — CI pins third-party actions to commits; releases include SPDX SBOM, checksums, package provenance, and SBOM attestations.
 
 ## Agents and skills
 
@@ -310,12 +345,17 @@ python skills/best-in-code/scripts/upgrade_project.py --project P --models all -
 
 ```bash
 python skills/best-in-code/scripts/validate_portability.py   # structure gate (13 groups)
+python skills/best-in-code/scripts/execution_runtime_tests.py # adapter/approval/delegation/cancel/tamper integration
+python skills/best-in-code/scripts/context_eval_trace_tests.py # context/tool/eval/trace regression suite
+python skills/best-in-code/scripts/doctor_runtime_tests.py    # exact runtime-pin drift detection
 python skills/best-in-code/scripts/loop_tests.py             # loop-contract invariant suite
 python skills/best-in-code/scripts/loop_runtime_tests.py     # trigger/lease/evidence/budget/Git integration
 python skills/best-in-code/scripts/graph_tests.py            # static graph invariant suite
 python skills/best-in-code/scripts/graph_runtime_tests.py    # real Git/claim/artifact/resume integration
 python skills/best-in-code/scripts/race_tests.py             # two-process concurrency suite
 python skills/best-in-code/scripts/run_memory_evals.py --json # M01-M41 matrix (36-37 PASS locally)
+python scripts/check_workflow_policy.py                       # pinned actions + release attestations
+npm run test:sbom                                            # SPDX generator regression suite
 ```
 
 CI runs all deterministic suites on Ubuntu and Windows. Eval cases M05/M06/M28/M31 require a live target model; M34 requires POSIX for symlink coverage. See [CHANGELOG.md](CHANGELOG.md).

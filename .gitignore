@@ -1,5 +1,7 @@
 __pycache__/
 *.py[cod]
+.ruff_cache/
+.pytest_cache/
 *.tmp
 .DS_Store
 Thumbs.db

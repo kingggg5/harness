@@ -1,7 +1,7 @@
 {
   "name": "harness",
-  "version": "0.5.0+codex.20260825170429",
-  "description": "An adaptive, model-neutral software-delivery harness with bounded loop contracts, validated graph receipts, model routing, durable scoped memory, QA, and human gates.",
+  "version": "0.6.0+codex.20260901100338",
+  "description": "A provider-neutral software-delivery harness with executable agent graphs, bounded context, durable memory, behavioral evals, trusted tool policy, and human gates.",
   "author": {
     "name": "Local developer"
   },
@@ -34,8 +34,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Harness",
-    "shortDescription": "Adaptive delivery, portable memory, QA, and human gates.",
-    "longDescription": "Harness routes each task to quick, standard, or full delivery; validates provider-neutral turn, goal, scheduled, and proactive loop contracts; can persist bounded delivery dedupe, iteration leases, accepted Git results, evidence and usage receipts, pause/cancel state, and timeout recovery; conditionally compiles task graphs only when work truly splits; can also record atomic graph-node claims and artifact digests; isolates concurrent writers; selects provider-neutral model profiles; preserves scoped memory; defends research from prompt injection; and applies evidence-based QA plus human gates. Named models and optional tools are verified backend mappings rather than hard dependencies.",
+    "shortDescription": "Executable agent graphs, durable memory, evals, and human gates.",
+    "longDescription": "Harness routes each task to quick, standard, or full delivery; compiles bounded provenance-rich context; validates provider-neutral loop and task-graph contracts; can execute a reviewed role graph through a capability-bounded adapter with model profiles, exact tool scopes, durable action-bound approvals, cancellation, crash guards, and a hash-chained trace; preserves scoped memory; defends research and tool output from prompt injection; and applies behavioral evals, evidence-based QA, and human gates. Named models and optional tools remain reviewed backend mappings rather than hard dependencies.",
     "developerName": "Local developer",
     "category": "Developer Tools",
     "capabilities": [
@@ -44,6 +44,11 @@
       "Durable Loop Delivery, Lease, Evidence, and Usage Receipts",
       "Conditional Graph Engineering and Validation",
       "Content-Addressed Graph Receipts and Resume",
+      "Executable Capability-Bounded Agent Graphs",
+      "Provenance-Rich Context Compilation",
+      "Durable Action-Bound Approval Receipts",
+      "Behavioral Full and Ablation Evaluation Matrix",
+      "Hash-Chained Trace Validation and Redaction",
       "Isolated Concurrent Writers and Bounded Long Runs",
       "Adaptive Model and Reasoning-Effort Routing",
       "Cross-Model Role Contracts",

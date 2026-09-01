@@ -1,0 +1,206 @@
+{
+	"schema_version": 1,
+	"contract_id": "best-in-code-default",
+	"project_id": "project-replace-me",
+	"run_id": "RUN-replace-me",
+	"task": "Replace this text with one bounded, testable outcome.",
+	"root_role": "project-manager",
+	"budgets": {
+		"max_steps": 96,
+		"max_tokens": 500000,
+		"max_cost_microusd": 5000000,
+		"max_external_calls": 128,
+		"max_trace_events": 2048,
+		"approval_ttl_seconds": 86400
+	},
+	"adapter": {
+		"id": "provider-router",
+		"environment_allowlist": [],
+		"max_message_bytes": 1048576,
+		"max_state_bytes": 262144,
+		"timeout_seconds": 300
+	},
+	"tools": [
+		{
+			"id": "agent.delegate",
+			"enabled": true,
+			"read_scopes": [],
+			"write_scopes": [],
+			"exec_ids": [],
+			"approval": "never",
+			"max_input_bytes": 65536,
+			"max_output_bytes": 262144,
+			"timeout_seconds": 300
+		},
+		{
+			"id": "human.request",
+			"enabled": true,
+			"read_scopes": [],
+			"write_scopes": [],
+			"exec_ids": [],
+			"approval": "never",
+			"max_input_bytes": 65536,
+			"max_output_bytes": 4096,
+			"timeout_seconds": 300
+		},
+		{
+			"id": "verifier.run",
+			"enabled": true,
+			"read_scopes": [],
+			"write_scopes": [],
+			"exec_ids": [
+				"test"
+			],
+			"approval": "never",
+			"max_input_bytes": 4096,
+			"max_output_bytes": 262144,
+			"timeout_seconds": 120
+		},
+		{
+			"id": "workspace.read",
+			"enabled": true,
+			"read_scopes": [
+				"."
+			],
+			"write_scopes": [],
+			"exec_ids": [],
+			"approval": "never",
+			"max_input_bytes": 4096,
+			"max_output_bytes": 262144,
+			"timeout_seconds": 30
+		},
+		{
+			"id": "workspace.write",
+			"enabled": true,
+			"read_scopes": [],
+			"write_scopes": [
+				"src"
+			],
+			"exec_ids": [],
+			"approval": "always",
+			"max_input_bytes": 1048576,
+			"max_output_bytes": 4096,
+			"timeout_seconds": 30
+		}
+	],
+	"verifiers": [
+		{
+			"id": "test",
+			"argv": [
+				"@harness-python",
+				"-B",
+				"-c",
+				"import sys; print('Register a real project verifier before use'); raise SystemExit(1)"
+			],
+			"timeout_seconds": 120,
+			"max_output_bytes": 262144,
+			"allowed_exit_codes": [
+				0
+			],
+			"environment_allowlist": []
+		}
+	],
+	"delegation": {
+		"max_depth": 1,
+		"max_children": 16,
+		"roles": [
+			{
+				"id": "backend",
+				"model_profile": "gpt-terra-build",
+				"tools": [
+					"human.request",
+					"verifier.run",
+					"workspace.read",
+					"workspace.write"
+				],
+				"can_spawn": [],
+				"max_steps": 16
+			},
+			{
+				"id": "business-analyst",
+				"model_profile": "gpt-luna-analysis",
+				"tools": [
+					"human.request",
+					"workspace.read"
+				],
+				"can_spawn": [],
+				"max_steps": 10
+			},
+			{
+				"id": "designer",
+				"model_profile": "gpt-terra-design",
+				"tools": [
+					"human.request",
+					"workspace.read",
+					"workspace.write"
+				],
+				"can_spawn": [],
+				"max_steps": 16
+			},
+			{
+				"id": "frontend",
+				"model_profile": "gpt-terra-build",
+				"tools": [
+					"human.request",
+					"verifier.run",
+					"workspace.read",
+					"workspace.write"
+				],
+				"can_spawn": [],
+				"max_steps": 16
+			},
+			{
+				"id": "planner",
+				"model_profile": "gpt-sol-plan",
+				"tools": [
+					"human.request",
+					"workspace.read"
+				],
+				"can_spawn": [],
+				"max_steps": 10
+			},
+			{
+				"id": "project-manager",
+				"model_profile": "gpt-sol-orchestrate-review",
+				"tools": [
+					"agent.delegate",
+					"human.request",
+					"verifier.run",
+					"workspace.read",
+					"workspace.write"
+				],
+				"can_spawn": [
+					"backend",
+					"business-analyst",
+					"designer",
+					"frontend",
+					"planner",
+					"researcher",
+					"tester"
+				],
+				"max_steps": 24
+			},
+			{
+				"id": "researcher",
+				"model_profile": "gpt-luna-research",
+				"tools": [
+					"human.request",
+					"workspace.read"
+				],
+				"can_spawn": [],
+				"max_steps": 12
+			},
+			{
+				"id": "tester",
+				"model_profile": "gpt-sol-test-review",
+				"tools": [
+					"human.request",
+					"verifier.run",
+					"workspace.read"
+				],
+				"can_spawn": [],
+				"max_steps": 16
+			}
+		]
+	}
+}

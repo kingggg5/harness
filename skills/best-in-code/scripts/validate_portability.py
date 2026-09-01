@@ -14,7 +14,10 @@ from typing import Any
 sys.dont_write_bytecode = True
 
 from memory_ops import PROJECT_ID_PATTERN, MemoryErrorWithCode, configure_utf8_stdio, parse_time, path_is_link_or_junction, validate_project_memory
-from validate_loop_contract import validate_contract
+from context_compiler import validate_tool_registry
+from eval_matrix import EvalError, validate_suite
+from execution_kernel import KernelError, validate_contract as validate_run_contract
+from validate_loop_contract import validate_contract as validate_loop_contract
 from validate_task_graph import validate_graph
 
 
@@ -31,9 +34,8 @@ REQUIRED_FILES = (
 	".claude-plugin/plugin.json",
 	"gemini-extension.json",
 	"bin/harness.js",
-	"scripts/check_eval_results.py",
-	"scripts/check_eval_results_tests.py",
 	"README.md",
+	"SECURITY.md",
 	"adapters/project/AGENTS.md.fragment",
 	"adapters/project/CLAUDE.md.fragment",
 	"adapters/project/GEMINI.md.fragment",
@@ -47,6 +49,9 @@ REQUIRED_FILES = (
 	"skills/best-in-code/references/loop-engineering.md",
 	"skills/best-in-code/references/loop-runtime.md",
 	"skills/best-in-code/references/execution-isolation.md",
+	"skills/best-in-code/references/execution-runtime.md",
+	"skills/best-in-code/references/context-compiler.md",
+	"skills/best-in-code/references/eval-runtime.md",
 	"skills/best-in-code/references/model-routing.md",
 	"skills/best-in-code/references/requirements-analysis.md",
 	"skills/best-in-code/references/capability-contract.md",
@@ -56,6 +61,14 @@ REQUIRED_FILES = (
 	"skills/best-in-code/scripts/init_project.py",
 	"skills/best-in-code/scripts/bounded_json.py",
 	"skills/best-in-code/scripts/memory_ops.py",
+	"skills/best-in-code/scripts/context_compiler.py",
+	"skills/best-in-code/scripts/context_eval_trace_tests.py",
+	"skills/best-in-code/scripts/eval_matrix.py",
+	"skills/best-in-code/scripts/execution_kernel.py",
+	"skills/best-in-code/scripts/execution_runtime_tests.py",
+	"skills/best-in-code/scripts/reference_adapter.py",
+	"skills/best-in-code/scripts/trace_ops.py",
+	"skills/best-in-code/scripts/doctor_runtime_tests.py",
 	"skills/best-in-code/scripts/migrate_project.py",
 	"skills/best-in-code/scripts/graph_tests.py",
 	"skills/best-in-code/scripts/graph_runtime.py",
@@ -70,6 +83,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/scripts/validate_loop_contract.py",
 	"skills/best-in-code/assets/evals/router-cases.json",
 	"skills/best-in-code/assets/evals/memory-cases.json",
+	"skills/best-in-code/assets/evals/BEHAVIOR-SUITE.json",
 	"skills/best-in-code/assets/templates/IDENTITY.json",
 	"skills/best-in-code/assets/templates/MEMORY.json",
 	"skills/best-in-code/assets/templates/INDEX.md",
@@ -77,6 +91,10 @@ REQUIRED_FILES = (
 	"skills/best-in-code/assets/templates/CONTEXT.md",
 	"skills/best-in-code/assets/templates/PROJECT-MAP.md",
 	"skills/best-in-code/assets/templates/LOOP-CONTRACT.json",
+	"skills/best-in-code/assets/templates/RUN-CONTRACT.json",
+	"skills/best-in-code/assets/templates/ADAPTER-ARGV.json",
+	"skills/best-in-code/assets/templates/CONTEXT-MANIFEST.json",
+	"skills/best-in-code/assets/templates/TOOL-REGISTRY.json",
 	"skills/best-in-code/assets/templates/TASK-GRAPH.json",
 	"skills/best-in-code/assets/templates/PREFERENCES.md",
 	"skills/best-in-code/assets/templates/DECISIONS.md",
@@ -89,6 +107,7 @@ REQUIRED_FILES = (
 	"examples/graph-engineering-feature.md",
 	"examples/loop-engineering-performance.json",
 	"examples/loop-engineering-performance.md",
+	"examples/executable-agent-graph.md",
 )
 
 SCHEMA_EXPECTATIONS = {
@@ -273,7 +292,7 @@ def check_templates(root: Path, errors: list[str]) -> None:
 	):
 		contract = load_json(root / relative, errors)
 		if contract is not None:
-			for error in validate_contract(contract):
+			for error in validate_loop_contract(contract):
 				errors.append(f"Invalid loop contract {relative}: {error}")
 	for relative in (
 		"skills/best-in-code/assets/templates/TASK-GRAPH.json",
@@ -283,6 +302,35 @@ def check_templates(root: Path, errors: list[str]) -> None:
 		if graph is not None:
 			for error in validate_graph(graph):
 				errors.append(f"Invalid task graph {relative}: {error}")
+	run_contract = load_json(template_root / "RUN-CONTRACT.json", errors)
+	if run_contract is not None:
+		try:
+			validate_run_contract(run_contract)
+		except KernelError as exc:
+			errors.append(f"Invalid executable run contract: {exc}")
+	registry = load_json(template_root / "TOOL-REGISTRY.json", errors)
+	if registry is not None:
+		for error in validate_tool_registry(registry):
+			errors.append(f"Invalid tool registry: {error}")
+	adapter_argv = load_json(template_root / "ADAPTER-ARGV.json", errors)
+	if not isinstance(adapter_argv, list) or not adapter_argv or not all(isinstance(item, str) and item for item in adapter_argv):
+		errors.append("ADAPTER-ARGV.json must be a non-empty string array")
+	elif adapter_argv[0] != "@harness-python":
+		errors.append("ADAPTER-ARGV.json must use @harness-python as its portable executable token")
+	if isinstance(run_contract, dict):
+		default_verifier = next((item for item in run_contract.get("verifiers", []) if isinstance(item, dict) and item.get("id") == "test"), None)
+		if not isinstance(default_verifier, dict) or not isinstance(default_verifier.get("argv"), list) or not default_verifier["argv"] or default_verifier["argv"][0] != "@harness-python":
+			errors.append("RUN-CONTRACT.json default verifier must use @harness-python as its portable executable token")
+	context_manifest = load_json(template_root / "CONTEXT-MANIFEST.json", errors)
+	if isinstance(context_manifest, dict):
+		if context_manifest.get("schema_version") != 1 or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(context_manifest.get("integrity", {}).get("manifest_sha256", ""))):
+			errors.append("CONTEXT-MANIFEST.json template shape is invalid")
+	behavior_suite = load_json(root / "skills" / "best-in-code" / "assets" / "evals" / "BEHAVIOR-SUITE.json", errors)
+	if behavior_suite is not None:
+		try:
+			validate_suite(behavior_suite)
+		except EvalError as exc:
+			errors.append(f"Invalid behavior suite: {exc}")
 
 
 def check_adapters(root: Path, errors: list[str]) -> None:
@@ -304,7 +352,16 @@ def check_cli(root: Path, errors: list[str]) -> None:
 	if not path.is_file():
 		return
 	content = path.read_text(encoding="utf-8")
-	for marker in ('"loop-validate": "validate_loop_contract.py"', '"loop-run": "loop_runtime.py"', '"graph-validate": "validate_task_graph.py"', '"graph-run": "graph_runtime.py"'):
+	for marker in (
+		'"loop-validate": { script: "validate_loop_contract.py"',
+		'"loop-run": { script: "loop_runtime.py"',
+		'"graph-validate": { script: "validate_task_graph.py"',
+		'"graph-run": { script: "graph_runtime.py"',
+		'run: { script: "execution_kernel.py", prefix: ["run"] }',
+		'"context-build": { script: "context_compiler.py", prefix: ["compile"] }',
+		'"eval-matrix": { script: "eval_matrix.py", prefix: [] }',
+		'trace: { script: "trace_ops.py", prefix: [] }',
+	):
 		if marker not in content:
 			errors.append(f"CLI launcher is missing mapping: {marker}")
 

@@ -61,6 +61,9 @@ MAX_DERIVED_VIEW_BYTES = 2 * 1024 * 1024
 MAX_TTL_SECONDS = 365 * 24 * 60 * 60
 MAX_VERIFICATION_SOURCE_BYTES = 64 * 1024 * 1024
 MAX_CLOCK_SKEW_SECONDS = 5 * 60
+MAX_RUNTIME_DOCTOR_FILES = 4096
+MAX_RUNTIME_DOCTOR_FILE_BYTES = 64 * 1024 * 1024
+MAX_RUNTIME_DOCTOR_TOTAL_BYTES = 128 * 1024 * 1024
 STORE_FIELDS = {"schema_version", "project_id", "revision", "records", "tombstones", "adapter", "last_transaction"}
 RECORD_FIELDS = {
 	"id", "kind", "key", "value", "scope", "applies_when", "tags", "authority", "source",
@@ -1781,6 +1784,33 @@ def add_common_record_args(parser: argparse.ArgumentParser, include_kind: bool =
 	parser.add_argument("--run-id")
 
 
+def pinned_runtime_digest(runtime_root: Path) -> tuple[str, int, int]:
+	if path_is_link_or_junction(runtime_root) or not runtime_root.is_dir():
+		raise MemoryErrorWithCode("RUNTIME_INCOMPLETE", "Pinned runtime root must be a real directory")
+	selected: list[Path] = []
+	for path in runtime_root.rglob("*"):
+		if path_is_link_or_junction(path):
+			raise MemoryErrorWithCode("RUNTIME_MODIFIED", f"Pinned runtime contains a link or junction: {path}")
+		if path.is_file() and path.name != "HARNESS-RUNTIME.json":
+			selected.append(path)
+			if len(selected) > MAX_RUNTIME_DOCTOR_FILES:
+				raise MemoryErrorWithCode("RUNTIME_TOO_LARGE", f"Pinned runtime exceeds {MAX_RUNTIME_DOCTOR_FILES} files")
+	selected.sort(key=lambda path: path.relative_to(runtime_root).as_posix())
+	digest = hashlib.sha256()
+	total = 0
+	for path in selected:
+		relative = path.relative_to(runtime_root).as_posix().encode("utf-8")
+		data = read_regular_file_bounded(path, MAX_RUNTIME_DOCTOR_FILE_BYTES, "pinned runtime file")
+		total += len(data)
+		if total > MAX_RUNTIME_DOCTOR_TOTAL_BYTES:
+			raise MemoryErrorWithCode("RUNTIME_TOO_LARGE", f"Pinned runtime exceeds {MAX_RUNTIME_DOCTOR_TOTAL_BYTES} bytes")
+		digest.update(len(relative).to_bytes(4, "big"))
+		digest.update(relative)
+		digest.update(len(data).to_bytes(8, "big"))
+		digest.update(data)
+	return f"sha256:{digest.hexdigest()}", len(selected), total
+
+
 def doctor_command(args: argparse.Namespace) -> dict[str, Any]:
 	DOCTOR_KNOWN_OPERATIONS = {"start", "resume", "review", "init", "memory", "done"}
 	DOCTOR_PARSE_ERRORS = (MemoryErrorWithCode, OSError, KeyError, TypeError, AttributeError, ValueError)
@@ -1891,9 +1921,21 @@ def doctor_command(args: argparse.Namespace) -> dict[str, Any]:
 		if runtime_manifest.is_file():
 			pin, _ = read_json_bytes(runtime_manifest)
 			version = str(pin.get("source_version", ""))
-			digest_ok = SHA256_PATTERN.fullmatch(str(pin.get("source_digest", ""))) is not None
+			recorded_digest = str(pin.get("source_digest", ""))
+			digest_shape_ok = SHA256_PATTERN.fullmatch(recorded_digest) is not None
 			skill_present = (runtime_manifest.parent / "SKILL.md").is_file()
-			record("runtime-pinned", digest_ok and skill_present, f"version={version}", manifest_complete=digest_ok, skill_present=skill_present)
+			actual_digest, runtime_files, runtime_bytes = pinned_runtime_digest(runtime_manifest.parent)
+			digest_matches = digest_shape_ok and actual_digest == recorded_digest
+			record(
+				"runtime-pinned",
+				digest_matches and skill_present,
+				f"version={version}" if digest_matches else "pinned runtime bytes do not match the recorded digest",
+				manifest_complete=digest_shape_ok,
+				skill_present=skill_present,
+				digest_matches=digest_matches,
+				runtime_files=runtime_files,
+				runtime_bytes=runtime_bytes,
+			)
 		else:
 			record("runtime-pinned", False, "no pinned runtime under .harness/runtime; run init_project.py")
 	except DOCTOR_PARSE_ERRORS as exc:

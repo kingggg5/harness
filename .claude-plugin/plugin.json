@@ -2,8 +2,8 @@
 	"$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
 	"name": "harness",
 	"displayName": "Harness",
-	"version": "0.5.0",
-	"description": "Adaptive cross-model software delivery with bounded loop supervision, validated graph receipts, scoped memory, QA, and human gates.",
+	"version": "0.6.0",
+	"description": "Provider-neutral software delivery with executable agent graphs, bounded context, scoped memory, behavioral evals, QA, and human gates.",
 	"author": {
 		"name": "Local developer"
 	},

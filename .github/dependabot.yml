@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:17"
+      timezone: Asia/Bangkok
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: monthly
+      time: "04:47"
+      timezone: Asia/Bangkok
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies

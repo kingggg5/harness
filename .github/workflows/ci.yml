@@ -29,6 +29,14 @@ jobs:
         run: python skills/best-in-code/scripts/validate_portability.py
       - name: CI policy regression suite
         run: python scripts/check_eval_results_tests.py
+      - name: Workflow supply-chain policy
+        run: python scripts/check_workflow_policy.py
+      - name: Pinned-runtime doctor regression suite
+        run: python skills/best-in-code/scripts/doctor_runtime_tests.py
+      - name: Executable agent-graph integration suite
+        run: python skills/best-in-code/scripts/execution_runtime_tests.py
+      - name: Context, tool-contract, eval, and trace suite
+        run: python skills/best-in-code/scripts/context_eval_trace_tests.py
       - name: Loop-contract invariant suite
         run: python skills/best-in-code/scripts/loop_tests.py
       - name: Loop runtime integration suite
@@ -49,3 +57,5 @@ jobs:
           python scripts/check_eval_results.py --results evals.json --os "$HARNESS_RUNNER_OS"
       - name: Verify release package allowlist
         run: npm run pack:check
+      - name: SBOM generation regression suite
+        run: npm run test:sbom

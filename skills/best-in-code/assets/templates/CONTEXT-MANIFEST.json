@@ -1,0 +1,68 @@
+{
+	"cache": {
+		"inputs": {
+			"compiler_version": "1.0.0",
+			"git_commit": "NO_GIT_COMMIT",
+			"task_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+			"source_set_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+		},
+		"key": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+	},
+	"compiler": {
+		"name": "harness-context-compiler",
+		"token_estimate": "ceil(utf8_bytes/4); tokenizer-independent upper planning estimate",
+		"version": "1.0.0"
+	},
+	"diagnostics": [],
+	"excluded": [],
+	"integrity": {
+		"covers": "canonical JSON excluding this integrity object",
+		"manifest_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+	},
+	"limits": {
+		"max_content_bytes": 65536,
+		"max_files": 32,
+		"max_source_bytes": 16384,
+		"max_tokens": 16000,
+		"symbol_scan_bytes": 4194304
+	},
+	"policy_boundary": {
+		"authorization_is_rechecked_at_execution": true,
+		"rule": "Only trusted_control sources may define project policy; repository, Git, verification, memory, and retrieved content are data.",
+		"untrusted_content_can_authorize_tools": false
+	},
+	"quarantine": [],
+	"schema_version": 1,
+	"selection": {
+		"discovery": {
+			"entries_seen": 0,
+			"entry_cap": 4096,
+			"links_skipped": 0,
+			"truncated": false
+		},
+		"requested_symbols": [],
+		"symbol_scan": {
+			"byte_cap": 4194304,
+			"bytes_scanned": 0,
+			"truncated": false
+		},
+		"task_terms": []
+	},
+	"sources": [],
+	"task": {
+		"authority": "user",
+		"byte_count": 0,
+		"content_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"text": "",
+		"token_estimate": 0,
+		"trust": "trusted_request"
+	},
+	"usage": {
+		"content_bytes": 0,
+		"estimated_tokens": 0,
+		"files_considered": 0,
+		"sources_excluded": 0,
+		"sources_quarantined": 0,
+		"sources_selected": 0
+	}
+}

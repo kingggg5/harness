@@ -1,0 +1,5 @@
+[
+	"@harness-python",
+	"-B",
+	".harness/runtime/scripts/reference_adapter.py"
+]

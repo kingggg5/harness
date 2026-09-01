@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Version tag matching package.json, for example v0.5.0"
+        description: "Version tag matching package.json, for example v0.6.0"
         required: true
         type: string
 
@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -56,6 +59,8 @@ jobs:
           fi
       - name: Run deterministic release gates
         run: npm test
+      - name: Enforce workflow supply-chain policy
+        run: python scripts/check_workflow_policy.py
       - name: Verify package allowlist and version parity
         run: npm run pack:check
       - name: Build and smoke-install release archive
@@ -67,8 +72,9 @@ jobs:
           archive="$(find "$PWD/dist" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
           test -n "$archive"
           npm install --ignore-scripts --no-audit --no-fund --prefix .release-smoke -- "$archive"
-          node .release-smoke/node_modules/@kingggg5/harness/bin/harness.js --help >/dev/null
-          (cd dist && sha256sum *.tgz > SHA256SUMS)
+          node .release-smoke/node_modules/@kingggg5/harness/bin/harness.js portability --json
+          npm run sbom:generate -- --archive "$archive" --output dist/harness.spdx.json
+          (cd dist && sha256sum *.tgz *.spdx.json > SHA256SUMS)
       - name: Create annotated tag for manual release
         if: github.event_name == 'workflow_dispatch'
         env:
@@ -91,7 +97,16 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
             -f "ref=refs/tags/$RELEASE_TAG" \
             -f "sha=$tag_sha"
-      - name: Publish immutable GitHub Release
+      - name: Attest release build provenance
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: dist/*.tgz
+      - name: Attest release SBOM
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: dist/*.tgz
+          sbom-path: dist/harness.spdx.json
+      - name: Publish verified GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -100,6 +115,7 @@ jobs:
           archive="$(find dist -maxdepth 1 -type f -name '*.tgz' -print -quit)"
           gh release create "$RELEASE_TAG" \
             "$archive#npm install archive" \
+            "dist/harness.spdx.json#SPDX 2.3 software bill of materials" \
             "dist/SHA256SUMS#SHA-256 checksums" \
             --verify-tag \
             --generate-notes \

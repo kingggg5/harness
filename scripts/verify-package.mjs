@@ -18,6 +18,8 @@ function readJson(path) {
 }
 
 const packageManifest = readJson("package.json");
+const adapterTemplate = readJson("skills/best-in-code/assets/templates/ADAPTER-ARGV.json");
+const runContractTemplate = readJson("skills/best-in-code/assets/templates/RUN-CONTRACT.json");
 const providerVersions = [
 	readJson(".codex-plugin/plugin.json").version,
 	readJson(".claude-plugin/plugin.json").version,
@@ -28,6 +30,13 @@ for (const version of providerVersions) {
 	if (version !== packageManifest.version) {
 		fail(`provider version ${version} does not match package ${packageManifest.version}`);
 	}
+}
+if (!Array.isArray(adapterTemplate) || adapterTemplate[0] !== "@harness-python") {
+	fail("ADAPTER-ARGV.json must use @harness-python as its portable executable token");
+}
+const defaultVerifier = runContractTemplate.verifiers?.find((entry) => entry?.id === "test");
+if (!Array.isArray(defaultVerifier?.argv) || defaultVerifier.argv[0] !== "@harness-python") {
+	fail("RUN-CONTRACT.json default verifier must use @harness-python as its portable executable token");
 }
 
 const npmCli = process.env.npm_execpath;
@@ -62,6 +71,7 @@ const requiredFiles = [
 	"LICENSE",
 	"README.md",
 	"RELEASING.md",
+	"SECURITY.md",
 	"adapters/project/AGENTS.md.fragment",
 	"adapters/project/CLAUDE.md.fragment",
 	"adapters/project/GEMINI.md.fragment",
@@ -71,6 +81,7 @@ const requiredFiles = [
 	"bin/harness.js",
 	"examples/README.md",
 	"examples/cross-model-handoff.md",
+	"examples/executable-agent-graph.md",
 	"examples/full-product-feature.md",
 	"examples/graph-engineering-feature.json",
 	"examples/graph-engineering-feature.md",
@@ -80,15 +91,36 @@ const requiredFiles = [
 	"examples/quick-bug-fix.md",
 	"gemini-extension.json",
 	"package.json",
+	"scripts/check_eval_results.py",
+	"scripts/check_eval_results_tests.py",
+	"scripts/generate-sbom.mjs",
+	"scripts/generate-sbom-tests.mjs",
+	"scripts/launcher_tests.mjs",
+	"scripts/verify-package.mjs",
 	"skills/best-in-code/SKILL.md",
 	"skills/best-in-code/assets/templates/LOOP-CONTRACT.json",
+	"skills/best-in-code/assets/templates/RUN-CONTRACT.json",
+	"skills/best-in-code/assets/templates/ADAPTER-ARGV.json",
 	"skills/best-in-code/assets/templates/TASK-GRAPH.json",
+	"skills/best-in-code/assets/templates/CONTEXT-MANIFEST.json",
+	"skills/best-in-code/assets/templates/TOOL-REGISTRY.json",
+	"skills/best-in-code/assets/evals/BEHAVIOR-SUITE.json",
+	"skills/best-in-code/references/context-compiler.md",
+	"skills/best-in-code/references/eval-runtime.md",
+	"skills/best-in-code/references/execution-runtime.md",
 	"skills/best-in-code/references/execution-isolation.md",
 	"skills/best-in-code/references/graph-engineering.md",
 	"skills/best-in-code/references/graph-runtime.md",
 	"skills/best-in-code/references/loop-engineering.md",
 	"skills/best-in-code/references/loop-runtime.md",
 	"skills/best-in-code/scripts/bounded_json.py",
+	"skills/best-in-code/scripts/context_compiler.py",
+	"skills/best-in-code/scripts/context_eval_trace_tests.py",
+	"skills/best-in-code/scripts/eval_matrix.py",
+	"skills/best-in-code/scripts/execution_kernel.py",
+	"skills/best-in-code/scripts/execution_runtime_tests.py",
+	"skills/best-in-code/scripts/reference_adapter.py",
+	"skills/best-in-code/scripts/trace_ops.py",
 	"skills/best-in-code/scripts/loop_tests.py",
 	"skills/best-in-code/scripts/loop_runtime.py",
 	"skills/best-in-code/scripts/loop_runtime_tests.py",
@@ -117,11 +149,19 @@ for (const prefix of requiredPrefixes) {
 	}
 }
 
+const packagedScripts = new Set([
+	"scripts/check_eval_results.py",
+	"scripts/check_eval_results_tests.py",
+	"scripts/generate-sbom.mjs",
+	"scripts/generate-sbom-tests.mjs",
+	"scripts/launcher_tests.mjs",
+	"scripts/verify-package.mjs",
+]);
 const forbidden = [...files].filter((path) =>
 	path.startsWith(".git/") ||
 	path.startsWith(".github/") ||
 	path.startsWith("dist/") ||
-	path.startsWith("scripts/") ||
+	(path.startsWith("scripts/") && !packagedScripts.has(path)) ||
 	path.includes("/__pycache__/") ||
 	path.endsWith(".pyc") ||
 	/(^|\/)(\.env|\.npmrc|[^/]+\.(key|pem|p12))$/i.test(path)

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.6.0 — executable graph, compiled context, and behavioral evidence
+
+### Added
+
+- A provider-neutral execution kernel that runs the reviewed role graph through a bounded JSONL adapter while enforcing Project/Run/runtime binding, model profiles, exact tool scopes, registered verifier argv, step/token/cost/external-call/trace budgets, child capability containment, cooperative cancellation, and deterministic single-owner execution.
+- Durable human approval receipts bound to the exact project, run, agent, tool call, action, request bytes, artifact digest, idempotency key, actor, decision, and expiry; modified receipts fail closed.
+- Crash-aware execution state: model calls are committed before dispatch, atomic writes recover only by exact content digest, and indeterminate command execution stops rather than replaying blindly.
+- A provenance-rich context compiler with content budgets, explicit/symbol/task selection, bounded Git evidence, dirty-source-aware cache keys, trust labels, and prompt-injection quarantine.
+- A closed tool-registry validator covering JSON schemas, scopes, effects, approval, output/pagination/digest limits, idempotency, and redacted telemetry.
+- A full/single-owner/ablation behavioral evaluator with trials, bounded concurrency, exact argv runners, local fixtures, external-runner skip policy, and task/policy/tool/context plus latency/token/cache/cost/retry metrics.
+- One shared canonical trace format with validation, timeline/inspection, secret/PII redaction and chain resealing, plus evidence-only dry-run replay.
+- A reusable eight-role run-contract template (including conditional Business Analyst), Sol/Terra/Luna-style portable model profiles, deterministic protocol adapter, executable example, integration/tamper tests, and direct CLI commands.
+- Release security policy, Dependabot, CodeQL, generated SPDX SBOM, package/SBOM attestations, and checksum coverage for both release assets.
+
+### Changed
+
+- Runtime health now recomputes every pinned source byte and rejects digest drift instead of checking only manifest syntax.
+- README, skill routing, package allowlists, CI, release guidance, and provider manifests now cover executable graphs, context compilation, behavior matrices, and trace evidence.
+- The executable kernel remains opt-in: quick work and hosts with stronger trusted orchestration keep the lighter labeled-pass workflow.
+
 ## 0.5.0 — bounded Graph and Loop Engineering
 
 ### Added
