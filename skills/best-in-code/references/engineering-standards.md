@@ -1,11 +1,11 @@
 # Engineering Standards
 
-Apply these standards before implementation and review. Repository instructions and enforced toolchains remain authoritative; conflicts that would require a broad migration go to a human decision gate.
+Use this reference for nontrivial implementation or review decisions. Repository instructions and enforced toolchains remain authoritative; resolve material conflicts before a broad migration.
 
 ## Non-negotiable behavior
 
 - Do not guess material requirements, credentials, production state, schema semantics, or external side effects. Investigate first; if uncertainty remains and changes the outcome, ask the human.
-- Keep the codebase internally consistent. Inspect nearby patterns, module boundaries, naming, formatter, linter, tests, and error-handling conventions before editing.
+- Keep the codebase internally consistent. Inspect affected code and nearby conventions as needed; small edits do not require a full repository or tooling survey.
 - Prefer the smallest coherent change. Avoid unrelated cleanup, speculative flexibility, silent contract changes, and duplicated implementations.
 - Use names that communicate domain meaning and intent. Avoid cryptic abbreviations, generic buckets such as `data` or `utils`, and misleading booleans.
 - Centralize a constant, type, validation rule, configuration value, or helper when it represents one genuinely shared concept. Do not create a global dumping ground or abstract one-off behavior merely to reduce line count.
@@ -24,7 +24,8 @@ Do not insert tabs where the format forbids them or where doing so breaks the en
 - Define error ownership and propagation deliberately; do not swallow failures or leak sensitive details.
 - Preserve public API, schema, stored-data, and configuration compatibility unless a breaking change is approved.
 - Consider empty state, partial failure, retry, cancellation, timeout, cleanup, idempotency, ordering, and concurrency when relevant.
-- Add or update focused tests for changed behavior. A bug fix should include a regression test when practical.
+- Select verification for changed behavior and risk. Add regression coverage for a bug when practical; a reversible copy or documentation edit generally needs inspection, not a new behavioral test.
+- After a check passes, repeat or broaden it only for new changes, failures, repository requirements, or unresolved concerns.
 - Keep generated files, lockfiles, migrations, snapshots, and documentation aligned with the source change when they are genuinely affected.
 
 ## Review lenses

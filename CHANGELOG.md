@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.7.0 — strict Linux verifier isolation, a real Anthropic adapter, and host-enforced Claude Code boundaries
+
+Run-contract `schema_version` 2 and adapter protocol 2 are breaking for external adapters: a v2 contract sends protocol-2 requests, and a v2 response must use exactly the legacy or the complete cache-telemetry usage shape. Schema-1 contracts keep protocol 1.
+
+### Added
+
+- Run-contract schema v2 with `verifier_isolation` (`required` by default). Windows keeps the suspended-start no-breakaway Job Object; Linux now has a real strict backend that launches each verifier as PID 1 of a fresh user/PID namespace (`unshare --fork --kill-child --map-current-user`), probed once per run so an unavailable namespace fails closed with its reason instead of silently degrading. A `setsid()` descendant cannot outlive the namespace; the integration suite proves both the contained and the fail-closed paths.
+- `anthropic_adapter.py`: a dependency-free Claude Messages API adapter for the execution kernel, with an `ANTHROPIC-ADAPTER.json` template binding every template `model_profile` to a model, effort, replay budget, retries, and price table. It maps kernel tools to closed Anthropic tool schemas, replays a bounded transcript through `adapter_state`, normalizes cache counters into canonical `input_tokens`, never persists the credential, and fails closed on refusals, `max_tokens` cuts, undeclared tools, unpriced models, or non-retryable API errors. An offline suite drives the full kernel → adapter → loopback fake API → tool path.
+- Adapter protocol v2 cache telemetry: extended usage receipts with disjoint cache read/creation counters, `harness trace usage` aggregation with `UNKNOWN`/`REPORTED`/`UNAVAILABLE` observations, and evaluation-matrix coverage metrics.
+- Digest-bound local verifier evidence: bounded error-and-tail previews for the model, full captured bytes under `.harness/.cache/execution-runs/<run>/outputs/`, a 16 MiB per-run evidence budget, and fail-closed resume on altered or missing evidence.
+- Context-boundary routing contract: every routed pass declares `same-session` or `isolated-child` with a matching context-isolation label, transfer mode, and advisory cache observation; router fixtures R27–R29 and the portability validator reject crosswise tuples.
+- Claude Code plugin surface: read-only `harness-qa` and `harness-researcher` subagents, a PreToolUse hook that refuses direct edits to canonical memory, identity, generated views, the pinned runtime, archives, and ledgers, and a SessionStart hook that reports the active run. A new portability check group validates agents, hooks, and the adapter template.
+- CI now runs the launcher suite and the adapter suite, and the workflow policy fails when `ci.yml` omits any `test:*` script.
+- `.gitattributes` normalizes line endings to LF so digests and packed archives match across platforms.
+
+### Changed
+
+- `SKILL.md` is condensed into route selection, operating boundaries, a load-by-need reference table, and verification/handoff rules; the long orchestration narrative moved into the referenced modules. Its description names the review, resume, init, and memory triggers explicitly.
+- `AGENTS.md.fragment` is shorter and defers to the pinned runtime skill.
+- `CONFIG.md`, `WORKFLOW.md`, `ROLE-PACKET.md`, and `EVALUATION.md` templates record the fixed primary model, context boundary, cache observation, and completion rules.
+
 ## 0.6.0 — executable graph, compiled context, and behavioral evidence
 
 ### Added

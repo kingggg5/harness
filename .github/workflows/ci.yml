@@ -27,6 +27,8 @@ jobs:
           node-version: "20"
       - name: Portability validation
         run: python skills/best-in-code/scripts/validate_portability.py
+      - name: Launcher regression suite
+        run: node scripts/launcher_tests.mjs
       - name: CI policy regression suite
         run: python scripts/check_eval_results_tests.py
       - name: Workflow supply-chain policy
@@ -35,6 +37,8 @@ jobs:
         run: python skills/best-in-code/scripts/doctor_runtime_tests.py
       - name: Executable agent-graph integration suite
         run: python skills/best-in-code/scripts/execution_runtime_tests.py
+      - name: Anthropic adapter integration suite
+        run: python skills/best-in-code/scripts/anthropic_adapter_tests.py
       - name: Context, tool-contract, eval, and trace suite
         run: python skills/best-in-code/scripts/context_eval_trace_tests.py
       - name: Loop-contract invariant suite

@@ -1,6 +1,6 @@
 {
   "name": "harness",
-  "version": "0.6.0+codex.20260901100338",
+  "version": "0.7.0+codex.20260911092453",
   "description": "A provider-neutral software-delivery harness with executable agent graphs, bounded context, durable memory, behavioral evals, trusted tool policy, and human gates.",
   "author": {
     "name": "Local developer"

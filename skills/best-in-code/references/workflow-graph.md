@@ -83,7 +83,7 @@ Reject any other transition. A resume must restore exactly one `next_action`; if
 |---|---|---|
 | Project Manager | Scope, routing, state, ownership, gates, integration, memory, handoff | Sole shared-state writer |
 | Business Analyst (conditional pass) | Business outcome, actors, scope, rules, assumptions/questions, acceptance behavior, and shared vocabulary | Read-only; returns a requirement baseline and never invents stakeholder intent |
-| Planner / Architect | System map, contracts, tasks, dependencies, rollout, measurable DoD | Read-only until approval |
+| Planner / Architect | System map, contracts, tasks, dependencies, rollout, measurable DoD | Planning artifacts within authorized scope; material unresolved choices go to the human |
 | Researcher | Repository and external evidence, provenance, injection screening, unknowns | Read-only |
 | Product Designer | User outcome, flows, hierarchy, states, tokens, accessibility, motion and reference contract | Approved design scope |
 | Frontend Engineer | Client behavior, accessibility, responsive UI, data integration, frontend tests and budgets | Assigned client files |
@@ -107,3 +107,5 @@ Discovery stops after two consecutive cycles add no material evidence. The same 
 ## Checkpoint writes
 
 The Project Manager updates `STATE.json` and the current workflow only at intake, plan/gate, integration, verification, blocker, and completion. Use optimistic memory revisions from [memory-loop.md](memory-loop.md). Role agents return structured packets and do not concurrently edit `.harness/`.
+
+An existing approval satisfies its checkpoint while scope and material contracts remain unchanged. Apply [mode-routing.md](mode-routing.md) for authorization and completion: continue implementation and affected verification before the final acceptance handoff; do not manufacture another gate for ordinary repairs.

@@ -24,7 +24,7 @@ Before probing, record the compact contract in `WORKFLOW.md` and detailed lane e
 - maximum cycles, elapsed time, cost, and external calls;
 - plan-readiness and stop conditions.
 
-Local repository inspection and non-mutating deterministic diagnostics are allowed when safe. Profiling that executes untrusted code, fuzzing, DAST, load tests, production traffic, external targets, credentials, paid services, installations, and generated write artifacts require the normal human gate and an agreed safe scope.
+Local repository inspection and scoped deterministic diagnostics can proceed within the task's authorization. Disposable local reproduction fixtures and generated test artifacts do not need another approval when their scope and lack of production access are verified. Profiling untrusted code, fuzzing, DAST, load tests, production traffic, external targets, credentials, paid services, and installations require authorization covering the target and effects; reuse an existing approval when it already covers them.
 
 ## One cycle
 
@@ -35,7 +35,7 @@ Local repository inspection and non-mutating deterministic diagnostics are allow
 5. **Classify:** Record the command or method, result, evidence location, confidence change, limitations, and provenance. Deterministic output remains separate from agent interpretation.
 6. **Decide:** Finish as `READY_FOR_PLAN`, run one new targeted cycle, ask the human a bundled material question, or stop with `BLOCKED`, `BUDGET_EXHAUSTED`, or `NO_PROGRESS`.
 
-Two consecutive cycles that add no material evidence are `NO_PROGRESS`; stop and revisit the model or ask for missing context. Do not repeat an unchanged command without a changed hypothesis. Never weaken a test, scanner, budget, SLO, or invariant to produce a ready state.
+Two consecutive cycles that add no material evidence are `NO_PROGRESS`; stop that investigation loop, reconsider the hypothesis, or ask for missing context. Preserve the primary model and effort unless the user requests a change. Do not repeat an unchanged command without a changed hypothesis. Never weaken a test, scanner, budget, SLO, or invariant to produce a ready state.
 
 ## Plan-ready packet
 

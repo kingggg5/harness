@@ -57,6 +57,9 @@ METRIC_FIELDS = {
 	"latency_ms", "input_tokens", "output_tokens", "cached_tokens",
 	"cost_microusd", "retries", "context_bytes", "max_tool_output_bytes",
 }
+METRIC_EXTENDED_FIELDS = METRIC_FIELDS | {
+	"cache_read_input_tokens", "cache_creation_input_tokens",
+}
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 LABEL_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$")
 ENV_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,127}$")
@@ -104,6 +107,51 @@ def _bounded_integer(value: Any, label: str, *, maximum: int = MAX_METRIC) -> in
 	if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= maximum:
 		raise EvalError(f"{label} must be an integer from 0 to {maximum}")
 	return value
+
+
+def _validate_metrics(value: Any, label: str) -> tuple[dict[str, int], bool]:
+	"""Accept the historical metric shape or a complete provider cache receipt."""
+	if not isinstance(value, dict):
+		raise EvalError(f"{label} must be an object")
+	fields = set(value)
+	if fields == METRIC_FIELDS:
+		extended = False
+	elif fields == METRIC_EXTENDED_FIELDS:
+		extended = True
+	else:
+		raise EvalError(
+			f"{label} must use exactly the legacy metrics shape or the complete cache-telemetry extension"
+		)
+	metrics = {field: _bounded_integer(value[field], f"{label}.{field}") for field in fields}
+	if extended:
+		if metrics["cached_tokens"] != metrics["cache_read_input_tokens"]:
+			raise EvalError(f"{label}.cached_tokens must equal cache_read_input_tokens")
+		if metrics["cache_read_input_tokens"] + metrics["cache_creation_input_tokens"] > metrics["input_tokens"]:
+			raise EvalError(f"{label} cache input counters cannot exceed canonical input_tokens")
+	return metrics, extended
+
+
+def derive_cache_telemetry(metrics: dict[str, Any]) -> dict[str, Any]:
+	"""Return cache data only where a full, provider-compatible receipt exists."""
+	validated_metrics, extended = _validate_metrics(metrics, "metrics")
+	if not extended:
+		return {
+			"observation": "UNAVAILABLE",
+			"full_coverage": False,
+			"cache_read_input_tokens": None,
+			"cache_creation_input_tokens": None,
+			"cache_read_share_ppm": None,
+		}
+	cache_read = validated_metrics["cache_read_input_tokens"]
+	cache_creation = validated_metrics["cache_creation_input_tokens"]
+	input_tokens = validated_metrics["input_tokens"]
+	return {
+		"observation": "REPORTED",
+		"full_coverage": True,
+		"cache_read_input_tokens": cache_read,
+		"cache_creation_input_tokens": cache_creation,
+		"cache_read_share_ppm": (cache_read * 1_000_000) // input_tokens if input_tokens > 0 else None,
+	}
 
 
 def _bounded_labels(value: Any, label: str) -> list[str]:
@@ -169,9 +217,7 @@ def validate_observed(value: Any, label: str = "observed") -> dict[str, Any]:
 			raise EvalError(f"{label}.{field} must be boolean")
 	for field in ("tools", "events", "actions", "retained_markers"):
 		_bounded_labels(observed[field], f"{label}.{field}")
-	metrics = _closed_object(observed["metrics"], METRIC_FIELDS, f"{label}.metrics")
-	for field in METRIC_FIELDS:
-		_bounded_integer(metrics[field], f"{label}.metrics.{field}")
+	_validate_metrics(observed["metrics"], f"{label}.metrics")
 	return observed
 
 
@@ -412,6 +458,7 @@ def score_observed(observed: dict[str, Any], expectations: dict[str, Any], wall_
 			**metrics,
 			"evaluator_wall_latency_ms": wall_latency_ms,
 			"total_tokens": metrics["input_tokens"] + metrics["output_tokens"],
+			"cache_telemetry": derive_cache_telemetry(metrics),
 		},
 	}
 
@@ -492,6 +539,29 @@ def _aggregate_variant(results: list[dict[str, Any]], variant: str) -> dict[str,
 	metrics = [item["metrics"] for item in scored if item.get("metrics") is not None]
 	def metric_values(name: str) -> list[int]:
 		return [metric[name] for metric in metrics if name in metric and isinstance(metric[name], int)]
+	cache_receipts = [
+		metric["cache_telemetry"]
+		for metric in metrics
+		if isinstance(metric.get("cache_telemetry"), dict)
+		and metric["cache_telemetry"].get("observation") == "REPORTED"
+	]
+	cache_complete = bool(metrics) and len(cache_receipts) == len(metrics)
+	cache_read_input_tokens = (
+		sum(int(receipt["cache_read_input_tokens"]) for receipt in cache_receipts)
+		if cache_complete
+		else None
+	)
+	cache_creation_input_tokens = (
+		sum(int(receipt["cache_creation_input_tokens"]) for receipt in cache_receipts)
+		if cache_complete
+		else None
+	)
+	input_token_total = sum(metric_values("input_tokens"))
+	cache_read_share_ppm = (
+		(cache_read_input_tokens * 1_000_000) // input_token_total
+		if cache_complete and input_token_total > 0 and cache_read_input_tokens is not None
+		else None
+	)
 	return {
 		"total": len(items),
 		"passed": sum(item["status"] == "PASSED" for item in items),
@@ -509,6 +579,15 @@ def _aggregate_variant(results: list[dict[str, Any]], variant: str) -> dict[str,
 				"cached_tokens", "total_tokens", "cost_microusd", "retries", "context_bytes",
 				"max_tool_output_bytes",
 			)
+		},
+		"cache_telemetry": {
+			"observation": "REPORTED" if cache_complete else "UNAVAILABLE",
+			"full_coverage": cache_complete,
+			"reported_results": len(cache_receipts),
+			"unavailable_results": len(metrics) - len(cache_receipts),
+			"cache_read_input_tokens": cache_read_input_tokens,
+			"cache_creation_input_tokens": cache_creation_input_tokens,
+			"cache_read_share_ppm": cache_read_share_ppm,
 		},
 	}
 

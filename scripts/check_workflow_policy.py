@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -21,8 +22,34 @@ def require(content: str, pattern: str, message: str, errors: list[str]) -> None
 		errors.append(message)
 
 
+def check_ci_covers_every_test_script(errors: list[str]) -> None:
+	"""Keep ci.yml and the npm test chain from drifting apart.
+
+	The CI workflow lists its steps explicitly so the memory-eval policy step can
+	differ from ``npm test``. Every ``test:*`` script must therefore appear in the
+	workflow, either as its underlying script path or as ``npm run <name>``.
+	"""
+	ci_path = WORKFLOW_ROOT / "ci.yml"
+	if not ci_path.is_file():
+		errors.append("ci.yml is missing")
+		return
+	ci = ci_path.read_text(encoding="utf-8")
+	scripts = json.loads((ROOT / "package.json").read_text(encoding="utf-8")).get("scripts", {})
+	for name, command in sorted(scripts.items()):
+		if not name.startswith("test:") or not isinstance(command, str):
+			continue
+		script_paths = re.findall(r"(?:scripts|skills)/[A-Za-z0-9_./-]+\.(?:py|mjs|js)", command)
+		if not script_paths:
+			errors.append(f"package.json script {name} does not reference a test script file")
+			continue
+		if f"npm run {name}" in ci or all(path in ci for path in script_paths):
+			continue
+		errors.append(f"ci.yml does not run npm script {name} ({', '.join(script_paths)})")
+
+
 def main() -> int:
 	errors: list[str] = []
+	check_ci_covers_every_test_script(errors)
 	paths = sorted(WORKFLOW_ROOT.glob("*.yml")) + sorted(WORKFLOW_ROOT.glob("*.yaml"))
 	if not paths:
 		errors.append("no GitHub workflows found")
@@ -51,7 +78,7 @@ def main() -> int:
 		for error in errors:
 			print(f"[FAIL] {error}")
 		return 1
-	print(f"Workflow policy passed: {len(paths)} workflows; actions commit-pinned; release SBOM and attestations enforced.")
+	print(f"Workflow policy passed: {len(paths)} workflows; actions commit-pinned; CI covers every npm test script; release SBOM and attestations enforced.")
 	return 0
 
 

@@ -30,6 +30,7 @@ MAX_PAYLOAD_DEPTH = 8
 MAX_PAYLOAD_ITEMS = 2_048
 MAX_STRING_BYTES = 16 * 1024
 MAX_ERRORS = 64
+MAX_USAGE_VALUE = 10**15
 GENESIS_HASH = "0" * 64
 EVENT_FIELDS = {
 	"schema_version", "trace_id", "sequence", "timestamp", "event", "actor",
@@ -40,6 +41,11 @@ TRACE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 EVENT_PATTERN = re.compile(r"^[a-z][a-z0-9_.-]{0,63}$")
 ACTOR_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$")
 HASH_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+MODEL_USAGE_LEGACY_FIELDS = {"input_tokens", "output_tokens", "cost_microusd"}
+MODEL_USAGE_EXTENDED_FIELDS = {
+	"input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens",
+	"output_tokens", "cost_microusd",
+}
 SENSITIVE_KEY_PATTERN = re.compile(
 	r"(?:authorization|cookie|credential|password|passwd|private[_-]?key|secret|session|token|api[_-]?key)",
 	re.IGNORECASE,
@@ -302,6 +308,109 @@ def require_trace(path: Path) -> list[dict[str, Any]]:
 	return events
 
 
+def _validate_usage_integer(value: Any, label: str) -> int:
+	if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= MAX_USAGE_VALUE:
+		raise TraceError(f"{label} must be a bounded non-negative integer")
+	return value
+
+
+def _validate_model_usage(value: Any, label: str) -> tuple[dict[str, int], bool]:
+	"""Validate one provider usage receipt without guessing omitted cache fields."""
+	if not isinstance(value, dict):
+		raise TraceError(f"{label} must be an object")
+	fields = set(value)
+	if fields == MODEL_USAGE_LEGACY_FIELDS:
+		extended = False
+	elif fields == MODEL_USAGE_EXTENDED_FIELDS:
+		extended = True
+	else:
+		raise TraceError(
+			f"{label} must use exactly the legacy or complete cache-telemetry usage shape"
+		)
+	usage = {field: _validate_usage_integer(value[field], f"{label}.{field}") for field in fields}
+	if extended and usage["cache_read_input_tokens"] + usage["cache_creation_input_tokens"] > usage["input_tokens"]:
+		raise TraceError(f"{label} cache input counters cannot exceed canonical input_tokens")
+	return usage, extended
+
+
+def summarize_usage(events: list[dict[str, Any]]) -> dict[str, Any]:
+	"""Summarize signed model usage receipts without inventing cache telemetry.
+
+	Old traces can lack a usage receipt. They remain inspectable, but cache totals
+	are reported only when every model response carries the complete extended
+	shape. A present-but-malformed receipt fails closed instead of being ignored.
+	"""
+	model_response_events = 0
+	usage_receipts = 0
+	legacy_usage_receipts = 0
+	extended_usage_receipts = 0
+	input_tokens = 0
+	output_tokens = 0
+	cost_microusd = 0
+	cache_read_input_tokens = 0
+	cache_creation_input_tokens = 0
+	for event in events:
+		if event.get("event") != "model_responded":
+			continue
+		model_response_events += 1
+		payload = event.get("payload")
+		data = payload.get("data") if isinstance(payload, dict) else None
+		if not isinstance(data, dict) or "usage" not in data:
+			continue
+		sequence = event.get("sequence", "?")
+		usage, extended = _validate_model_usage(data["usage"], f"model_responded sequence {sequence}.payload.data.usage")
+		usage_receipts += 1
+		input_tokens += usage["input_tokens"]
+		output_tokens += usage["output_tokens"]
+		cost_microusd += usage["cost_microusd"]
+		if extended:
+			extended_usage_receipts += 1
+			cache_read_input_tokens += usage["cache_read_input_tokens"]
+			cache_creation_input_tokens += usage["cache_creation_input_tokens"]
+		else:
+			legacy_usage_receipts += 1
+	missing_usage_receipts = model_response_events - usage_receipts
+	usage_complete = model_response_events > 0 and missing_usage_receipts == 0
+	cache_complete = usage_complete and extended_usage_receipts == model_response_events
+	if missing_usage_receipts or model_response_events == 0:
+		cache_observation = "UNKNOWN"
+	elif cache_complete:
+		cache_observation = "REPORTED"
+	else:
+		# Every model response has a valid receipt, but at least one provider
+		# could not expose the complete cache-counter pair.
+		cache_observation = "UNAVAILABLE"
+	cache_read_share_ppm = (
+		(cache_read_input_tokens * 1_000_000) // input_tokens
+		if cache_complete and input_tokens > 0
+		else None
+	)
+	return {
+		"model_response_events": model_response_events,
+		"usage_receipts": usage_receipts,
+		"usage_coverage": {
+			"complete": usage_complete,
+			"missing_turns": missing_usage_receipts,
+		},
+		"cache_telemetry": {
+			"observation": cache_observation,
+			"full_coverage": cache_complete,
+			"reported_turns": extended_usage_receipts,
+			"legacy_turns": legacy_usage_receipts,
+			"unavailable_turns": legacy_usage_receipts,
+			"unknown_turns": missing_usage_receipts,
+		},
+		"totals": {
+			"input_tokens": input_tokens if usage_complete else None,
+			"output_tokens": output_tokens if usage_complete else None,
+			"cost_microusd": cost_microusd if usage_complete else None,
+			"cache_read_input_tokens": cache_read_input_tokens if cache_complete else None,
+			"cache_creation_input_tokens": cache_creation_input_tokens if cache_complete else None,
+			"cache_read_share_ppm": cache_read_share_ppm,
+		},
+	}
+
+
 def _safe_summary(payload: dict[str, Any]) -> dict[str, Any]:
 	redacted = redact_value(payload)
 	summary: dict[str, Any] = {}
@@ -415,7 +524,7 @@ def _bounded_int(value: str, low: int, high: int) -> int:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description="Operate on bounded hash-chained Harness JSONL traces")
 	subparsers = parser.add_subparsers(dest="command", required=True)
-	for name in ("validate", "timeline", "inspect", "redact", "replay"):
+	for name in ("validate", "timeline", "inspect", "redact", "replay", "usage"):
 		subparser = subparsers.add_parser(name)
 		subparser.add_argument("--trace", required=True, help="Path to the source JSONL trace")
 		subparser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
@@ -495,14 +604,28 @@ def main(argv: list[str] | None = None) -> int:
 				"head_hash": redacted_events[-1]["hash"],
 				"message": f"Wrote a redacted, re-chained trace to {output}.",
 			}
-		else:
+		elif args.command == "replay":
 			result = build_replay_plan(events, limit=args.limit)
+		else:
+			usage = summarize_usage(events)
+			result = {
+				"ok": True,
+				"trace": str(path),
+				"trace_id": events[0]["trace_id"],
+				"event_count": len(events),
+				**usage,
+				"message": (
+					f"Usage summary: {usage['usage_receipts']} receipt(s) across "
+					f"{usage['model_response_events']} model response event(s); "
+					f"cache telemetry is {usage['cache_telemetry']['observation']}."
+				),
+			}
 	except TraceError as exc:
 		result = {"ok": False, "trace": str(path), "errors": [str(exc)]}
 		_print_result(result, as_json=args.json)
 		return 1
 	_print_result(result, as_json=args.json)
-	if not args.json and args.command in {"timeline", "inspect", "replay"}:
+	if not args.json and args.command in {"timeline", "inspect", "replay", "usage"}:
 		print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
 	return 0
 

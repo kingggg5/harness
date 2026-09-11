@@ -19,6 +19,8 @@
 - Full: plan; conditional design; decision when material; acceptance for delivery
 - Review: findings handoff; no delivery Acceptance Gate
 - Design trigger: changed visual direction, flow/information architecture, design system, motion contract, or third-party assets
+- Existing approval: reuse within unchanged scope; new material decisions require covering authorization
+- Completion: finish authorized implementation and affected verification before final human acceptance
 
 ## Memory
 
@@ -33,10 +35,17 @@
 
 ## Model routing
 
-- Policy: adaptive when `models.select` is ready; current model otherwise
+- Policy: current-only; adaptive routing requires an explicit user request or approved model plan
 - User-pinned model/profile/effort wins: yes
-- Switch boundary: stable role/pass boundary only
-- Escalation order: fast → balanced → reasoning, only on evidence or changed risk
+- Primary model/effort: fixed per task; change only on explicit user request
+- Authorized switch boundary: stable role/pass boundary only
+- Mechanical delegation: authorized fast child for bounded work; primary model remains fixed
+- Context boundary default: same-session
+- Same-session rule: preserve confirmed actual model/effort for sequential non-independent work; never claim a cache hit
+- Isolated-child rule: use a bounded role packet for cross-model/provider, independent, concurrent, resumed, or narrowed-context work
+- Cache observation: UNKNOWN | REPORTED | UNAVAILABLE; advisory evidence only
+- Cache hit, pricing, and retention prediction: prohibited
+- Escalation: evidence-backed proposal; apply only within explicit model authorization
 - Full-chat cross-model handoff: prohibited
 
 | Profile | Intended work | Preferred backend/model | Default effort | Fallback |

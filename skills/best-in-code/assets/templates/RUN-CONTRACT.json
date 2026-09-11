@@ -1,10 +1,11 @@
 {
-	"schema_version": 1,
+	"schema_version": 2,
 	"contract_id": "best-in-code-default",
 	"project_id": "project-replace-me",
 	"run_id": "RUN-replace-me",
 	"task": "Replace this text with one bounded, testable outcome.",
 	"root_role": "project-manager",
+	"verifier_isolation": "required",
 	"budgets": {
 		"max_steps": 96,
 		"max_tokens": 500000,

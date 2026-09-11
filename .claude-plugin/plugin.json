@@ -2,7 +2,7 @@
 	"$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
 	"name": "harness",
 	"displayName": "Harness",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"description": "Provider-neutral software delivery with executable agent graphs, bounded context, scoped memory, behavioral evals, QA, and human gates.",
 	"author": {
 		"name": "Local developer"
@@ -18,5 +18,7 @@
 		"human-in-the-loop",
 		"qa"
 	],
-	"skills": "./skills/"
+	"skills": "./skills/",
+	"agents": "./agents/",
+	"hooks": "./hooks/hooks.json"
 }

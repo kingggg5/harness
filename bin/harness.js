@@ -61,7 +61,7 @@ Project lifecycle:
   context-build Compile bounded, provenance-rich task context
   tools-validate Validate a closed capability/tool registry
   eval-matrix Run full/single-owner/ablation behavior trials
-  trace       Validate, inspect, redact, or dry-run replay of a trace
+  trace       Validate, inspect, summarize usage, redact, or dry-run replay of a trace
 
 Memory operations (memory_ops.py):
   remember | correct | forget | recall | status | render

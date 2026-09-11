@@ -26,7 +26,7 @@ Harness depends on capabilities, not vendor or model names. At intake, record on
 | `requirements.spec` | Create or reconcile repository-native requirement/spec artifacts from an approved baseline. |
 | `evidence.static` / `evidence.runtime` | Produce deterministic static or runtime evidence. |
 
-Tool and skill names are backend bindings. Examples include Context7 for `docs.versioned`, GitHub for `repository.remote`, Exa or another search service for `web.search`, Pinterest/domain-filtered image search for `image.search`, MemPalace for `memory.semantic`, OpenSpec or GitHub Spec Kit for `requirements.spec`, and ShipProof for `evidence.static`. Never require or claim a named backend when only the capability matters.
+Tool and skill names are backend bindings. Examples include the Claude Code plugin subagents `harness-qa` and `harness-researcher` for `agents.isolated`, Context7 for `docs.versioned`, GitHub for `repository.remote`, Exa or another search service for `web.search`, Pinterest/domain-filtered image search for `image.search`, MemPalace for `memory.semantic`, OpenSpec or GitHub Spec Kit for `requirements.spec`, and ShipProof for `evidence.static`. Never require or claim a named backend when only the capability matters.
 
 ## Fallback order
 
@@ -37,7 +37,7 @@ Tool and skill names are backend bindings. Examples include Context7 for `docs.v
 | Long-running supervision | Event-driven supervisor with status/cancel/stall detection → one bounded interactive iteration → handoff |
 | Scheduled/event loop | Verified scheduler/subscription with dedupe and cancellation → one bounded interactive iteration → reusable handoff command |
 | Durable graph receipts | Bundled local Git-backed ledger → Project Manager records the same evidence manually in `WORKFLOW.md` → static graph only |
-| Model selection | Exact user-pinned available model → verified profile binding → current model with supported effort → labeled same-model pass |
+| Model selection | Keep current model/effort; select or change only within the user's explicit model authorization; never silently replace an explicitly required model |
 | Current documentation | Versioned-doc tool → official versioned docs → official repository/tag → installed local source → ask human |
 | Remote repository | Connector → local Git → official web source → user-provided evidence |
 | Browser/UI verification | Browser automation → repository E2E → manual screenshot/walkthrough evidence → `Not verified` |

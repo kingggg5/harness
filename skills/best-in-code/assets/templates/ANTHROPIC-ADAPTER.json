@@ -1,0 +1,26 @@
+{
+	"schema_version": 1,
+	"notes": "Config for anthropic_adapter.py. Copy to .harness/ANTHROPIC-ADAPTER.json and edit the copy. Credentials never belong here: the kernel forwards ANTHROPIC_API_KEY only when adapter.environment_allowlist in RUN-CONTRACT.json names it. Prices are microUSD per one million tokens and were verified on 2026-06-24; an unknown model with no price fails closed.",
+	"default_model": "claude-opus-5",
+	"profiles": {
+		"gpt-sol-orchestrate-review": {"model": "claude-opus-5", "effort": "high"},
+		"gpt-sol-plan": {"model": "claude-opus-5", "effort": "high"},
+		"gpt-sol-test-review": {"model": "claude-opus-5", "effort": "high"},
+		"gpt-terra-build": {"model": "claude-opus-5", "effort": "medium"},
+		"gpt-terra-design": {"model": "claude-opus-5", "effort": "medium"},
+		"gpt-luna-analysis": {"model": "claude-opus-5", "effort": "low"},
+		"gpt-luna-research": {"model": "claude-opus-5", "effort": "low"}
+	},
+	"max_tokens": 16000,
+	"timeout_seconds": 240,
+	"max_retries": 2,
+	"max_state_bytes": 200000,
+	"max_tool_result_chars": 24000,
+	"server_side_fallbacks": false,
+	"pricing_verified": "2026-06-24",
+	"pricing_microusd_per_million_tokens": {
+		"claude-opus-5": {"input": 5000000, "output": 25000000, "cache_read": 500000, "cache_write": 6250000},
+		"claude-sonnet-5": {"input": 2000000, "output": 10000000, "cache_read": 200000, "cache_write": 2500000},
+		"claude-haiku-4-5": {"input": 1000000, "output": 5000000, "cache_read": 100000, "cache_write": 1250000}
+	}
+}

@@ -45,7 +45,7 @@ The receipt is tied to the exact artifact and action. Editing the receipt, contr
 
 ## 3. Replace the demo adapter
 
-A real adapter maps portable `model_profile` values to models available in its provider and returns the closed response documented in the [execution runtime guide](../skills/best-in-code/references/execution-runtime.md). Keep it in a reviewed external file or package and point `ADAPTER-ARGV.json` to an exact argv array. Use `@harness-python` as the first item for a Python adapter, or an absolute executable path for another runtime; raw PATH names such as `python` or `node` are intentionally rejected. Do not add shell strings, let repository content choose a model/tool, or pass the whole environment by default.
+The bundled `anthropic_adapter.py` is a ready real adapter: copy `.harness/runtime/assets/templates/ANTHROPIC-ADAPTER.json` next to the contract, add `ANTHROPIC_API_KEY` to `adapter.environment_allowlist`, and set `ADAPTER-ARGV.json` to `["@harness-python", "-B", ".harness/runtime/scripts/anthropic_adapter.py", "--config", ".harness/ANTHROPIC-ADAPTER.json"]`. Any other real adapter maps portable `model_profile` values to models available in its provider and returns the closed response documented in the [execution runtime guide](../skills/best-in-code/references/execution-runtime.md). Keep it in a reviewed external file or package and point `ADAPTER-ARGV.json` to an exact argv array. Use `@harness-python` as the first item for a Python adapter, or an absolute executable path for another runtime; raw PATH names such as `python` or `node` are intentionally rejected. Do not add shell strings, let repository content choose a model/tool, or pass the whole environment by default.
 
 Suggested portable mapping:
 

@@ -21,6 +21,7 @@ import os
 import queue
 import re
 import secrets
+import signal
 import stat
 import subprocess
 import sys
@@ -48,8 +49,11 @@ from memory_ops import (
 )
 
 
-PROTOCOL_VERSION = 1
-CONTRACT_SCHEMA = 1
+LEGACY_PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
+SUPPORTED_PROTOCOL_VERSIONS = {LEGACY_PROTOCOL_VERSION, PROTOCOL_VERSION}
+LEGACY_CONTRACT_SCHEMA = 1
+CONTRACT_SCHEMA = 2
 STATE_SCHEMA = 1
 RECEIPT_SCHEMA = 1
 TRACE_SCHEMA = 1
@@ -79,6 +83,20 @@ MAX_VERIFIERS = 128
 MAX_TOOLS = 8
 MAX_RECEIPTS = 1024
 MAX_USAGE_VALUE = 10**15
+MAX_STATE_TOKENS = MAX_USAGE_VALUE * MAX_EXTERNAL_CALLS * 2
+MAX_STATE_COST_MICROUSD = MAX_USAGE_VALUE * MAX_EXTERNAL_CALLS
+MAX_VERIFIER_EVIDENCE_BYTES = MAX_TRACE_BYTES
+VERIFIER_PREVIEW_TAIL_LINES = 30
+VERIFIER_PREVIEW_MAX_ERROR_LINES = 64
+VERIFIER_PREVIEW_MAX_BYTES = 16 * 1024
+VERIFIER_PREVIEW_LINE_BYTES = 1024
+VERIFIER_MIN_EVIDENCE_BYTES = 256
+INTERNAL_VERIFIER_EVIDENCE_FIELD = "_harness_verifier_evidence"
+WINDOWS_CREATE_SUSPENDED = 0x00000004
+LINUX_UNSHARE_CANDIDATES = ("/usr/bin/unshare", "/bin/unshare")
+POSIX_CONTAINMENT_PROBE = "import os, sys; sys.stdout.write(f'{os.getpid()},{os.getuid()},{os.getgid()}')"
+_POSIX_CONTAINMENT_BACKEND: dict[str, Any] | None = None
+_POSIX_CONTAINMENT_LOCK = threading.Lock()
 TOOL_IDS = {
 	"workspace.read", "workspace.write", "verifier.run", "human.request",
 	"agent.delegate",
@@ -101,15 +119,21 @@ REQUEST_PATTERN = re.compile(r"^APR-[0-9a-f]{24}$")
 RECEIPT_PATTERN = re.compile(r"^REC-[0-9a-f]{24}$")
 AGENT_PATTERN = re.compile(r"^agent-[0-9]{4}$")
 TOOL_CALL_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+VERIFIER_ERROR_LINE_PATTERN = re.compile(
+	r"\b(?:error|fatal|exception|traceback|panic|assert(?:ion)?|fail(?:ed|ure)?)\b",
+	re.IGNORECASE,
+)
 BASE_ENVIRONMENT = {
 	"COMSPEC", "LANG", "LC_ALL", "PATH", "PATHEXT", "PYTHONIOENCODING", "PYTHONDONTWRITEBYTECODE",
 	"SYSTEMROOT", "TEMP", "TMP", "WINDIR",
 }
 
-CONTRACT_FIELDS = {
+CONTRACT_FIELDS_V1 = {
 	"schema_version", "contract_id", "project_id", "run_id", "task",
 	"root_role", "budgets", "adapter", "tools", "verifiers", "delegation",
 }
+CONTRACT_FIELDS_V2 = {*CONTRACT_FIELDS_V1, "verifier_isolation"}
+VERIFIER_ISOLATION_POLICIES = {"required", "best-effort"}
 BUDGET_FIELDS = {
 	"max_steps", "max_tokens", "max_cost_microusd", "max_external_calls",
 	"max_trace_events", "approval_ttl_seconds",
@@ -137,12 +161,20 @@ STATE_FIELDS = {
 	"trace_head", "state_digest", "created_at", "updated_at",
 }
 USAGE_FIELDS = {"steps", "tokens", "cost_microusd", "external_calls", "tool_calls"}
+STATE_USAGE_MAXIMUMS = {
+	"steps": MAX_EXTERNAL_CALLS,
+	"tokens": MAX_STATE_TOKENS,
+	"cost_microusd": MAX_STATE_COST_MICROUSD,
+	"external_calls": MAX_EXTERNAL_CALLS,
+	"tool_calls": MAX_EXTERNAL_CALLS * MAX_TOOL_CALLS_PER_STEP,
+}
 AGENT_FIELDS = {
 	"agent_id", "role", "parent_agent_id", "task", "status", "step_count",
 	"allowed_tools", "adapter_state", "tool_results", "pending_tool_calls",
 	"pending_tool_index", "pending_results", "final_message",
 }
 COMPLETED_CALL_FIELDS = {"request_digest", "result"}
+COMPLETED_CALL_WITH_EVIDENCE_FIELDS = {"request_digest", "result", "evidence"}
 DELEGATION_RECORD_FIELDS = {
 	"parent_agent_id", "child_agent_id", "role", "task_digest", "status",
 }
@@ -177,7 +209,12 @@ MODEL_RESPONSE_FIELDS = {
 	"type", "protocol_version", "request_id", "finish_reason", "message",
 	"tool_calls", "adapter_state", "usage",
 }
-MODEL_USAGE_FIELDS = {"input_tokens", "output_tokens", "cost_microusd"}
+MODEL_USAGE_LEGACY_FIELDS = {"input_tokens", "output_tokens", "cost_microusd"}
+MODEL_USAGE_EXTENDED_FIELDS = {
+	"input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens",
+	"output_tokens", "cost_microusd",
+}
+VERIFIER_EVIDENCE_FIELDS = {"path", "bytes", "digest", "complete"}
 MODEL_TOOL_CALL_FIELDS = {"id", "tool", "arguments"}
 CANCEL_FIELDS = {
 	"schema_version", "project_id", "run_id", "contract_digest", "reason",
@@ -372,9 +409,17 @@ def resolve_execution_argv(project: Path, value: Any, label: str) -> list[str]:
 
 
 def validate_contract(data: Any) -> dict[str, Any]:
-	contract = require_exact_fields(data, CONTRACT_FIELDS, "run contract")
-	if contract.get("schema_version") != CONTRACT_SCHEMA:
-		fail("INVALID_CONTRACT", "run contract schema_version must be 1")
+	if not isinstance(data, dict):
+		fail("INVALID_CONTRACT", "run contract must be an object")
+	schema_version = data.get("schema_version")
+	if schema_version == LEGACY_CONTRACT_SCHEMA:
+		contract = require_exact_fields(data, CONTRACT_FIELDS_V1, "run contract")
+	elif schema_version == CONTRACT_SCHEMA:
+		contract = require_exact_fields(data, CONTRACT_FIELDS_V2, "run contract")
+		if contract.get("verifier_isolation") not in VERIFIER_ISOLATION_POLICIES:
+			fail("INVALID_CONTRACT", "verifier_isolation must be required or best-effort")
+	else:
+		fail("INVALID_CONTRACT", "run contract schema_version must be 1 or 2")
 	for field in ("contract_id", "project_id", "run_id"):
 		if not valid_identifier(contract.get(field)):
 			fail("INVALID_CONTRACT", f"{field} is invalid")
@@ -759,12 +804,34 @@ def event_digest(event: dict[str, Any]) -> str:
 
 
 def run_directory(project: Path, contract: dict[str, Any]) -> Path:
-	key = digest_bytes(f"{contract['project_id']}\0{contract['run_id']}\0{contract['contract_id']}".encode("utf-8"))[7:23]
+	identity = f"{contract['project_id']}\0{contract['run_id']}\0{contract['contract_id']}"
+	digest = digest_bytes(identity.encode("utf-8"))[7:]
+	legacy_key = digest[:16]
+	compact_key = digest[:32]
 	root = project / ".harness" / ".cache" / "execution-runs"
 	root.mkdir(parents=True, exist_ok=True)
 	confined_path(project, root, "execution state root")
-	directory = root / f"{contract['contract_id']}-{key}"
-	directory.mkdir(parents=True, exist_ok=True)
+	# Contract IDs may legally be long. Keep new run directories fixed-width so
+	# evidence paths remain usable on Windows and deeply nested workspaces. Check
+	# the old descriptive name only as a compatibility fallback for an in-progress
+	# run created by an earlier runtime.
+	compact = root / f"run-{compact_key}"
+	legacy = root / f"{contract['contract_id']}-{legacy_key}"
+	try:
+		compact_exists = compact.exists()
+		legacy_exists = legacy.exists()
+	except OSError:
+		# A legacy path can itself exceed an OS path limit. It cannot be resumed
+		# there, so safely select the compact name instead.
+		compact_exists = False
+		legacy_exists = False
+	if compact_exists and legacy_exists:
+		fail("RUN_DIRECTORY_AMBIGUOUS", "both compact and legacy execution run directories exist")
+	directory = legacy if legacy_exists else compact
+	try:
+		directory.mkdir(parents=True, exist_ok=True)
+	except OSError as exc:
+		fail("RUN_DIRECTORY_UNAVAILABLE", f"could not create execution run directory: {exc}")
 	confined_path(root, directory, "execution run directory")
 	return directory
 
@@ -959,6 +1026,7 @@ class StateStore:
 		if any(not isinstance(event.get("payload"), dict) or event["payload"].get("project_id") != data["project_id"] or event["payload"].get("run_id") != data["run_id"] for event in events):
 			fail("TRACE_INVALID", "trace identity changed")
 		validate_receipt_files(self, data)
+		validate_verifier_evidence_files(self, data)
 		try:
 			self.raw = read_regular_file_bounded(self.state_path, MAX_STATE_BYTES, "execution state")
 		except MemoryErrorWithCode as exc:
@@ -1061,11 +1129,149 @@ def validate_receipt_files(store: StateStore, state: dict[str, Any]) -> None:
 		validate_receipt(data, store.contract, index)
 
 
+def verifier_evidence_relative_path(request_digest: str) -> str:
+	if not isinstance(request_digest, str) or DIGEST_PATTERN.fullmatch(request_digest) is None:
+		fail("STATE_INVALID", "verifier evidence request digest is invalid")
+	return f"outputs/{request_digest[7:]}.log"
+
+
+def completed_verifier_evidence_bytes(state: dict[str, Any], *, over_code: str) -> int:
+	"""Return one bounded evidence total from completed-call source of truth.
+
+	Compact model projections retain evidence on the completed-call record, while
+	older full results keep it under ``result.value``. Prefer the record so the
+	same evidence is never double-counted when both representations are present.
+	"""
+	completed_calls = state.get("completed_calls")
+	if not isinstance(completed_calls, dict):
+		fail("STATE_INVALID", "completed calls are unavailable for evidence accounting")
+	total = 0
+	for completed in completed_calls.values():
+		if not isinstance(completed, dict):
+			fail("EVIDENCE_INVALID", "completed verifier evidence record is invalid")
+		evidence = completed.get("evidence")
+		if evidence is None:
+			result = completed.get("result")
+			value = result.get("value") if isinstance(result, dict) else None
+			evidence = value.get("evidence") if isinstance(value, dict) else None
+		if evidence is None:
+			continue
+		if not isinstance(evidence, dict) or not is_integer(evidence.get("bytes"), 0, MAX_TOOL_CONTENT_BYTES):
+			fail("EVIDENCE_INVALID", "verifier evidence bytes are invalid")
+		total += evidence["bytes"]
+		if total > MAX_VERIFIER_EVIDENCE_BYTES:
+			fail(over_code, f"verifier evidence exceeds {MAX_VERIFIER_EVIDENCE_BYTES} bytes per run")
+	return total
+
+
+def persist_verifier_evidence(
+	store: StateStore,
+	request_digest: str,
+	raw: bytes,
+	*,
+	capture_complete: bool,
+) -> dict[str, Any]:
+	if not isinstance(raw, bytes) or len(raw) > MAX_TOOL_CONTENT_BYTES:
+		fail("EVIDENCE_INVALID", "verifier evidence exceeds the bounded capture limit")
+	if not isinstance(capture_complete, bool):
+		fail("EVIDENCE_INVALID", "verifier evidence completion state is invalid")
+	assert store.state is not None
+	used = completed_verifier_evidence_bytes(store.state, over_code="EVIDENCE_BUDGET_EXCEEDED")
+	if len(raw) > MAX_VERIFIER_EVIDENCE_BYTES - used:
+		fail("EVIDENCE_BUDGET_EXHAUSTED", "verifier evidence budget is exhausted")
+	relative = verifier_evidence_relative_path(request_digest)
+	try:
+		path = confined_path(store.directory, store.directory / PurePosixPath(relative), "verifier evidence")
+		prepare_write_parent(store.directory, path)
+		atomic_write(path, raw, expected=None, create_only=True)
+	except (KernelError, MemoryErrorWithCode, OSError) as exc:
+		fail("EVIDENCE_INVALID", f"could not persist verifier evidence: {exc}")
+	return {
+		"path": relative,
+		"bytes": len(raw),
+		"digest": digest_bytes(raw),
+		"complete": capture_complete,
+	}
+
+
+def validate_verifier_evidence_files(store: StateStore, state: dict[str, Any]) -> None:
+	"""Verify local raw verifier evidence before a run may resume or report status.
+
+	Older completed runs may have no verifier capture metadata. Once a verifier
+	result declares capture metadata, however, it must retain durable evidence
+	bound to the completed call's request digest. New compact model-facing results
+	keep that metadata on the completed-call record so a small output cap cannot
+	discard the integrity binding.
+	"""
+	for completed in state["completed_calls"].values():
+		if not isinstance(completed, dict):
+			continue
+		result = completed.get("result")
+		record_evidence = completed.get("evidence")
+		if not isinstance(result, dict) or result.get("tool") != "verifier.run":
+			if record_evidence is not None:
+				fail("EVIDENCE_INVALID", "only verifier results may retain verifier evidence")
+			continue
+		value = result.get("value")
+		if not isinstance(value, dict):
+			if record_evidence is not None:
+				fail("EVIDENCE_INVALID", "verifier evidence requires an object result value")
+			continue
+		value_evidence = value.get("evidence")
+		if "evidence" in value and not isinstance(value_evidence, dict):
+			fail("EVIDENCE_INVALID", "verifier result evidence is invalid")
+		capture_declared = "capture_complete" in value
+		if capture_declared and not isinstance(value.get("capture_complete"), bool):
+			fail("EVIDENCE_INVALID", "verifier capture completion state is invalid")
+		if "evidence_recorded" in value and value.get("evidence_recorded") is not True:
+			fail("EVIDENCE_INVALID", "verifier evidence marker is invalid")
+		if record_evidence is None:
+			if value_evidence is None:
+				if capture_declared or value.get("evidence_recorded") is True:
+					fail("EVIDENCE_INVALID", "verifier capture metadata requires durable evidence")
+				continue
+			evidence = value_evidence
+		else:
+			evidence = record_evidence
+			if value_evidence is not None and value_evidence != evidence:
+				fail("EVIDENCE_INVALID", "verifier result and completed-call evidence disagree")
+			if capture_declared and value_evidence is None:
+				fail("EVIDENCE_INVALID", "verifier capture metadata must retain matching evidence")
+		if not isinstance(evidence, dict) or set(evidence) != VERIFIER_EVIDENCE_FIELDS:
+			fail("EVIDENCE_INVALID", "verifier evidence has invalid fields")
+		request_digest = completed.get("request_digest")
+		if not isinstance(request_digest, str) or DIGEST_PATTERN.fullmatch(request_digest) is None:
+			fail("EVIDENCE_INVALID", "verifier evidence has an invalid request binding")
+		expected_relative = verifier_evidence_relative_path(request_digest)
+		if evidence.get("path") != expected_relative:
+			fail("EVIDENCE_INVALID", "verifier evidence path does not match its request binding")
+		if not is_integer(evidence.get("bytes"), 0, MAX_TOOL_CONTENT_BYTES) or not DIGEST_PATTERN.fullmatch(str(evidence.get("digest", ""))) or not isinstance(evidence.get("complete"), bool):
+			fail("EVIDENCE_INVALID", "verifier evidence metadata is invalid")
+		if (
+			("bytes" in value and value.get("bytes") != evidence["bytes"])
+			or ("digest" in value and value.get("digest") != evidence["digest"])
+			or (capture_declared and value.get("capture_complete") is not evidence["complete"])
+		):
+			fail("EVIDENCE_INVALID", "verifier result and evidence metadata disagree")
+		try:
+			path = confined_path(store.directory, store.directory / PurePosixPath(expected_relative), "verifier evidence", must_exist=True)
+			raw = read_regular_file_bounded(path, MAX_TOOL_CONTENT_BYTES, "verifier evidence")
+		except (KernelError, MemoryErrorWithCode, OSError) as exc:
+			fail("EVIDENCE_INVALID", f"could not read verifier evidence: {exc}")
+		if len(raw) != evidence["bytes"] or digest_bytes(raw) != evidence["digest"]:
+			fail("EVIDENCE_INVALID", "verifier evidence bytes changed after capture")
+	completed_verifier_evidence_bytes(state, over_code="EVIDENCE_BUDGET_EXCEEDED")
+
+
 def validate_state(state: dict[str, Any], contract: dict[str, Any]) -> None:
 	if state.get("status") not in RUN_STATUSES or not is_integer(state.get("revision"), 0, 10**9):
 		fail("STATE_INVALID", "execution state status/revision is invalid")
 	usage = state.get("usage")
-	if not isinstance(usage, dict) or set(usage) != USAGE_FIELDS or not all(is_integer(value, 0, MAX_USAGE_VALUE) for value in usage.values()):
+	if (
+		not isinstance(usage, dict)
+		or set(usage) != USAGE_FIELDS
+		or any(not is_integer(usage[field], 0, maximum) for field, maximum in STATE_USAGE_MAXIMUMS.items())
+	):
 		fail("STATE_INVALID", "execution usage is invalid")
 	agents = state.get("agents")
 	if not isinstance(agents, dict) or not agents or len(agents) > contract["delegation"]["max_children"] + 1:
@@ -1116,7 +1322,14 @@ def validate_state(state: dict[str, Any], contract: dict[str, Any]) -> None:
 		if record.get("status") not in {"ACTIVE", "COMPLETE", "FAILED"} or not DIGEST_PATTERN.fullmatch(str(record.get("task_digest", ""))):
 			fail("STATE_INVALID", "delegation status/digest is invalid")
 	for call_id, completed in state["completed_calls"].items():
-		if not valid_identifier(call_id, TOOL_CALL_PATTERN) or not isinstance(completed, dict) or set(completed) != COMPLETED_CALL_FIELDS:
+		if (
+			not valid_identifier(call_id, TOOL_CALL_PATTERN)
+			or not isinstance(completed, dict)
+			or (
+				set(completed) != COMPLETED_CALL_FIELDS
+				and set(completed) != COMPLETED_CALL_WITH_EVIDENCE_FIELDS
+			)
+		):
 			fail("STATE_INVALID", "completed call record is invalid")
 	pending = state.get("pending_approval")
 	if pending is not None and (not isinstance(pending, dict) or set(pending) != PENDING_APPROVAL_FIELDS):
@@ -1276,11 +1489,59 @@ class AdapterProcess:
 		self.terminate()
 
 
+def validate_model_usage(usage: Any, protocol_version: int) -> dict[str, Any]:
+	"""Validate a legacy receipt or an extended canonical-total receipt.
+
+	Adapters normalize provider-specific counters before crossing this boundary:
+	when cache fields are present, ``input_tokens`` is the Harness total that
+	contains their disjoint read and creation subsets.
+	"""
+	if not isinstance(usage, dict):
+		fail("ADAPTER_PROTOCOL_ERROR", "model usage has invalid fields")
+	fields = set(usage)
+	if fields != MODEL_USAGE_LEGACY_FIELDS and fields != MODEL_USAGE_EXTENDED_FIELDS:
+		fail("ADAPTER_PROTOCOL_ERROR", "model usage must use the legacy or complete cache-telemetry shape")
+	if protocol_version == LEGACY_PROTOCOL_VERSION and fields != MODEL_USAGE_LEGACY_FIELDS:
+		fail("ADAPTER_PROTOCOL_ERROR", "protocol v1 supports only the legacy model usage shape")
+	if not all(is_integer(value, 0, MAX_USAGE_VALUE) for value in usage.values()):
+		fail("ADAPTER_PROTOCOL_ERROR", "model usage values must be bounded non-negative integers")
+	if fields == MODEL_USAGE_EXTENDED_FIELDS:
+		if usage["cache_read_input_tokens"] + usage["cache_creation_input_tokens"] > usage["input_tokens"]:
+			fail("ADAPTER_PROTOCOL_ERROR", "cache usage cannot exceed canonical input_tokens")
+	return usage
+
+
+def adapter_protocol_version(contract: dict[str, Any]) -> int:
+	"""Select the request protocol from the reviewed contract schema.
+
+	Schema v1 predates cache telemetry, so sending it a v2 request would break
+	a strict v1 adapter before it has a chance to return a compatible response.
+	Schema v2 uses the current request shape, but may still accept an explicitly
+	validated v1 legacy response during a controlled adapter migration.
+	"""
+	schema_version = contract.get("schema_version")
+	if schema_version == LEGACY_CONTRACT_SCHEMA:
+		return LEGACY_PROTOCOL_VERSION
+	if schema_version == CONTRACT_SCHEMA:
+		return PROTOCOL_VERSION
+	fail("STATE_INVALID", "run contract schema is invalid for adapter protocol selection")
+	raise AssertionError("unreachable")
+
+
 def validate_model_response(response: dict[str, Any], request_id: str, contract: dict[str, Any]) -> dict[str, Any]:
 	if set(response) != MODEL_RESPONSE_FIELDS:
 		fail("ADAPTER_PROTOCOL_ERROR", "model response has unknown or missing fields")
-	if response.get("type") != "model_response" or response.get("protocol_version") != PROTOCOL_VERSION or response.get("request_id") != request_id:
+	protocol_version = response.get("protocol_version")
+	if (
+		response.get("type") != "model_response"
+		or not isinstance(protocol_version, int)
+		or isinstance(protocol_version, bool)
+		or protocol_version not in SUPPORTED_PROTOCOL_VERSIONS
+		or response.get("request_id") != request_id
+	):
 		fail("ADAPTER_PROTOCOL_ERROR", "model response type/version/request_id does not match")
+	if adapter_protocol_version(contract) == LEGACY_PROTOCOL_VERSION and protocol_version != LEGACY_PROTOCOL_VERSION:
+		fail("ADAPTER_PROTOCOL_ERROR", "a schema v1 contract requires a protocol v1 adapter response")
 	if response.get("finish_reason") not in {"tool_calls", "final"}:
 		fail("ADAPTER_PROTOCOL_ERROR", "model finish_reason must be tool_calls or final")
 	message = response.get("message")
@@ -1304,11 +1565,7 @@ def validate_model_response(response: dict[str, Any], request_id: str, contract:
 	if response["finish_reason"] == "final" and (tool_calls or not message.strip()):
 		fail("ADAPTER_PROTOCOL_ERROR", "final response requires a non-empty message and no tool calls")
 	inspect_json_tree(response.get("adapter_state"), "adapter state", max_bytes=contract["adapter"]["max_state_bytes"])
-	usage = response.get("usage")
-	if not isinstance(usage, dict) or set(usage) != MODEL_USAGE_FIELDS:
-		fail("ADAPTER_PROTOCOL_ERROR", "model usage has invalid fields")
-	if not all(is_integer(value, 0, MAX_USAGE_VALUE) for value in usage.values()):
-		fail("ADAPTER_PROTOCOL_ERROR", "model usage values must be bounded non-negative integers")
+	validate_model_usage(response.get("usage"), protocol_version)
 	return response
 
 
@@ -1442,6 +1699,7 @@ class BoundedProcessResult:
 	def __init__(self) -> None:
 		self.data = bytearray()
 		self.overflow = threading.Event()
+		self.read_failed = threading.Event()
 		self.finished = threading.Event()
 
 	def drain(self, stream: BinaryIO, maximum: int) -> None:
@@ -1456,71 +1714,413 @@ class BoundedProcessResult:
 				if len(chunk) > remaining:
 					self.overflow.set()
 		except (OSError, ValueError):
-			pass
+			self.read_failed.set()
 		finally:
 			self.finished.set()
 
 
-def terminate_process(process: subprocess.Popen[bytes]) -> None:
-	if process.poll() is None:
-		process.terminate()
+def _probe_posix_containment_backend() -> dict[str, Any]:
+	unavailable: dict[str, Any] = {"available": False, "backend": "", "argv_prefix": [], "reason": ""}
+	if os.name == "nt":
+		return {**unavailable, "reason": "Windows uses the Job Object backend"}
+	if not sys.platform.startswith("linux"):
+		return {
+			**unavailable,
+			"reason": f"no strict verifier sandbox is bundled for {sys.platform}; supply an operator-managed backend",
+		}
+	unshare = next(
+		(candidate for candidate in LINUX_UNSHARE_CANDIDATES if Path(candidate).is_file() and os.access(candidate, os.X_OK)),
+		"",
+	)
+	if not unshare:
+		return {**unavailable, "reason": "util-linux unshare was not found at an absolute system path"}
+	prefix = [unshare, "--user", "--pid", "--fork", "--kill-child", "--map-current-user", "--"]
+	try:
+		probe = subprocess.run(
+			[*prefix, sys.executable, "-B", "-c", POSIX_CONTAINMENT_PROBE],
+			stdin=subprocess.DEVNULL, capture_output=True, timeout=10, check=False,
+			env=minimal_environment([]), shell=False,
+		)
+	except (OSError, subprocess.TimeoutExpired) as exc:
+		return {**unavailable, "reason": f"unshare PID-namespace probe could not run: {exc}"}
+	observed = probe.stdout.decode("utf-8", "replace").strip()
+	expected = f"1,{os.getuid()},{os.getgid()}"
+	if probe.returncode != 0 or observed != expected:
+		detail = probe.stderr.decode("utf-8", "replace").strip()[:200]
+		return {
+			**unavailable,
+			"reason": f"unshare PID-namespace probe failed (exit {probe.returncode}, observed {observed!r}): {detail}",
+		}
+	return {"available": True, "backend": "linux-pid-namespace", "argv_prefix": prefix, "reason": ""}
+
+
+def posix_containment_backend(*, refresh: bool = False) -> dict[str, Any]:
+	"""Resolve the strict POSIX verifier backend once per kernel process.
+
+	Only a Linux PID namespace qualifies: with ``unshare --fork --kill-child`` the
+	verifier becomes PID 1 of a fresh namespace whose init dies with the launcher,
+	so the kernel SIGKILLs every descendant, including one that called ``setsid()``.
+	The probe demands PID 1 plus an identity-preserving user mapping; anything else
+	leaves ``required`` policy fail-closed with the observed reason. macOS and other
+	POSIX hosts have no bundled strict backend.
+	"""
+	global _POSIX_CONTAINMENT_BACKEND
+	with _POSIX_CONTAINMENT_LOCK:
+		if _POSIX_CONTAINMENT_BACKEND is None or refresh:
+			_POSIX_CONTAINMENT_BACKEND = _probe_posix_containment_backend()
+		return {**_POSIX_CONTAINMENT_BACKEND, "argv_prefix": list(_POSIX_CONTAINMENT_BACKEND["argv_prefix"])}
+
+
+class VerifierProcessContainment:
+	"""Own the verifier cleanup primitive selected by the host isolation policy.
+
+	Registered verifiers are allowed to run only as bounded, foreground checks.
+	Windows starts the primary thread suspended, attaches a mandatory no-breakaway
+	job, and resumes only after that attachment succeeds. Under ``required`` policy
+	a POSIX verifier is launched as PID 1 of a Linux PID namespace resolved by
+	``posix_containment_backend``; killing that launcher's group ends the whole
+	namespace. Plain process-group cleanup remains ``best-effort`` only: a hostile
+	child can create a new session and escape it.
+	"""
+
+	def __init__(self, process: subprocess.Popen[bytes]) -> None:
+		self.process = process
+		self._terminated = False
+		self._windows_kernel32: Any | None = None
+		self._windows_job: Any | None = None
+		self.ready = True
+		if os.name == "nt":
+			self.ready = self._attach_and_resume_windows()
+
+	def _pid(self) -> int | None:
+		pid = getattr(self.process, "pid", None)
+		return pid if isinstance(pid, int) and pid > 0 else None
+
+	def _is_alive(self) -> bool:
 		try:
-			process.wait(timeout=2)
-		except subprocess.TimeoutExpired:
-			process.kill()
-			process.wait(timeout=2)
+			return self.process.poll() is None
+		except (AttributeError, OSError, ValueError):
+			return False
+
+	def _wait_primary(self, timeout: float) -> bool:
+		try:
+			self.process.wait(timeout=timeout)
+			return True
+		except (AttributeError, OSError, ValueError, subprocess.TimeoutExpired):
+			return False
+
+	def _attach_and_resume_windows(self) -> bool:
+		"""Attach before execution; failure leaves the verifier safely suspended."""
+		process_handle = getattr(self.process, "_handle", None)
+		if not isinstance(process_handle, int) or process_handle <= 0:
+			return False
+		try:
+			import ctypes
+			from ctypes import wintypes
+
+			class BasicLimitInformation(ctypes.Structure):
+				_fields_ = [
+					("per_process_user_time_limit", ctypes.c_longlong),
+					("per_job_user_time_limit", ctypes.c_longlong),
+					("limit_flags", wintypes.DWORD),
+					("minimum_working_set_size", ctypes.c_size_t),
+					("maximum_working_set_size", ctypes.c_size_t),
+					("active_process_limit", wintypes.DWORD),
+					("affinity", ctypes.c_size_t),
+					("priority_class", wintypes.DWORD),
+					("scheduling_class", wintypes.DWORD),
+				]
+
+			class IoCounters(ctypes.Structure):
+				_fields_ = [
+					("read_operation_count", ctypes.c_ulonglong),
+					("write_operation_count", ctypes.c_ulonglong),
+					("other_operation_count", ctypes.c_ulonglong),
+					("read_transfer_count", ctypes.c_ulonglong),
+					("write_transfer_count", ctypes.c_ulonglong),
+					("other_transfer_count", ctypes.c_ulonglong),
+				]
+
+			class ExtendedLimitInformation(ctypes.Structure):
+				_fields_ = [
+					("basic_limit_information", BasicLimitInformation),
+					("io_info", IoCounters),
+					("process_memory_limit", ctypes.c_size_t),
+					("job_memory_limit", ctypes.c_size_t),
+					("peak_process_memory_used", ctypes.c_size_t),
+					("peak_job_memory_used", ctypes.c_size_t),
+				]
+
+			kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+			kernel32.CreateJobObjectW.argtypes = (wintypes.LPVOID, wintypes.LPCWSTR)
+			kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+			kernel32.SetInformationJobObject.argtypes = (
+				wintypes.HANDLE, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD,
+			)
+			kernel32.SetInformationJobObject.restype = wintypes.BOOL
+			kernel32.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+			kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
+			kernel32.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
+			kernel32.TerminateJobObject.restype = wintypes.BOOL
+			kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+			kernel32.CloseHandle.restype = wintypes.BOOL
+			job = kernel32.CreateJobObjectW(None, None)
+			if not job:
+				return False
+			try:
+				limits = ExtendedLimitInformation()
+				# JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE. We deliberately do not permit
+				# BREAKAWAY_OK, so a verifier child cannot opt out of this job.
+				limits.basic_limit_information.limit_flags = 0x00002000
+				if not kernel32.SetInformationJobObject(
+					job, 9, ctypes.byref(limits), ctypes.sizeof(limits),
+				):
+					return False
+				if not kernel32.AssignProcessToJobObject(job, wintypes.HANDLE(process_handle)):
+					return False
+				self._windows_kernel32 = kernel32
+				self._windows_job = job
+				job = None
+				return self._resume_windows_primary_thread(kernel32)
+			finally:
+				if job:
+					kernel32.CloseHandle(job)
+		except (AttributeError, OSError, TypeError):
+			return False
+
+	def _resume_windows_primary_thread(self, kernel32: Any) -> bool:
+		"""Resume the one thread of a CREATE_SUSPENDED verifier process.
+
+		The Toolhelp/OpenThread path uses documented Win32 APIs and lets us require
+		the expected previous suspend count of one. Any ambiguity fails closed.
+		"""
+		pid = self._pid()
+		if pid is None:
+			return False
+		try:
+			import ctypes
+			from ctypes import wintypes
+
+			class ThreadEntry32(ctypes.Structure):
+				_fields_ = [
+					("size", wintypes.DWORD),
+					("usage", wintypes.DWORD),
+					("thread_id", wintypes.DWORD),
+					("owner_process_id", wintypes.DWORD),
+					("base_priority", wintypes.LONG),
+					("delta_priority", wintypes.LONG),
+					("flags", wintypes.DWORD),
+				]
+
+			kernel32.CreateToolhelp32Snapshot.argtypes = (wintypes.DWORD, wintypes.DWORD)
+			kernel32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+			kernel32.Thread32First.argtypes = (wintypes.HANDLE, ctypes.POINTER(ThreadEntry32))
+			kernel32.Thread32First.restype = wintypes.BOOL
+			kernel32.Thread32Next.argtypes = (wintypes.HANDLE, ctypes.POINTER(ThreadEntry32))
+			kernel32.Thread32Next.restype = wintypes.BOOL
+			kernel32.OpenThread.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+			kernel32.OpenThread.restype = wintypes.HANDLE
+			kernel32.ResumeThread.argtypes = (wintypes.HANDLE,)
+			kernel32.ResumeThread.restype = wintypes.DWORD
+			invalid_handle = ctypes.c_void_p(-1).value
+			deadline = time.monotonic() + 0.5
+			while time.monotonic() < deadline:
+				snapshot = kernel32.CreateToolhelp32Snapshot(0x00000004, 0)
+				if snapshot and snapshot != invalid_handle:
+					try:
+						entry = ThreadEntry32()
+						entry.size = ctypes.sizeof(entry)
+						has_entry = bool(kernel32.Thread32First(snapshot, ctypes.byref(entry)))
+						while has_entry:
+							if entry.owner_process_id == pid:
+								thread = kernel32.OpenThread(0x0002, False, entry.thread_id)
+								if thread:
+									try:
+										# CREATE_SUSPENDED adds exactly one suspend count. A
+										# different value means the process is not in the state
+										# required for a verified, race-free release.
+										return kernel32.ResumeThread(thread) == 1
+									finally:
+										kernel32.CloseHandle(thread)
+							entry.size = ctypes.sizeof(entry)
+							has_entry = bool(kernel32.Thread32Next(snapshot, ctypes.byref(entry)))
+					finally:
+						kernel32.CloseHandle(snapshot)
+				time.sleep(0.01)
+		except (AttributeError, OSError, TypeError):
+			return False
+		return False
+
+	def _terminate_windows_job(self) -> None:
+		if self._windows_job is not None and self._windows_kernel32 is not None:
+			try:
+				self._windows_kernel32.TerminateJobObject(self._windows_job, 1)
+			finally:
+				self._windows_kernel32.CloseHandle(self._windows_job)
+				self._windows_job = None
+				self._windows_kernel32 = None
+			self._wait_primary(0.25)
+
+	def _terminate_posix_group(self) -> None:
+		pid = self._pid()
+		if pid is None:
+			return
+		try:
+			# start_new_session makes the child PID its process-group ID. Keep the
+			# original PID so this still reaches children after the leader exits.
+			os.killpg(pid, signal.SIGTERM)
+		except (ProcessLookupError, PermissionError):
+			return
+		# Best-effort cleanup for cooperative descendants that remain in the
+		# verifier's original process group. Strict POSIX containment is never
+		# inferred from this primitive; required policy needs the PID-namespace
+		# launcher resolved before dispatch, whose init dies with this group.
+		time.sleep(0.05)
+		try:
+			os.killpg(pid, signal.SIGKILL)
+		except (ProcessLookupError, PermissionError):
+			pass
+		self._wait_primary(0.25)
+
+	def terminate(self) -> None:
+		if self._terminated:
+			return
+		self._terminated = True
+		if os.name == "nt":
+			self._terminate_windows_job()
+		else:
+			self._terminate_posix_group()
+		if self._is_alive():
+			try:
+				self.process.kill()
+			except (AttributeError, OSError, ValueError):
+				pass
+			self._wait_primary(0.25)
+
+	def close(self) -> None:
+		# A Python exception between Popen and normal result handling must retain
+		# the same no-orphan guarantee as an explicit timeout or cancellation.
+		self.terminate()
 
 
-def verifier_execute(project: Path, verifier: dict[str, Any], argv: list[str], timeout: int, output_cap: int, cancelled: Callable[[], bool]) -> dict[str, Any]:
+def verifier_execute(
+	project: Path,
+	verifier: dict[str, Any],
+	argv: list[str],
+	timeout: int,
+	output_cap: int,
+	cancelled: Callable[[], bool],
+	isolation_policy: str,
+) -> tuple[dict[str, Any], bytes]:
+	if isolation_policy not in VERIFIER_ISOLATION_POLICIES:
+		fail("STATE_INVALID", "verifier isolation policy is invalid")
+	argv = list(argv)
+	isolation_backend = "windows-job-object" if os.name == "nt" else "posix-process-group"
+	if isolation_policy == "required" and os.name != "nt":
+		backend = posix_containment_backend()
+		if not backend["available"]:
+			return {
+				"ok": False,
+				"code": "EXEC_ISOLATION_UNAVAILABLE",
+				"error": f"strict verifier containment is unavailable on this host: {backend['reason']}",
+				"capture_complete": False,
+			}, b""
+		isolation_backend = str(backend["backend"])
+		# The launcher, its namespace init, and every descendant share one session
+		# below; killing that group tears the complete namespace down.
+		argv = [*backend["argv_prefix"], *argv]
 	maximum = min(output_cap, verifier["max_output_bytes"])
 	deadline = time.monotonic() + min(timeout, verifier["timeout_seconds"])
+	popen_options: dict[str, Any] = {}
+	if os.name == "nt":
+		# The primary thread cannot execute until its mandatory no-breakaway job
+		# attachment has been verified by VerifierProcessContainment below.
+		popen_options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP | WINDOWS_CREATE_SUSPENDED
+	else:
+		# Give this verifier a private group so cleanup never signals Harness or
+		# another verifier running in the caller's process group.
+		popen_options["start_new_session"] = True
 	try:
 		process = subprocess.Popen(
 			argv, cwd=str(project), stdin=subprocess.DEVNULL,
 			stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
 			env=minimal_environment(verifier["environment_allowlist"]), shell=False,
+			**popen_options,
 		)
 	except OSError:
-		return {"ok": False, "code": "EXEC_UNAVAILABLE", "error": "registered verifier could not start"}
-	collector = BoundedProcessResult()
-	assert process.stdout is not None
-	reader = threading.Thread(target=collector.drain, args=(process.stdout, maximum), daemon=True)
-	reader.start()
-	stop_code = ""
-	while process.poll() is None:
-		if cancelled():
-			stop_code = "CANCELLED"
-			break
-		if collector.overflow.is_set():
-			stop_code = "OUTPUT_LIMIT"
-			break
-		if time.monotonic() >= deadline:
-			stop_code = "TIMEOUT"
-			break
-		time.sleep(0.02)
-	if stop_code:
-		terminate_process(process)
-	reader.join(timeout=2)
-	output = bytes(collector.data)
-	text = output.decode("utf-8", errors="replace")
-	if stop_code == "CANCELLED":
-		fail("CANCELLED", "execution was cancelled")
-	if stop_code:
+		return {"ok": False, "code": "EXEC_UNAVAILABLE", "error": "registered verifier could not start"}, b""
+	containment = VerifierProcessContainment(process)
+	if not containment.ready:
+		# On Windows this closes/terminates the still-suspended primary before any
+		# verifier bytecode, descendant launch, or output reader can run.
+		containment.close()
 		return {
-			"ok": False, "code": stop_code,
-			"error": "registered verifier exceeded its output cap" if stop_code == "OUTPUT_LIMIT" else "registered verifier timed out",
-			"output": text, "bytes": len(output), "digest": digest_bytes(output), "truncated": stop_code == "OUTPUT_LIMIT",
-		}
-	returncode = process.returncode if process.returncode is not None else 255
-	return {
-		"ok": returncode in verifier["allowed_exit_codes"],
-		"command_id": verifier["id"],
-		"exit_code": returncode,
-		"output": text,
-		"bytes": len(output),
-		"digest": digest_bytes(output),
-		"truncated": False,
-	}
+			"ok": False,
+			"code": "EXEC_ISOLATION_UNAVAILABLE",
+			"error": "registered verifier could not be isolated before execution",
+			"capture_complete": False,
+		}, b""
+	try:
+		collector = BoundedProcessResult()
+		assert process.stdout is not None
+		reader = threading.Thread(target=collector.drain, args=(process.stdout, maximum), daemon=True)
+		reader.start()
+		stop_code = ""
+		while process.poll() is None:
+			if cancelled():
+				stop_code = "CANCELLED"
+				break
+			if collector.read_failed.is_set():
+				stop_code = "OUTPUT_CAPTURE_FAILED"
+				break
+			if collector.overflow.is_set():
+				stop_code = "OUTPUT_LIMIT"
+				break
+			if time.monotonic() >= deadline:
+				stop_code = "TIMEOUT"
+				break
+			time.sleep(0.02)
+		# Teardown is unconditional. On Windows the job ends the complete job
+		# tree; a required POSIX run ends its PID namespace with the launcher's
+		# group; explicit best-effort mode cleans only the original group.
+		containment.terminate()
+		reader.join(timeout=2)
+		# A short-lived verifier can exit before the polling loop observes the reader's
+		# overflow flag. Check again after draining so a completed process never turns
+		# an over-limit capture into a falsely complete result.
+		if not stop_code:
+			if collector.read_failed.is_set() or not collector.finished.is_set():
+				stop_code = "OUTPUT_CAPTURE_FAILED"
+			elif collector.overflow.is_set():
+				stop_code = "OUTPUT_LIMIT"
+		output = bytes(collector.data)
+		capture_complete = not stop_code and collector.finished.is_set()
+		if stop_code == "CANCELLED":
+			fail("CANCELLED", "execution was cancelled")
+		if stop_code:
+			error = {
+				"OUTPUT_LIMIT": "registered verifier exceeded its output cap",
+				"OUTPUT_CAPTURE_FAILED": "registered verifier output capture failed",
+			}.get(stop_code, "registered verifier timed out")
+			return {
+				"ok": False, "code": stop_code,
+				"error": error,
+				"bytes": len(output), "digest": digest_bytes(output), "truncated": stop_code == "OUTPUT_LIMIT",
+				"capture_complete": False,
+			}, output
+		returncode = process.returncode if process.returncode is not None else 255
+		return {
+			"ok": returncode in verifier["allowed_exit_codes"],
+			"command_id": verifier["id"],
+			"isolation": isolation_backend,
+			"exit_code": returncode,
+			"bytes": len(output),
+			"digest": digest_bytes(output),
+			"truncated": False,
+			"capture_complete": capture_complete,
+		}, output
+	finally:
+		containment.close()
 
 
 def require_argument_fields(arguments: Any, accepted: tuple[set[str], ...], label: str) -> dict[str, Any]:
@@ -1756,6 +2356,148 @@ def fit_result_text(result: dict[str, Any], field: str, maximum: int) -> dict[st
 	return result
 
 
+def clipped_utf8_text(value: str, maximum: int) -> tuple[str, bool]:
+	"""Return one UTF-8-safe presentation line within a strict byte budget."""
+	if maximum <= 0:
+		return "", bool(value)
+	encoded = value.encode("utf-8")
+	if len(encoded) <= maximum:
+		return value, False
+	marker = " …[line clipped]"
+	if len(marker.encode("utf-8")) >= maximum:
+		return safe_utf8_prefix(encoded[:maximum]), True
+	prefix = safe_utf8_prefix(encoded[:maximum - len(marker.encode("utf-8"))])
+	return prefix + marker, True
+
+
+def verifier_output_preview(raw: bytes, *, capture_complete: bool, maximum: int) -> tuple[str, bool]:
+	"""Render verifier output as bounded, untrusted error-and-tail evidence.
+
+	The digest and durable evidence bind the raw bytes. This helper is solely the
+	model-facing presentation: it prefers one error signal and the final lines,
+	never an arbitrary raw prefix.
+	"""
+	if maximum <= 0:
+		return "", bool(raw) or not capture_complete
+	lines = raw.decode("utf-8", errors="replace").splitlines()
+	error_indices = [
+		index for index, line in enumerate(lines)
+		if VERIFIER_ERROR_LINE_PATTERN.search(line) is not None
+	]
+	tail_indices = list(range(max(0, len(lines) - VERIFIER_PREVIEW_TAIL_LINES), len(lines)))
+	tail_set = set(tail_indices)
+	priority: list[int] = []
+	# Retain at least one non-tail error when room permits, then favor the newest
+	# output that normally contains a test summary or final stack-frame context.
+	first_error = next((index for index in error_indices if index not in tail_set), None)
+	if first_error is not None:
+		priority.append(first_error)
+	priority.extend(index for index in reversed(tail_indices) if index not in priority)
+	priority.extend(index for index in error_indices[:VERIFIER_PREVIEW_MAX_ERROR_LINES] if index not in priority)
+
+	def header(retained: int) -> str:
+		return (
+			"[Harness verifier preview: "
+			f"captured_lines={len(lines)}; retained_lines={retained}; "
+			f"omitted_lines={max(0, len(lines) - retained)}; "
+			f"error_matches={len(error_indices)}; "
+			f"capture={'complete' if capture_complete else 'partial'}.]\n"
+		)
+
+	retained: dict[int, str] = {}
+	line_was_clipped = False
+	for index in priority:
+		line, clipped = clipped_utf8_text(lines[index], VERIFIER_PREVIEW_LINE_BYTES)
+		candidate = f"{line}\n"
+		prospective = dict(retained)
+		prospective[index] = candidate
+		body_size = sum(len(item.encode("utf-8")) for item in prospective.values())
+		if len(header(len(prospective)).encode("utf-8")) + body_size > maximum:
+			continue
+		retained = prospective
+		line_was_clipped = line_was_clipped or clipped
+
+	body = "".join(retained[index] for index in sorted(retained))
+	preview = header(len(retained)) + body
+	if len(preview.encode("utf-8")) > maximum:
+		# This can happen only when the header itself exceeds an unusually small
+		# policy cap. Keep a factual, byte-bounded header rather than raw output.
+		preview, _ = clipped_utf8_text(header(0), maximum)
+		retained = {}
+	preview_truncated = (
+		not capture_complete
+		or len(retained) != len(lines)
+		or len(error_indices) > VERIFIER_PREVIEW_MAX_ERROR_LINES
+		or line_was_clipped
+	)
+	return preview, preview_truncated
+
+
+def compact_verifier_result(
+	result: dict[str, Any],
+	*,
+	evidence_recorded: bool,
+	maximum: int,
+) -> dict[str, Any]:
+	"""Return a truthful verifier receipt even at the minimum output cap.
+
+	The durable evidence metadata and captured bytes remain in the completed-call
+	record. The model-facing projection deliberately excludes raw output and, if
+	necessary, the verbose kernel error so declared caps never turn an already-run
+	verifier into a misleading ``TOOL_OUTPUT_LIMIT`` failure.
+	"""
+	compact = tool_result(
+		str(result["call_id"]),
+		str(result["tool"]),
+		bool(result["ok"]),
+		value={"evidence_recorded": True} if evidence_recorded else None,
+		code=str(result.get("code", "")),
+		error=str(result.get("error", "")),
+	)
+	if len(canonical_json(compact)) <= maximum:
+		return compact
+	compact["error"] = ""
+	if len(canonical_json(compact)) <= maximum:
+		return compact
+	compact["value"] = None
+	if len(canonical_json(compact)) <= maximum:
+		return compact
+	compact["code"] = ""
+	return bounded_result(compact, maximum)
+
+
+def fit_verifier_result(
+	result: dict[str, Any],
+	raw: bytes,
+	*,
+	capture_complete: bool,
+	evidence_recorded: bool,
+	maximum: int,
+) -> dict[str, Any]:
+	"""Fit a verifier result without degrading its preview to a raw prefix."""
+	value = result.get("value")
+	if not isinstance(value, dict):
+		fail("INVALID_TOOL_RESULT", "verifier result must contain an object value")
+	value["output"] = ""
+	value["output_preview_truncated"] = False
+	if len(canonical_json(result)) > maximum:
+		return compact_verifier_result(result, evidence_recorded=evidence_recorded, maximum=maximum)
+	preview_budget = min(VERIFIER_PREVIEW_MAX_BYTES, max(0, maximum - len(canonical_json(result))))
+	while True:
+		preview, preview_truncated = verifier_output_preview(
+			raw,
+			capture_complete=capture_complete,
+			maximum=preview_budget,
+		)
+		value["output"] = preview
+		value["output_preview_truncated"] = preview_truncated
+		if len(canonical_json(result)) <= maximum:
+			return result
+		if preview_budget == 0:
+			return compact_verifier_result(result, evidence_recorded=evidence_recorded, maximum=maximum)
+		preview_budget //= 2
+
+
 def begin_side_effect(
 	store: StateStore,
 	state: dict[str, Any],
@@ -1799,11 +2541,22 @@ def execute_tool(
 	request_digest = call_request_digest(agent["agent_id"], call)
 	verifier: dict[str, Any] | None = None
 	verifier_argv: list[str] | None = None
+	verifier_capture_cap: int | None = None
 	if tool_id == "verifier.run":
 		try:
 			verifier, verifier_argv = resolve_registered_verifier(store.project, store.contract, policy, arguments)
 		except KernelError as exc:
 			return tool_failure(call, exc.code, str(exc))
+		requested_capture_cap = min(
+			verifier["max_output_bytes"],
+			max(VERIFIER_MIN_EVIDENCE_BYTES, policy["max_output_bytes"] - 1024),
+		)
+		minimum_capture = min(VERIFIER_MIN_EVIDENCE_BYTES, verifier["max_output_bytes"])
+		used_evidence = completed_verifier_evidence_bytes(state, over_code="EVIDENCE_BUDGET_EXCEEDED")
+		remaining_evidence = MAX_VERIFIER_EVIDENCE_BYTES - used_evidence
+		if remaining_evidence < minimum_capture:
+			return tool_failure(call, "EVIDENCE_BUDGET_EXHAUSTED", "verifier evidence budget has no safe capture capacity")
+		verifier_capture_cap = min(requested_capture_cap, remaining_evidence)
 	receipt = require_approval(store, state, agent, call, policy, verifier_argv)
 	if receipt is not None and receipt["decision"] != "APPROVED":
 		return tool_failure(call, "APPROVAL_DENIED", "human approval was denied or expired")
@@ -1854,10 +2607,62 @@ def execute_tool(
 
 	if tool_id == "verifier.run":
 		assert verifier is not None and verifier_argv is not None
+		assert verifier_capture_cap is not None
 		artifact_digest = digest_json({"command_id": arguments["command_id"], "argv": verifier_argv})
 		begin_side_effect(store, state, agent, call, request_digest, artifact_digest)
-		value = verifier_execute(store.project, verifier, verifier_argv, policy["timeout_seconds"], max(0, policy["max_output_bytes"] - 1024), cancelled)
-		return fit_result_text(tool_result(call["id"], tool_id, bool(value.get("ok")), value=value, code="" if value.get("ok") else str(value.get("code", "VERIFIER_FAILED")), error="" if value.get("ok") else str(value.get("error", "registered verifier failed"))), "output", policy["max_output_bytes"])
+		value, raw = verifier_execute(
+			store.project,
+			verifier,
+			verifier_argv,
+			policy["timeout_seconds"],
+			# This cap was preflighted against the durable per-run evidence budget.
+			# It may be smaller on the final verifier call, but cannot overrun disk.
+			verifier_capture_cap,
+			cancelled,
+			str(store.contract.get("verifier_isolation", "best-effort")),
+		)
+		value["trust"] = "untrusted_verifier_output"
+		value["instructions_authority"] = False
+		if "digest" not in value:
+			return fit_verifier_result(
+				tool_result(
+					call["id"], tool_id, False, value=value,
+					code=str(value.get("code", "VERIFIER_FAILED")),
+					error=str(value.get("error", "registered verifier failed")),
+				),
+				raw,
+				capture_complete=False,
+				evidence_recorded=False,
+				maximum=policy["max_output_bytes"],
+			)
+		capture_complete = bool(value.get("capture_complete"))
+		evidence = persist_verifier_evidence(
+			store,
+			request_digest,
+			raw,
+			capture_complete=capture_complete,
+		)
+		value["evidence"] = evidence
+		result = tool_result(
+			call["id"],
+			tool_id,
+			bool(value.get("ok")),
+			value=value,
+			code="" if value.get("ok") else str(value.get("code", "VERIFIER_FAILED")),
+			error="" if value.get("ok") else str(value.get("error", "registered verifier failed")),
+		)
+		model_result = fit_verifier_result(
+			result,
+			raw,
+			capture_complete=capture_complete,
+			evidence_recorded=True,
+			maximum=policy["max_output_bytes"],
+		)
+		# This private handoff is consumed before the model-facing result is stored
+		# or replayed. It keeps durable evidence even when the compact projection
+		# cannot carry the verbose path/digest metadata within its declared cap.
+		model_result[INTERNAL_VERIFIER_EVIDENCE_FIELD] = evidence
+		return model_result
 
 	if tool_id == "human.request":
 		assert receipt is not None
@@ -1998,7 +2803,18 @@ def complete_pending_call(
 	state = store.state
 	assert state is not None
 	key = call_key(agent["agent_id"], call["id"])
-	state["completed_calls"][key] = {"request_digest": request_digest, "result": result}
+	internal_evidence = result.pop(INTERNAL_VERIFIER_EVIDENCE_FIELD, None)
+	if internal_evidence is not None:
+		if call["tool"] != "verifier.run" or not isinstance(internal_evidence, dict) or set(internal_evidence) != VERIFIER_EVIDENCE_FIELDS:
+			fail("EVIDENCE_INVALID", "internal verifier evidence handoff is invalid")
+		completed = {
+			"request_digest": request_digest,
+			"result": result,
+			"evidence": internal_evidence,
+		}
+	else:
+		completed = {"request_digest": request_digest, "result": result}
+	state["completed_calls"][key] = completed
 	agent["pending_results"].append(result)
 	agent["pending_tool_index"] += 1
 	state["usage"]["tool_calls"] += 1
@@ -2104,7 +2920,7 @@ def model_request_payload(store: StateStore, agent: dict[str, Any], request_id: 
 	}
 	return {
 		"type": "model_request",
-		"protocol_version": PROTOCOL_VERSION,
+		"protocol_version": adapter_protocol_version(store.contract),
 		"request_id": request_id,
 		"contract_id": store.contract["contract_id"],
 		"project_id": store.contract["project_id"],
@@ -2166,6 +2982,15 @@ def execute_model_step(store: StateStore, adapter: AdapterProcess) -> None:
 	elif budgets["max_cost_microusd"] and state["usage"]["cost_microusd"] > budgets["max_cost_microusd"]:
 		over = "cost"
 	if over:
+		# The provider has already accepted this response and its usage may be
+		# billable. Preserve one complete receipt before the terminal budget event
+		# so trace accounting never hides the overshooting turn.
+		store.commit("model_responded", {
+			"request_id": request_id,
+			"finish_reason": response["finish_reason"],
+			"tool_count": len(response["tool_calls"]),
+			"usage": usage,
+		}, agent_id=agent["agent_id"], outcome="budget_overshoot")
 		state["status"] = "BUDGET_EXHAUSTED"
 		state["error_code"] = "BUDGET_OVERSHOOT"
 		store.commit("budget_exhausted", {"budget": over, "request_id": request_id}, agent_id=agent["agent_id"], outcome="overshoot")
@@ -2174,10 +2999,21 @@ def execute_model_step(store: StateStore, adapter: AdapterProcess) -> None:
 		agent["pending_tool_calls"] = response["tool_calls"]
 		agent["pending_tool_index"] = 0
 		agent["pending_results"] = []
-		store.commit("model_responded", {"request_id": request_id, "finish_reason": "tool_calls", "tool_count": len(response["tool_calls"])}, agent_id=agent["agent_id"], outcome="tool_calls")
+		store.commit("model_responded", {
+			"request_id": request_id,
+			"finish_reason": "tool_calls",
+			"tool_count": len(response["tool_calls"]),
+			"usage": usage,
+		}, agent_id=agent["agent_id"], outcome="tool_calls")
 		return
 	agent["status"] = "COMPLETE"
 	agent["final_message"] = response["message"]
+	store.commit("model_responded", {
+		"request_id": request_id,
+		"finish_reason": "final",
+		"tool_count": 0,
+		"usage": usage,
+	}, agent_id=agent["agent_id"], outcome="final")
 	if agent["agent_id"] == state["root_agent_id"]:
 		state["status"] = "COMPLETE"
 		store.commit("run_completed", {"request_id": request_id, "message_digest": digest_bytes(response["message"].encode("utf-8"))}, agent_id=agent["agent_id"], outcome="complete")

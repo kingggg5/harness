@@ -1,5 +1,5 @@
 {
 	"name": "harness",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"description": "Provider-neutral software delivery with executable agent graphs, bounded context, scoped memory, behavioral evals, QA, and human gates."
 }

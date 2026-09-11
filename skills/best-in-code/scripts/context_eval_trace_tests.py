@@ -13,8 +13,8 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 from context_compiler import Limits, compile_context, sha256_text, validate_tool_registry
-from eval_matrix import evaluate_suite, load_suite
-from trace_ops import GENESIS_HASH, build_replay_plan, load_trace, redact_events, seal_event
+from eval_matrix import EvalError, derive_cache_telemetry, evaluate_suite, load_suite, score_observed, validate_observed
+from trace_ops import GENESIS_HASH, TraceError, build_replay_plan, load_trace, redact_events, seal_event, summarize_usage
 
 
 SCRIPTS = Path(__file__).resolve().parent
@@ -90,6 +90,41 @@ def main() -> int:
 		suite = load_suite(EVAL_SUITE)
 		full_report = evaluate_suite(suite, trials=2, variants=["full"], concurrency=2)
 		report.check("full-eval-variant-passes", full_report["summary"]["status"] == "PASS" and full_report["summary"]["passed"] == 6, str(full_report["summary"]))
+		report.check(
+			"legacy-eval-cache-is-not-provider-telemetry",
+			full_report["summary"]["by_variant"]["full"]["cache_telemetry"]["observation"] == "UNAVAILABLE"
+			and full_report["summary"]["by_variant"]["full"]["cache_telemetry"]["cache_read_input_tokens"] is None,
+			str(full_report["summary"]["by_variant"]["full"]["cache_telemetry"]),
+		)
+		extended_observed = copy.deepcopy(suite["cases"][0]["fixtures"]["full"])
+		extended_metrics = extended_observed["metrics"]
+		extended_metrics["input_tokens"] = 100
+		extended_metrics["cached_tokens"] = 25
+		extended_metrics["cache_read_input_tokens"] = 25
+		extended_metrics["cache_creation_input_tokens"] = 10
+		validated_extended = validate_observed(extended_observed, "extended_observed")
+		extended_telemetry = derive_cache_telemetry(validated_extended["metrics"])
+		extended_score = score_observed(validated_extended, suite["cases"][0]["expectations"], 11)
+		report.check(
+			"extended-eval-cache-telemetry-is-derived",
+			extended_telemetry == {
+				"observation": "REPORTED",
+				"full_coverage": True,
+				"cache_read_input_tokens": 25,
+				"cache_creation_input_tokens": 10,
+				"cache_read_share_ppm": 250_000,
+			}
+			and extended_score["metrics"]["cache_telemetry"] == extended_telemetry,
+			str(extended_telemetry),
+		)
+		partial_cache_observed = copy.deepcopy(extended_observed)
+		partial_cache_observed["metrics"].pop("cache_creation_input_tokens")
+		try:
+			validate_observed(partial_cache_observed, "partial_cache_observed")
+			partial_cache_rejected = False
+		except EvalError:
+			partial_cache_rejected = True
+		report.check("partial-eval-cache-telemetry-fails-closed", partial_cache_rejected, "partial cache counters must not be accepted")
 		matrix_report = evaluate_suite(suite, trials=1, variants=["single-owner", "full", "ablation"], concurrency=3)
 		by_variant = matrix_report["summary"]["by_variant"]
 		report.check("ablation-exposes-safety-value", by_variant["full"]["overall_pass_rate"] == 1.0 and by_variant["single-owner"]["overall_pass_rate"] == 1.0 and by_variant["ablation"]["overall_pass_rate"] == 0.0, str(by_variant))
@@ -105,6 +140,79 @@ def main() -> int:
 		report.check("trace-redaction-reseals-chain", "sk-example-secret-value" not in redacted_text and "owner@example.com" not in redacted_text and redacted[1]["previous_hash"] == redacted[0]["hash"], redacted_text)
 		replay = build_replay_plan(events)
 		report.check("trace-replay-is-dry-run", replay.get("dry_run") is True and replay.get("executed_actions") == 0 and all(item.get("decision") == "NOT_EXECUTED" for item in replay.get("plan", [])), str(replay))
+		usage_first = trace_event(0, "model_responded", {"data": {"usage": {
+			"input_tokens": 10,
+			"cache_read_input_tokens": 5,
+			"cache_creation_input_tokens": 2,
+			"output_tokens": 3,
+			"cost_microusd": 4,
+		}}}, GENESIS_HASH)
+		usage_second = trace_event(1, "model_responded", {"data": {"usage": {
+			"input_tokens": 20,
+			"cache_read_input_tokens": 5,
+			"cache_creation_input_tokens": 0,
+			"output_tokens": 4,
+			"cost_microusd": 5,
+		}}}, usage_first["hash"])
+		usage_summary = summarize_usage([usage_first, usage_second])
+		report.check(
+			"trace-usage-aggregates-full-cache-coverage",
+			usage_summary["usage_coverage"]["complete"] is True
+			and usage_summary["cache_telemetry"]["observation"] == "REPORTED"
+			and usage_summary["totals"] == {
+				"input_tokens": 30,
+				"output_tokens": 7,
+				"cost_microusd": 9,
+				"cache_read_input_tokens": 10,
+				"cache_creation_input_tokens": 2,
+				"cache_read_share_ppm": 333_333,
+			},
+			str(usage_summary),
+		)
+		missing_usage = trace_event(0, "model_responded", {"data": {"finish_reason": "final"}}, GENESIS_HASH)
+		missing_usage_summary = summarize_usage([missing_usage])
+		report.check(
+			"trace-missing-usage-does-not-present-partial-totals",
+			missing_usage_summary["usage_coverage"]["complete"] is False
+			and missing_usage_summary["cache_telemetry"]["observation"] == "UNKNOWN"
+			and missing_usage_summary["cache_telemetry"]["unknown_turns"] == 1
+			and missing_usage_summary["totals"] == {
+				"input_tokens": None,
+				"output_tokens": None,
+				"cost_microusd": None,
+				"cache_read_input_tokens": None,
+				"cache_creation_input_tokens": None,
+				"cache_read_share_ppm": None,
+			},
+			str(missing_usage_summary),
+		)
+		legacy_usage = trace_event(0, "model_responded", {"data": {"usage": {
+			"input_tokens": 10,
+			"output_tokens": 3,
+			"cost_microusd": 4,
+		}}}, GENESIS_HASH)
+		legacy_usage_summary = summarize_usage([legacy_usage])
+		report.check(
+			"trace-legacy-usage-does-not-fake-cache-counters",
+			legacy_usage_summary["cache_telemetry"]["observation"] == "UNAVAILABLE"
+			and legacy_usage_summary["cache_telemetry"]["unavailable_turns"] == 1
+			and legacy_usage_summary["cache_telemetry"]["unknown_turns"] == 0
+			and legacy_usage_summary["totals"]["cache_read_input_tokens"] is None
+			and legacy_usage_summary["totals"]["cache_read_share_ppm"] is None,
+			str(legacy_usage_summary),
+		)
+		malformed_usage = trace_event(0, "model_responded", {"data": {"usage": {
+			"input_tokens": 10,
+			"cache_read_input_tokens": 1,
+			"output_tokens": 3,
+			"cost_microusd": 4,
+		}}}, GENESIS_HASH)
+		try:
+			summarize_usage([malformed_usage])
+			malformed_usage_rejected = False
+		except TraceError:
+			malformed_usage_rejected = True
+		report.check("trace-partial-cache-usage-fails-closed", malformed_usage_rejected, "partial cache receipt must not be summarized")
 		tampered = copy.deepcopy(second_event)
 		tampered["payload"]["nested"]["value"] = "changed"
 		trace_path.write_text("".join(json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n" for item in (first_event, tampered)), encoding="utf-8")

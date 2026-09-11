@@ -241,6 +241,10 @@
 			"expected_graph_shape": "centralized-diamond",
 			"expected_isolation_strategy": "git-worktree",
 			"expected_graph_runtime": {"writer": "Project Manager", "artifact_digests": "sha256", "resume": "fail-closed", "worker_token_storage": "ephemeral"},
+			"expected_context_boundary": "isolated-child",
+			"expected_context_isolation_label": "isolated",
+			"expected_context_transfer": "bounded-role-packet",
+			"expected_cache_observation": "UNAVAILABLE",
 			"forbidden_claims": ["worker writes shared graph state", "claim token committed to the repository", "graph runtime launches or authorizes agents"]
 		},
 		{
@@ -269,6 +273,50 @@
 			"expected_loop_level": "scheduled",
 			"expected_loop_fallback": "one bounded interactive iteration plus reusable handoff command",
 			"forbidden_claims": ["scheduled task created", "background execution available", "computer will wake itself"]
+		},
+		{
+			"id": "R27",
+			"request": "Harness standard: use the confirmed current model and effort for a sequential planner-to-implementation pass; preserve continuity but do not claim a cache hit.",
+			"available_capabilities": ["models.select"],
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Acceptance"],
+			"expected_context_boundary": "same-session",
+			"expected_context_isolation_label": "same-context",
+			"expected_context_transfer": "current-session",
+			"expected_cache_observation": "UNKNOWN",
+			"forbidden_claims": ["model switch occurred", "cache hit guaranteed", "independent QA"]
+		},
+		{
+			"id": "R28",
+			"request": "Harness full: after implementation, obtain an independent cross-provider security review in an isolated child and transfer only a bounded review packet.",
+			"available_capabilities": ["agents.isolated", "models.select"],
+			"expected_operation": "start",
+			"expected_scale": "full",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan", "Acceptance"],
+			"required_artifacts": [".harness/ROLE-PACKET.md"],
+			"expected_context_boundary": "isolated-child",
+			"expected_context_isolation_label": "independent-review",
+			"expected_context_transfer": "bounded-role-packet",
+			"expected_cache_observation": "UNAVAILABLE",
+			"forbidden_claims": ["full chat transferred", "cache reuse across providers", "model change alone proves independent review"]
+		},
+		{
+			"id": "R29",
+			"request": "Harness standard: continue a confirmed same-session pass. The runtime supplied attributable cache counters with a zero cache-read value; record them faithfully without claiming a cache hit.",
+			"available_capabilities": ["models.select"],
+			"expected_operation": "start",
+			"expected_scale": "standard",
+			"required_roles": ["Project Manager", "Planner / Architect", "Backend Engineer", "Tester / Reviewer / QA"],
+			"required_gates": ["Plan checkpoint", "Acceptance"],
+			"expected_context_boundary": "same-session",
+			"expected_context_isolation_label": "same-context",
+			"expected_context_transfer": "current-session",
+			"expected_cache_observation": "REPORTED",
+			"expected_cache_evidence": "attributable runtime cache counters for this pass",
+			"forbidden_claims": ["cache hit guaranteed", "cache reuse guaranteed", "independent QA"]
 		}
 	]
 }

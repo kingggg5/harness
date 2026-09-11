@@ -59,6 +59,14 @@ The pass runs within `INTAKE` or `PLAN`, writes no shared state, and adds no gat
 
 Do not activate a role or gate merely because its row exists. The Design Gate triggers only for a new or changed visual direction, flow/information architecture, design system, motion contract, or third-party asset choice.
 
+## Authorization and completion
+
+Plan and Design checkpoints resolve material choices, not routine implementation details. A clear user request or an earlier approved requirement/design/model plan supplies authorization within that scope; record it rather than asking for the same approval again. A changed scope, unresolved material architecture/schema decision, breaking or destructive effect, new credential/paid-service use, production mutation, or external communication needs authorization that covers that specific action. Platform permission prompts do not substitute for product decisions.
+
+Continue authorized implementation, runtime inspection where relevant, and repairs for change-caused failures. Tests verified to use disposable fixtures without production access may run and be rerun within this scope. Stop for genuinely missing authority or a material unresolved choice, an explicit review boundary, or an evidence-backed blocker—not merely because a first implementation is ready.
+
+Technical readiness and human acceptance are separate checkpoints. Finish applicable verification and report remaining limitations before requesting acceptance. Canonical delivery state then waits at `WAITING_ACCEPTANCE`; only human acceptance permits `DONE` and exact-run memory closure. Read-only reviews end with findings and no memory mutation.
+
 ## Review semantics
 
 - `review quick`: one bounded artifact or diff and focused checks.

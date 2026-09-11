@@ -47,7 +47,7 @@ These expire with this run and do not mutate durable memory.
 | Intake | Route, scope, risk, capabilities | Pending | |
 | Plan | Scope, exclusions, task graph, contracts | Pending or N/A | |
 | Design | Triggered design contract only | Pending or N/A | |
-| Decision | Durable/risky choices | Pending or N/A | |
+| Decision | Material unresolved choices or new consequential actions | Pending or N/A | |
 | Integration | Stable contracts and ownership | Pending or N/A | |
 | Verification | Acceptance matrix and evidence | Pending | |
 | Acceptance | Delivery only; review uses findings handoff | Pending or N/A | |
@@ -59,15 +59,19 @@ These expire with this run and do not mutate durable memory.
 
 ## Model routing ledger
 
-- Policy: current-only | adaptive | user-pinned
+- Policy: current-only (default) | adaptive (explicitly authorized) | user-pinned
+- Primary model/effort fixed for this task:
+- Model-plan authorization, if any:
 - User-pinned model/profile/effort or `N/A`:
+- Cache observation is advisory only: UNKNOWN | REPORTED | UNAVAILABLE
+- Routing tuple invariant: `same-session` → `same-context` → `current-session`; `isolated-child` → `isolated` or `independent-review` → `bounded-role-packet`. Record workspace/resource isolation separately in the execution envelope.
 
-| Packet/pass | Requested profile | Preferred model/effort | Actual model/effort | Selection reason/isolation | Fallback or escalation trigger |
-|---|---|---|---|---|---|
+| Packet/pass | Context boundary | Context transfer | Requested profile | Preferred model/effort | Actual model/effort | Selection reason/context-isolation label | Cache observation/evidence | Fallback or escalation trigger |
+|---|---|---|---|---|---|---|---|---|
 
 ## Role packets
 
-| Packet ID | Role/pass | Isolation label | Objective | Scope/owned files | State | Return evidence |
+| Packet ID | Role/pass | Context-isolation label | Objective | Scope/owned files | State | Return evidence |
 |---|---|---|---|---|---|---|
 
 ## Task graph

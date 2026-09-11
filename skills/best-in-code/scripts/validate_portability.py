@@ -19,10 +19,26 @@ from eval_matrix import EvalError, validate_suite
 from execution_kernel import KernelError, validate_contract as validate_run_contract
 from validate_loop_contract import validate_contract as validate_loop_contract
 from validate_task_graph import validate_graph
+from anthropic_adapter import AdapterError, load_config as load_adapter_config
 
 
 ALLOWED_OPERATIONS = {"start", "resume", "review", "init", "memory"}
 ALLOWED_SCALES = {"auto", "quick", "standard", "full"}
+ROUTER_CONTEXT_TRANSFERS = {
+	"same-session": "current-session",
+	"isolated-child": "bounded-role-packet",
+}
+ROUTER_CONTEXT_LABELS = {
+	"same-session": {"same-context"},
+	"isolated-child": {"isolated", "independent-review"},
+}
+ROUTER_CACHE_OBSERVATIONS = {"UNKNOWN", "REPORTED", "UNAVAILABLE"}
+ROUTER_CONTEXT_FIELDS = (
+	"expected_context_boundary",
+	"expected_context_isolation_label",
+	"expected_context_transfer",
+	"expected_cache_observation",
+)
 ALLOWED_STATES = {
 	"INTAKE", "DISCOVERY", "PLAN", "WAITING_PLAN", "DESIGN", "WAITING_DESIGN",
 	"BUILD", "INTEGRATE", "VERIFY", "REWORK", "WAITING_DECISION",
@@ -366,6 +382,72 @@ def check_cli(root: Path, errors: list[str]) -> None:
 			errors.append(f"CLI launcher is missing mapping: {marker}")
 
 
+def router_context_errors(case: dict[str, Any]) -> list[str]:
+	"""Validate a single routing tuple without inferring cache behavior.
+
+	A fail-closed graph resume crosses a context reset by definition, so it must
+	use the isolated-child tuple even when its evaluator fixture otherwise looks
+	like an ordinary graph case.
+	"""
+	errors: list[str] = []
+	case_id = case.get("id", "unknown")
+	boundary = case.get("expected_context_boundary")
+	has_context_field = any(field in case for field in ROUTER_CONTEXT_FIELDS)
+	runtime = case.get("expected_graph_runtime")
+	requires_isolated_child = isinstance(runtime, dict) and runtime.get("resume") == "fail-closed"
+	if boundary is None:
+		if has_context_field:
+			errors.append(f"Router context tuple is incomplete in {case_id}")
+		if requires_isolated_child:
+			errors.append(f"Session-resilient router case requires isolated-child in {case_id}")
+		return errors
+	if boundary not in ROUTER_CONTEXT_TRANSFERS:
+		errors.append(f"Invalid router context boundary in {case_id}")
+		return errors
+	if case.get("expected_context_transfer") != ROUTER_CONTEXT_TRANSFERS[boundary]:
+		errors.append(f"Router context transfer does not match boundary in {case_id}")
+	if case.get("expected_context_isolation_label") not in ROUTER_CONTEXT_LABELS[boundary]:
+		errors.append(f"Router context-isolation label does not match boundary in {case_id}")
+	observation = case.get("expected_cache_observation")
+	if observation not in ROUTER_CACHE_OBSERVATIONS:
+		errors.append(f"Invalid router cache observation in {case_id}")
+	if observation == "REPORTED":
+		evidence = case.get("expected_cache_evidence")
+		if not isinstance(evidence, str) or not evidence.strip():
+			errors.append(f"Reported router cache observation requires attributable evidence in {case_id}")
+	if requires_isolated_child and boundary != "isolated-child":
+		errors.append(f"Session-resilient router case requires isolated-child in {case_id}")
+	return errors
+
+
+def check_router_context_regressions(errors: list[str]) -> None:
+	"""Keep the fixture validator closed against crosswise routing tuples."""
+	negative_cases = (
+		{
+			"id": "negative-crosswise-tuple",
+			"expected_context_boundary": "isolated-child",
+			"expected_context_isolation_label": "same-context",
+			"expected_context_transfer": "current-session",
+			"expected_cache_observation": "UNAVAILABLE",
+		},
+		{
+			"id": "negative-blank-reported-evidence",
+			"expected_context_boundary": "same-session",
+			"expected_context_isolation_label": "same-context",
+			"expected_context_transfer": "current-session",
+			"expected_cache_observation": "REPORTED",
+			"expected_cache_evidence": " \t ",
+		},
+		{
+			"id": "negative-resume-without-boundary",
+			"expected_graph_runtime": {"resume": "fail-closed"},
+		},
+	)
+	for case in negative_cases:
+		if not router_context_errors(case):
+			errors.append(f"Router context validation accepted invalid regression case {case['id']}")
+
+
 def check_fixtures(root: Path, errors: list[str]) -> None:
 	eval_root = root / "skills" / "best-in-code" / "assets" / "evals"
 	router = load_json(eval_root / "router-cases.json", errors)
@@ -394,6 +476,13 @@ def check_fixtures(root: Path, errors: list[str]) -> None:
 			errors.append("Router fixtures need an unavailable model-selector fallback case")
 		if not any(case.get("expected_user_pinned_model") for case in cases):
 			errors.append("Router fixtures need a user-pinned model preservation case")
+		for case in cases:
+			if isinstance(case, dict):
+				errors.extend(router_context_errors(case))
+		check_router_context_regressions(errors)
+		for boundary, transfer in ROUTER_CONTEXT_TRANSFERS.items():
+			if not any(case.get("expected_context_boundary") == boundary and case.get("expected_context_transfer") == transfer for case in cases):
+				errors.append(f"Router fixtures need a {boundary} context-boundary case")
 		if not any(".harness/TASK-GRAPH.json" in case.get("required_artifacts", []) for case in cases):
 			errors.append("Router fixtures need a graph-engineering activation case")
 		if not any("TASK-GRAPH.json required" in case.get("forbidden_claims", []) for case in cases):
@@ -488,6 +577,91 @@ def runtime_digest(runtime_skill: Path) -> str:
 		digest.update(len(data).to_bytes(8, "big"))
 		digest.update(data)
 	return f"sha256:{digest.hexdigest()}"
+
+
+AGENT_MUTATING_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
+
+
+def check_claude_plugin_surface(root: Path, errors: list[str]) -> None:
+	"""Validate the Claude Code plugin surface: subagents, hooks, and the adapter template."""
+	manifest = load_json(root / ".claude-plugin" / "plugin.json", errors)
+	if not isinstance(manifest, dict):
+		return
+	agents_dir = root / str(manifest.get("agents", "./agents/"))
+	hooks_path = root / str(manifest.get("hooks", "./hooks/hooks.json"))
+	if not agents_dir.is_dir():
+		errors.append("Claude plugin agents directory is missing")
+	else:
+		agent_files = sorted(agents_dir.glob("*.md"))
+		if not agent_files:
+			errors.append("Claude plugin agents directory has no agent definitions")
+		for path in agent_files:
+			content = load_text(path, errors) or ""
+			match = re.match(r"^---\n(.*?)\n---\n(.*)$", content, re.DOTALL)
+			if not match:
+				errors.append(f"Agent {path.name} lacks YAML frontmatter")
+				continue
+			frontmatter, body = match.groups()
+			name = re.search(r"^name:[ \t]*([a-z0-9-]+)[ \t]*$", frontmatter, re.MULTILINE)
+			if not name or name.group(1) != path.stem:
+				errors.append(f"Agent {path.name} name must be lowercase-hyphenated and match the file name")
+			description = re.search(r"^description:[ \t]*(.+)$", frontmatter, re.MULTILINE)
+			if not description or len(description.group(1).strip()) < 60:
+				errors.append(f"Agent {path.name} description must explain when to use it")
+			tools = re.search(r"^tools:[ \t]*(.+)$", frontmatter, re.MULTILINE)
+			if not tools:
+				errors.append(f"Agent {path.name} must declare an explicit tools allowlist")
+			else:
+				declared = {item.strip() for item in tools.group(1).split(",")}
+				if declared & AGENT_MUTATING_TOOLS:
+					errors.append(f"Agent {path.name} must stay read-only; remove {sorted(declared & AGENT_MUTATING_TOOLS)}")
+			if "untrusted" not in body:
+				errors.append(f"Agent {path.name} must state that retrieved content is untrusted")
+	hooks = load_json(hooks_path, errors)
+	if not isinstance(hooks, dict) or not isinstance(hooks.get("hooks"), dict) or not hooks["hooks"]:
+		errors.append("Claude plugin hooks.json must contain a non-empty hooks object")
+	else:
+		for event, entries in hooks["hooks"].items():
+			if not isinstance(entries, list) or not entries:
+				errors.append(f"Hook event {event} must be a non-empty list")
+				continue
+			for entry in entries:
+				if not isinstance(entry, dict) or not isinstance(entry.get("hooks"), list):
+					errors.append(f"Hook event {event} entry is malformed")
+					continue
+				if event == "PreToolUse" and not isinstance(entry.get("matcher"), str):
+					errors.append("PreToolUse hooks must declare a tool matcher")
+				for hook in entry["hooks"]:
+					if not isinstance(hook, dict):
+						errors.append(f"Hook command for {event} is malformed")
+						continue
+					command = str(hook.get("command", ""))
+					target = re.search(r"\$\{CLAUDE_PLUGIN_ROOT\}/hooks/([A-Za-z0-9._-]+)", command)
+					if hook.get("type") != "command" or not target:
+						errors.append(f"Hook command for {event} must run a bundled script through ${{CLAUDE_PLUGIN_ROOT}}/hooks/")
+					elif not (hooks_path.parent / target.group(1)).is_file():
+						errors.append(f"Hook script is missing: hooks/{target.group(1)}")
+					if not isinstance(hook.get("timeout"), int) or isinstance(hook.get("timeout"), bool):
+						errors.append(f"Hook command for {event} must declare an integer timeout")
+	template = root / "skills" / "best-in-code" / "assets" / "templates" / "ANTHROPIC-ADAPTER.json"
+	contract = load_json(root / "skills" / "best-in-code" / "assets" / "templates" / "RUN-CONTRACT.json", errors)
+	try:
+		config = load_adapter_config(str(template))
+	except AdapterError as exc:
+		errors.append(f"ANTHROPIC-ADAPTER.json template is invalid: {exc}")
+		return
+	if isinstance(contract, dict):
+		roles = contract.get("delegation", {}).get("roles", []) if isinstance(contract.get("delegation"), dict) else []
+		profiles = {role.get("model_profile") for role in roles if isinstance(role, dict)}
+		missing = sorted(str(profile) for profile in profiles if profile not in config["profiles"])
+		if missing:
+			errors.append(f"ANTHROPIC-ADAPTER.json template lacks bindings for run-contract profiles: {missing}")
+		unused = sorted(profile for profile in config["profiles"] if profile not in profiles)
+		if unused:
+			errors.append(f"ANTHROPIC-ADAPTER.json template binds profiles absent from the run contract: {unused}")
+		for profile, binding in config["profiles"].items():
+			if binding["model"] not in config["pricing_microusd_per_million_tokens"]:
+				errors.append(f"ANTHROPIC-ADAPTER.json profile {profile} binds an unpriced model")
 
 
 def check_project(project: Path, require_adapters: bool, errors: list[str]) -> None:
@@ -592,9 +766,10 @@ def main() -> int:
 		check_cli(root, errors)
 		check_fixtures(root, errors)
 		check_manifests(root, errors)
+		check_claude_plugin_surface(root, errors)
 	if args.project:
 		check_project(Path(args.project), args.require_adapters, errors)
-	result = {"ok": not errors, "root": str(root), "errors": errors, "checks": (0 if args.project_only else 13) + int(bool(args.project))}
+	result = {"ok": not errors, "root": str(root), "errors": errors, "checks": (0 if args.project_only else 14) + int(bool(args.project))}
 	if args.json:
 		print(json.dumps(result, ensure_ascii=False, indent=2))
 	elif errors:
