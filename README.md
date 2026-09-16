@@ -176,6 +176,14 @@ npx github:kingggg5/harness run --project . --contract .harness/RUN-CONTRACT.jso
 
 `WAITING_APPROVAL` means the kernel stopped safely. Review its exact action and artifact digest, then use `run-approve`; use `run-cancel` to stop cooperatively. A completed kernel run still waits for the normal human Acceptance Gate. See the [execution runtime guide](skills/best-in-code/references/execution-runtime.md), [context compiler](skills/best-in-code/references/context-compiler.md), and [behavior/trace guide](skills/best-in-code/references/eval-runtime.md).
 
+### Performance work
+
+Performance work is conditional: begin with a reproducible workload, baseline, correctness gate, and resource budget; then profile and make one reversible hypothesis-driven change at a time. The cross-language [performance engineering guide](skills/best-in-code/references/performance-engineering.md) covers cache/data layout, allocations, I/O, parallelism, SIMD, managed runtimes, native rewrites, benchmark integrity, and bounded optimization loops. Copy [PERFORMANCE-EVIDENCE.md](skills/best-in-code/assets/templates/PERFORMANCE-EVIDENCE.md) only when the lane is active; raw benchmark data belongs in run evidence, not canonical memory.
+
+Use `harness perf-check --baseline perf-baseline.json --current perf-current.json --budget perf-budget.json --json` to compare closed cross-language results. It checks workload/environment comparability, correctness, p95/throughput/RSS/error budgets, and allowed regression without running project code itself.
+
+Use `harness perf-validate --result perf-current.json --json` in a language-specific benchmark runner or CI step before saving evidence for comparison.
+
 For a portable Python adapter or verifier, start its argv with `@harness-python`; Harness resolves it to the interpreter that started the kernel. Any other executable must be an absolute path—bare PATH commands such as `python`, `python3`, or `node` are refused to prevent substitution from a project directory or changed PATH.
 
 New schema-v2 contracts default to strict verifier isolation. Windows binds each verifier to a no-breakaway Job Object. Linux launches it as PID 1 of a fresh PID namespace through util-linux `unshare --user --pid --fork --kill-child --map-current-user`, probed once per run; when that namespace dies, the kernel kills every descendant, including one that called `setsid()`. A host that cannot create user/PID namespaces (macOS, a default Docker seccomp profile, a locked-down kernel) fails closed with the probe's reason instead of running the verifier. Select `best-effort` only deliberately for trusted, cooperative verifier code—the process-group fallback cannot contain a hostile descendant that creates its own session.
@@ -313,7 +321,19 @@ Keep the primary model and effort fixed for each task unless the user explicitly
 
 Each routed pass also declares a context boundary. `same-session` preserves the confirmed model and effort for sequential work that needs continuity, but it never guarantees a provider cache hit. `isolated-child` starts a new context for cross-model/provider, independent, concurrent, resumed, or narrowed-scope work and receives only a bounded role packet—not a full chat. Cache observation is recorded as `UNKNOWN`, `REPORTED`, or `UNAVAILABLE` only when evidence supports it; it is advisory and never a claim about price, retention, or quality. See [model routing](skills/best-in-code/references/model-routing.md) and [provider adapters](skills/best-in-code/references/provider-adapters.md).
 
-**Reference modules** loaded on demand: `workflow-graph`, `loop-engineering`, `loop-runtime`, `graph-engineering`, `graph-runtime`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+### Decision runtime
+
+The optional dependency-free decision runtime recommends typed `bool`, `choice`, and `score` values for route, risk, research, parallelism, or human review. It starts with a deterministic provider and a benchmark; it does not add PyTorch, model downloads, or a GPU to the core package.
+
+```bash
+harness decide --state state.json --questions questions.json --json
+harness decision-eval --suite .harness/runtime/assets/evals/DECISION-SUITE.json --trials 3 --json
+harness decision-eval --suite .harness/runtime/assets/evals/DECISION-REPRESENTATIVE-SUITE.json --trials 2 --json
+```
+
+Decision output is recommendation-only. Its deterministic policy floor sends low-confidence, high-risk, security-sensitive, or human-recommended cases to `human_approval`; the execution kernel still owns capabilities, budgets, authorization, tool calls, and human approval. See [decision runtime](skills/best-in-code/references/decision-runtime.md).
+
+**Reference modules** loaded on demand: `workflow-graph`, `loop-engineering`, `loop-runtime`, `graph-engineering`, `graph-runtime`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `decision-runtime`, `performance-engineering`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
 
 Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
 

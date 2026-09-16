@@ -15,6 +15,8 @@ Use the relevant lane:
 
 ## Discovery contract
 
+For a named performance, CPU, memory, I/O, or scale outcome, read [performance-engineering.md](performance-engineering.md) before choosing an optimization. It adds the cross-language performance contract, benchmark-integrity rules, technique ladder, and bounded optimization-loop constraints; this discovery loop remains the owner of uncertainty reduction.
+
 Before probing, record the compact contract in `WORKFLOW.md` and detailed lane evidence in conditional `EVIDENCE.md`:
 
 - objective and excluded scope;

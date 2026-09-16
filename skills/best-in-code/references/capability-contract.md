@@ -12,6 +12,7 @@ Harness depends on capabilities, not vendor or model names. At intake, record on
 | `automation.schedule` | Wake a bounded run on a verified cadence with status, pause/cancel, overlap, expiry, and run-count controls. |
 | `events.subscribe` | Receive authenticated bounded events with target validation, replay protection, and deduplication. |
 | `models.select` | Select and launch a verified model/effort profile for a bounded role pass. |
+| `decision.semantic` | Produce bounded typed semantic recommendations for route, risk, retrieval, or guardrail checks. |
 | `human.ask` | Pause for a material human decision. |
 | `filesystem.read` / `filesystem.write` | Inspect or mutate project files. |
 | `shell.execute` | Run local diagnostics, tests, builds, and approved scripts. |
@@ -38,6 +39,7 @@ Tool and skill names are backend bindings. Examples include the Claude Code plug
 | Scheduled/event loop | Verified scheduler/subscription with dedupe and cancellation → one bounded interactive iteration → reusable handoff command |
 | Durable graph receipts | Bundled local Git-backed ledger → Project Manager records the same evidence manually in `WORKFLOW.md` → static graph only |
 | Model selection | Keep current model/effort; select or change only within the user's explicit model authorization; never silently replace an explicitly required model |
+| Typed decision | Bundled deterministic decision runtime → labeled policy rule → human decision for material uncertainty |
 | Current documentation | Versioned-doc tool → official versioned docs → official repository/tag → installed local source → ask human |
 | Remote repository | Connector → local Git → official web source → user-provided evidence |
 | Browser/UI verification | Browser automation → repository E2E → manual screenshot/walkthrough evidence → `Not verified` |

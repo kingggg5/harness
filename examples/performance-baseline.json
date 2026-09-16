@@ -1,0 +1,28 @@
+{
+	"schema_version": 1,
+	"result_id": "checkout-baseline",
+	"workload": {
+		"id": "checkout-p95",
+		"dataset_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+		"command_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+		"distribution_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+		"mode": "warm",
+		"sample_count": 5
+	},
+	"environment": {
+		"runtime": "node-22.0",
+		"target": "checkout-service",
+		"host_class": "ci-linux-x64-medium"
+	},
+	"correctness": {
+		"status": "PASS",
+		"evidence_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+	},
+	"metrics": {
+		"latency_p50_ms": 80,
+		"latency_p95_ms": 120,
+		"throughput_per_second": 500,
+		"rss_bytes": 1048576,
+		"error_rate": 0
+	}
+}

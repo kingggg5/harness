@@ -1,0 +1,28 @@
+{
+	"schema_version": 1,
+	"result_id": "replace-me",
+	"workload": {
+		"id": "replace-me",
+		"dataset_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"command_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"distribution_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"mode": "warm",
+		"sample_count": 3
+	},
+	"environment": {
+		"runtime": "replace-with-runtime-and-version",
+		"target": "replace-with-approved-target",
+		"host_class": "replace-with-benchmark-host-class"
+	},
+	"correctness": {
+		"status": "PASS",
+		"evidence_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+	},
+	"metrics": {
+		"latency_p50_ms": 0,
+		"latency_p95_ms": 0,
+		"throughput_per_second": 0,
+		"rss_bytes": 0,
+		"error_rate": 0
+	}
+}

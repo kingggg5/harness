@@ -28,6 +28,14 @@ Do not insert tabs where the format forbids them or where doing so breaks the en
 - After a check passes, repeat or broaden it only for new changes, failures, repository requirements, or unresolved concerns.
 - Keep generated files, lockfiles, migrations, snapshots, and documentation aligned with the source change when they are genuinely affected.
 
+## Performance and scale, only when named
+
+- Start with a reproducible workload, baseline, target metric, correctness gate, and resource budget. Profile before selecting a tactic.
+- Treat algorithm/data movement, allocation/copying, cache locality, dispatch, contention, I/O, and runtime overhead as competing hypotheses; change one causal factor at a time.
+- Keep fast paths narrow and testable. Do not spread unsafe code, pooling, cache warming, layout tricks, thread changes, compiler flags, or native rewrites through ordinary product code without evidence.
+- Measure comparable cold/warm samples, p50/p95 or p99 where relevant, RSS/heap, CPU/I/O, and input distribution. A microbenchmark, emulator, or one host is not universal proof.
+- Preserve the complete behavioral contract. Faster code that drops validation, changes precision, weakens tests, silently raises memory/thread limits, or changes public behavior is not an accepted optimization.
+
 ## Review lenses
 
 QA selects only relevant lenses: functional correctness, invariants, contracts, security, privacy, concurrency, reliability, performance, accessibility, responsive UI, observability, migration safety, and operability. Findings must include a concrete failure scenario and practical remediation; style preference alone is not a defect unless it violates an approved convention.

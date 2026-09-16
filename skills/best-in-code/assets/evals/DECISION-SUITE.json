@@ -1,0 +1,42 @@
+{
+	"schema_version": 1,
+	"suite_id": "decision-runtime-smoke",
+	"questions": {
+		"schema_version": 1,
+		"questions": [
+			{"id": "route", "type": "choice", "options": ["quick", "standard", "full"]},
+			{"id": "needs_human", "type": "bool"},
+			{"id": "risk", "type": "score", "minimum": 0, "maximum": 1},
+			{"id": "needs_research", "type": "bool"},
+			{"id": "needs_parallelism", "type": "bool"},
+			{"id": "security_risk", "type": "score", "minimum": 0, "maximum": 1}
+		]
+	},
+	"cases": [
+		{
+			"id": "typo",
+			"state": {"task": "Fix a spelling typo in one existing button label."},
+			"expected": {"route": "quick", "needs_human": false, "risk": 0.04, "needs_research": false, "needs_parallelism": false, "security_risk": 0.036}
+		},
+		{
+			"id": "api-endpoint",
+			"state": {"task": "Add a normal API endpoint and connect the existing client."},
+			"expected": {"route": "standard", "needs_human": false, "risk": 0.2, "needs_research": false, "needs_parallelism": false, "security_risk": 0.06}
+		},
+		{
+			"id": "production-migration",
+			"state": {"task": "Migrate authentication and tenant data in production."},
+			"expected": {"route": "full", "needs_human": true, "risk": 0.4, "needs_research": false, "needs_parallelism": false, "security_risk": 0.09}
+		},
+		{
+			"id": "security-review",
+			"state": {"task": "Research a security vulnerability and review the affected dependency."},
+			"expected": {"route": "full", "needs_human": true, "risk": 0.44, "needs_research": true, "needs_parallelism": false, "security_risk": 0.846}
+		},
+		{
+			"id": "parallel-build",
+			"state": {"task": "Build the frontend and backend in parallel with isolated worktrees."},
+			"expected": {"route": "standard", "needs_human": false, "risk": 0.04, "needs_research": false, "needs_parallelism": true, "security_risk": 0.036}
+		}
+	]
+}

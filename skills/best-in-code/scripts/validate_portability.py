@@ -20,6 +20,7 @@ from execution_kernel import KernelError, validate_contract as validate_run_cont
 from validate_loop_contract import validate_contract as validate_loop_contract
 from validate_task_graph import validate_graph
 from anthropic_adapter import AdapterError, load_config as load_adapter_config
+from performance_budget import PerformanceError, compare as compare_performance, validate_budget as validate_performance_budget, validate_result as validate_performance_result
 
 
 ALLOWED_OPERATIONS = {"start", "resume", "review", "init", "memory"}
@@ -69,6 +70,8 @@ REQUIRED_FILES = (
 	"skills/best-in-code/references/context-compiler.md",
 	"skills/best-in-code/references/eval-runtime.md",
 	"skills/best-in-code/references/model-routing.md",
+	"skills/best-in-code/references/decision-runtime.md",
+	"skills/best-in-code/references/performance-engineering.md",
 	"skills/best-in-code/references/requirements-analysis.md",
 	"skills/best-in-code/references/capability-contract.md",
 	"skills/best-in-code/references/provider-adapters.md",
@@ -80,6 +83,10 @@ REQUIRED_FILES = (
 	"skills/best-in-code/scripts/context_compiler.py",
 	"skills/best-in-code/scripts/context_eval_trace_tests.py",
 	"skills/best-in-code/scripts/eval_matrix.py",
+	"skills/best-in-code/scripts/decision_runtime.py",
+	"skills/best-in-code/scripts/decision_runtime_tests.py",
+	"skills/best-in-code/scripts/performance_budget.py",
+	"skills/best-in-code/scripts/performance_budget_tests.py",
 	"skills/best-in-code/scripts/execution_kernel.py",
 	"skills/best-in-code/scripts/execution_runtime_tests.py",
 	"skills/best-in-code/scripts/reference_adapter.py",
@@ -100,10 +107,16 @@ REQUIRED_FILES = (
 	"skills/best-in-code/assets/evals/router-cases.json",
 	"skills/best-in-code/assets/evals/memory-cases.json",
 	"skills/best-in-code/assets/evals/BEHAVIOR-SUITE.json",
+	"skills/best-in-code/assets/evals/DECISION-SUITE.json",
+	"skills/best-in-code/assets/evals/DECISION-REPRESENTATIVE-SUITE.json",
 	"skills/best-in-code/assets/templates/IDENTITY.json",
 	"skills/best-in-code/assets/templates/MEMORY.json",
 	"skills/best-in-code/assets/templates/INDEX.md",
 	"skills/best-in-code/assets/templates/CONFIG.md",
+	"skills/best-in-code/assets/templates/DECISION-QUESTIONS.json",
+	"skills/best-in-code/assets/templates/PERFORMANCE-EVIDENCE.md",
+	"skills/best-in-code/assets/templates/PERFORMANCE-RESULT.json",
+	"skills/best-in-code/assets/templates/PERFORMANCE-BUDGET.json",
 	"skills/best-in-code/assets/templates/CONTEXT.md",
 	"skills/best-in-code/assets/templates/PROJECT-MAP.md",
 	"skills/best-in-code/assets/templates/LOOP-CONTRACT.json",
@@ -123,6 +136,9 @@ REQUIRED_FILES = (
 	"examples/graph-engineering-feature.md",
 	"examples/loop-engineering-performance.json",
 	"examples/loop-engineering-performance.md",
+	"examples/performance-baseline.json",
+	"examples/performance-current.json",
+	"examples/performance-budget.json",
 	"examples/executable-agent-graph.md",
 )
 
@@ -310,6 +326,28 @@ def check_templates(root: Path, errors: list[str]) -> None:
 		if contract is not None:
 			for error in validate_loop_contract(contract):
 				errors.append(f"Invalid loop contract {relative}: {error}")
+	performance_result = load_json(template_root / "PERFORMANCE-RESULT.json", errors)
+	if performance_result is not None:
+		try:
+			validate_performance_result(performance_result, "performance result template")
+		except PerformanceError as exc:
+			errors.append(f"Invalid PERFORMANCE-RESULT.json: {exc}")
+	performance_budget = load_json(template_root / "PERFORMANCE-BUDGET.json", errors)
+	if performance_budget is not None:
+		try:
+			validate_performance_budget(performance_budget, "performance budget template")
+		except PerformanceError as exc:
+			errors.append(f"Invalid PERFORMANCE-BUDGET.json: {exc}")
+	performance_baseline = load_json(root / "examples/performance-baseline.json", errors)
+	performance_current = load_json(root / "examples/performance-current.json", errors)
+	performance_example_budget = load_json(root / "examples/performance-budget.json", errors)
+	if performance_baseline is not None and performance_current is not None and performance_example_budget is not None:
+		try:
+			report = compare_performance(performance_baseline, performance_current, performance_example_budget)
+			if report["status"] != "PASS":
+				errors.append("Performance examples must pass their declared budget")
+		except PerformanceError as exc:
+			errors.append(f"Invalid performance example: {exc}")
 	for relative in (
 		"skills/best-in-code/assets/templates/TASK-GRAPH.json",
 		"examples/graph-engineering-feature.json",

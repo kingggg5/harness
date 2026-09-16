@@ -1,0 +1,28 @@
+{
+	"schema_version": 1,
+	"questions": [
+		{
+			"id": "route",
+			"type": "choice",
+			"options": ["quick", "standard", "full"]
+		},
+		{
+			"id": "needs_human",
+			"type": "bool"
+		},
+		{
+			"id": "risk",
+			"type": "score",
+			"minimum": 0,
+			"maximum": 1
+		},
+		{
+			"id": "needs_research",
+			"type": "bool"
+		},
+		{
+			"id": "needs_parallelism",
+			"type": "bool"
+		}
+	]
+}

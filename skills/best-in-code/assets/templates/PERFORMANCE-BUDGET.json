@@ -1,0 +1,21 @@
+{
+	"schema_version": 1,
+	"budget_id": "replace-me",
+	"workload": {
+		"id": "replace-me",
+		"dataset_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"command_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"distribution_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"mode": "warm",
+		"sample_count": 3
+	},
+	"comparison": {
+		"require_same_environment": true
+	},
+	"metrics": [
+		{"name": "latency_p95_ms", "limit": 0, "max_regression_ppm": 0},
+		{"name": "throughput_per_second", "limit": 0, "max_regression_ppm": 0},
+		{"name": "rss_bytes", "limit": 0, "max_regression_ppm": 0},
+		{"name": "error_rate", "limit": 0, "max_regression_ppm": 0}
+	]
+}

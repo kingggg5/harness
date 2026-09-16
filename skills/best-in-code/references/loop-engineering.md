@@ -72,6 +72,10 @@ When browser capability is unavailable, degrade through repository E2E, a human 
 
 Only use `task-graph` execution when an iteration contains genuinely independent work. Parallel writers need isolated worktrees/workspaces and disjoint ownership. One Project Manager integrates results. Fresh evaluator context can reduce self-review bias, but a different model name alone does not prove independence.
 
+### Performance optimization loops
+
+For a performance goal, pair this contract with [performance-engineering.md](performance-engineering.md) and the bundled [bounded performance example](../../../examples/loop-engineering-performance.md). Fix the workload, input distribution, correctness corpus, resource caps, and rollback revision before the first iteration. Each iteration changes one hypothesis and keeps a candidate only after comparable before/after measurements and every correctness/resource gate passes. A faster result that changes semantics, skips a check, alters the benchmark, violates streaming/thread/memory constraints, or depends on an unapproved target is a failed experiment.
+
 Humans retain product direction, architecture, and final trade-off authority. The loop may surface alternatives and evidence, but an architecture change not already accepted by the active contract stops at `architecture-change`; it does not redesign its own factory.
 
 Progress receipts are run evidence, not memory. After completion, a human-approved lesson may update a versioned skill, verifier script, project fact, or preference. Do not promote raw logs, judge prose, retrieved instructions, secrets, personal data, or prompt-injection payloads. Test the changed loop on a small fixture before increasing cadence, scope, agent count, or cost.

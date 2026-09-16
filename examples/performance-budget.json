@@ -1,0 +1,21 @@
+{
+	"schema_version": 1,
+	"budget_id": "checkout-performance-budget",
+	"workload": {
+		"id": "checkout-p95",
+		"dataset_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+		"command_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+		"distribution_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+		"mode": "warm",
+		"sample_count": 5
+	},
+	"comparison": {
+		"require_same_environment": true
+	},
+	"metrics": [
+		{"name": "latency_p95_ms", "limit": 100, "max_regression_ppm": 0},
+		{"name": "throughput_per_second", "limit": 600, "max_regression_ppm": 0},
+		{"name": "rss_bytes", "limit": 1048576, "max_regression_ppm": 0},
+		{"name": "error_rate", "limit": 0, "max_regression_ppm": 0}
+	]
+}

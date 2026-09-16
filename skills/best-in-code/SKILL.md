@@ -1,6 +1,6 @@
 ---
 name: best-in-code
-description: Run or resume the Harness software-delivery workflow - routed quick/standard/full delivery, read-only review, project init, resume, and remember/recall/forget memory commands - with scoped project memory and human decision gates. Use when the user invokes Harness (`Harness: <task>`, `Harness review`, `Harness resume`) or asks for its reusable workflow; do not use for a plain explanation with no project work.
+description: "Run or resume Harness delivery work with scoped project memory and human gates. Use for explicit Harness requests, routed quick/standard/full delivery, review, init, resume, or direct memory commands; do not use for plain explanations."
 ---
 
 # Best in Code
@@ -38,7 +38,8 @@ Read a linked module only when its condition applies; follow further links only 
 | Nontrivial implementation conventions or quality decisions | [engineering-standards.md](references/engineering-standards.md) |
 | A needed optional backend, permission, or isolation capability | [capability-contract.md](references/capability-contract.md); probe the required capabilities only |
 | Unclear business outcome, actors, rules, or acceptance behavior | [requirements-analysis.md](references/requirements-analysis.md) |
-| Bug diagnosis, performance, scale, security, or architectural unknowns | [discovery-loop.md](references/discovery-loop.md) |
+| Bug, security, or architecture unknowns; performance/scale uncertainty after its contract is set | [discovery-loop.md](references/discovery-loop.md) |
+| Named latency, throughput, CPU/RSS, allocation, cache, I/O, scale, or performance rewrite outcome | [performance-engineering.md](references/performance-engineering.md) |
 | Current library/API or external evidence | [research-routing.md](references/research-routing.md) |
 | UI/design work | [frontend-skill-routing.md](references/frontend-skill-routing.md) and [ux-laws-and-visual-discovery.md](references/ux-laws-and-visual-discovery.md) |
 | Real independent branches or an explicit task graph | [graph-engineering.md](references/graph-engineering.md) |
@@ -47,6 +48,7 @@ Read a linked module only when its condition applies; follow further links only 
 | Durable loop supervision or task-node receipts | [loop-runtime.md](references/loop-runtime.md) or [graph-runtime.md](references/graph-runtime.md), respectively |
 | Provider-neutral executable role graph | [execution-runtime.md](references/execution-runtime.md) |
 | Explicit model routing or cross-model handoff | [model-routing.md](references/model-routing.md) |
+| Typed semantic route/risk/guardrail recommendations | [decision-runtime.md](references/decision-runtime.md) |
 | Bounded context compilation or source provenance | [context-compiler.md](references/context-compiler.md) |
 | Behavior trials, trace inspection, or Harness evaluation changes | [eval-runtime.md](references/eval-runtime.md) and [harness-evaluation.md](references/harness-evaluation.md) |
 | Researching changes to Harness architecture or policy | [research-basis-2026.md](references/research-basis-2026.md) |

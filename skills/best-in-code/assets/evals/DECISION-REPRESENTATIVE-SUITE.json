@@ -1,0 +1,35 @@
+{
+	"schema_version": 1,
+	"suite_id": "decision-runtime-representative-v1",
+	"questions": {
+		"schema_version": 1,
+		"questions": [
+			{"id": "route", "type": "choice", "options": ["quick", "standard", "full"]},
+			{"id": "needs_human", "type": "bool"},
+			{"id": "needs_research", "type": "bool"},
+			{"id": "needs_parallelism", "type": "bool"}
+		]
+	},
+	"cases": [
+		{"id": "typo-label", "state": {"task": "Fix a spelling typo in one existing button label."}, "expected": {"route": "quick", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "rename-variable", "state": {"task": "Rename one local variable to a meaningful name."}, "expected": {"route": "quick", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "docs-update", "state": {"task": "Update one README example for clarity."}, "expected": {"route": "quick", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "format-css", "state": {"task": "Format the existing CSS without changing behavior."}, "expected": {"route": "quick", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "test-assertion", "state": {"task": "Fix one failing unit-test assertion with an existing reproduction."}, "expected": {"route": "standard", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "api-endpoint", "state": {"task": "Add a normal API endpoint and connect the existing client."}, "expected": {"route": "standard", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "module-refactor", "state": {"task": "Refactor the parser module while preserving its public API."}, "expected": {"route": "standard", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "database-index", "state": {"task": "Add a database index for the existing query and verify the migration."}, "expected": {"route": "full", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "race-bug", "state": {"task": "Investigate and fix a race condition in the job queue."}, "expected": {"route": "standard", "needs_human": false, "needs_research": true, "needs_parallelism": false}},
+		{"id": "frontend-backend", "state": {"task": "Integrate the frontend form with the backend validation endpoint."}, "expected": {"route": "standard", "needs_human": false, "needs_research": false, "needs_parallelism": true}},
+		{"id": "auth-production", "state": {"task": "Migrate authentication and tenant data in production."}, "expected": {"route": "full", "needs_human": true, "needs_research": false, "needs_parallelism": false}},
+		{"id": "deploy-production", "state": {"task": "Deploy the approved release to production."}, "expected": {"route": "full", "needs_human": true, "needs_research": false, "needs_parallelism": false}},
+		{"id": "delete-data", "state": {"task": "Delete expired customer records after the approved retention review."}, "expected": {"route": "full", "needs_human": true, "needs_research": false, "needs_parallelism": false}},
+		{"id": "payment-checkout", "state": {"task": "Build a payment checkout flow with provider webhooks."}, "expected": {"route": "full", "needs_human": true, "needs_research": false, "needs_parallelism": false}},
+		{"id": "security-review", "state": {"task": "Research a security vulnerability and review the affected dependency."}, "expected": {"route": "full", "needs_human": true, "needs_research": true, "needs_parallelism": false}},
+		{"id": "compliance-review", "state": {"task": "Research the compliance requirement and review the data flow."}, "expected": {"route": "full", "needs_human": true, "needs_research": true, "needs_parallelism": false}},
+		{"id": "scale-million", "state": {"task": "Scale capacity for one million users and measure the current bottleneck."}, "expected": {"route": "full", "needs_human": false, "needs_research": false, "needs_parallelism": false}},
+		{"id": "performance-slo", "state": {"task": "Investigate a latency regression against the production p95 SLO."}, "expected": {"route": "full", "needs_human": true, "needs_research": true, "needs_parallelism": false}},
+		{"id": "external-research", "state": {"task": "Research the latest API documentation and compare supported versions."}, "expected": {"route": "standard", "needs_human": false, "needs_research": true, "needs_parallelism": false}},
+		{"id": "parallel-graph", "state": {"task": "Build the frontend and backend in parallel with isolated worktrees."}, "expected": {"route": "standard", "needs_human": false, "needs_research": false, "needs_parallelism": true}}
+	]
+}

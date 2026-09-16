@@ -32,6 +32,10 @@ const PROJECT_SCRIPTS = {
 	"context-build": { script: "context_compiler.py", prefix: ["compile"] },
 	"tools-validate": { script: "context_compiler.py", prefix: ["validate-tools"] },
 	"eval-matrix": { script: "eval_matrix.py", prefix: [] },
+	decide: { script: "decision_runtime.py", prefix: ["decide"] },
+	"decision-eval": { script: "decision_runtime.py", prefix: ["eval"] },
+	"perf-check": { script: "performance_budget.py", prefix: [] },
+	"perf-validate": { script: "performance_budget.py", prefix: ["--validate"] },
 	trace: { script: "trace_ops.py", prefix: [] },
 	evals: { script: "run_memory_evals.py", prefix: [] },
 	race: { script: "race_tests.py", prefix: [] },
@@ -61,6 +65,10 @@ Project lifecycle:
   context-build Compile bounded, provenance-rich task context
   tools-validate Validate a closed capability/tool registry
   eval-matrix Run full/single-owner/ablation behavior trials
+  decide      Recommend typed route/risk decisions without executing actions
+  decision-eval Benchmark the deterministic decision provider
+  perf-check  Compare bounded baseline/current performance evidence
+  perf-validate Validate one cross-language performance result
   trace       Validate, inspect, summarize usage, redact, or dry-run replay of a trace
 
 Memory operations (memory_ops.py):
@@ -83,6 +91,9 @@ Examples:
   npx github:kingggg5/harness run --project . --contract .harness/RUN-CONTRACT.json --adapter-argv-file .harness/ADAPTER-ARGV.json
   npx github:kingggg5/harness context-build --project . --task "Fix checkout race" --include src/checkout.ts
   npx github:kingggg5/harness eval-matrix --suite skills/best-in-code/assets/evals/BEHAVIOR-SUITE.json --variant full --json
+
+  npx github:kingggg5/harness perf-check --baseline perf-baseline.json --current perf-current.json --budget perf-budget.json --json
+  npx github:kingggg5/harness perf-validate --result perf-current.json --json
   npx github:kingggg5/harness close-run --project . --run-id RUN-7f3a`;
 
 function pathEnvironmentName(environment) {

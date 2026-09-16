@@ -66,6 +66,7 @@ Leave backend blank until preflight proves it ready. Do not treat installation a
 | automation.schedule | | one bounded interactive iteration and handoff | UNAVAILABLE |
 | events.subscribe | | human-provided event and one bounded iteration | UNAVAILABLE |
 | models.select | | current model with labeled pass | UNAVAILABLE |
+| decision.semantic | bundled deterministic decision runtime | labeled policy rule or human decision | READY |
 | vcs.worktree | | sequential execution in current workspace | UNAVAILABLE |
 | graph.ledger | bundled local runtime after Git/identity probe | manual Project Manager receipts | UNAVAILABLE |
 | docs.versioned | | official docs/repo/local source | UNAVAILABLE |

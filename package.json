@@ -28,7 +28,7 @@
 		"harness": "bin/harness.js"
 	},
 	"scripts": {
-		"test": "npm run test:portability && npm run test:launcher && npm run test:ci-policy && npm run test:runtime-pin && npm run test:execution && npm run test:anthropic-adapter && npm run test:context-eval-trace && npm run test:loop && npm run test:loop-runtime && npm run test:graph && npm run test:graph-runtime && npm run test:race && npm run test:memory && npm run test:sbom && npm run test:portability",
+		"test": "npm run test:portability && npm run test:launcher && npm run test:ci-policy && npm run test:runtime-pin && npm run test:execution && npm run test:anthropic-adapter && npm run test:context-eval-trace && npm run test:decision && npm run test:performance && npm run test:loop && npm run test:loop-runtime && npm run test:graph && npm run test:graph-runtime && npm run test:race && npm run test:memory && npm run test:sbom && npm run test:portability",
 		"test:portability": "python -B skills/best-in-code/scripts/validate_portability.py",
 		"test:launcher": "node scripts/launcher_tests.mjs",
 		"test:ci-policy": "python -B scripts/check_eval_results_tests.py",
@@ -36,6 +36,8 @@
 		"test:execution": "python -B skills/best-in-code/scripts/execution_runtime_tests.py",
 		"test:anthropic-adapter": "python -B skills/best-in-code/scripts/anthropic_adapter_tests.py",
 		"test:context-eval-trace": "python -B skills/best-in-code/scripts/context_eval_trace_tests.py",
+		"test:decision": "python -B skills/best-in-code/scripts/decision_runtime_tests.py",
+		"test:performance": "python -B skills/best-in-code/scripts/performance_budget_tests.py",
 		"test:loop": "python -B skills/best-in-code/scripts/loop_tests.py",
 		"test:loop-runtime": "python -B skills/best-in-code/scripts/loop_runtime_tests.py",
 		"test:graph": "python -B skills/best-in-code/scripts/graph_tests.py",
