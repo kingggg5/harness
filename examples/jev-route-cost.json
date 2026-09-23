@@ -1,0 +1,9 @@
+{
+	"context_tokens": 650000,
+	"output_tokens": 120000,
+	"read_tokens": 230000,
+	"frontier_input": 5000000,
+	"frontier_output": 25000000,
+	"helper_input": 3000000,
+	"helper_output": 15000000
+}

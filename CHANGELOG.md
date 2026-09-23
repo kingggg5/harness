@@ -4,6 +4,13 @@
 
 Run-contract `schema_version` 2 and adapter protocol 2 are breaking for external adapters: a v2 contract sends protocol-2 requests, and a v2 response must use exactly the legacy or the complete cache-telemetry usage shape. Schema-1 contracts keep protocol 1.
 
+### Jev query-time context (opt-in schema v3)
+
+- Added `jev_runtime.py` for bounded context visibility (`hide`/`short`/`long`/`full`), confidence validation, local extractive selection, public-only TypeSafe decisions, tiered tool disclosure, trust-aware route estimates, and content-aware command review.
+- Added the opt-in `RUN-CONTRACT-JEV.json` and `TURN-POLICY.json` templates. Existing schema-v1/v2 projects keep their current runtime behavior; schema-v3 external Jev calls require explicit public-data policy and use reported token/cost budgets.
+- Wired schema-v3 context into the execution kernel and Anthropic adapter, reloads pinned conditional instructions, removes duplicate latest-result chunks, and retains full bounded evidence in the existing ledger.
+- Added offline Jev policy/runtime coverage, CLI commands, portability checks, and Thai/English implementation guides. A synthetic fixture measured 15.4% fewer serialized request bytes after duplicate removal; this is not a billed-token or task-quality claim.
+
 ### Added
 
 - Run-contract schema v2 with `verifier_isolation` (`required` by default). Windows keeps the suspended-start no-breakaway Job Object; Linux now has a real strict backend that launches each verifier as PID 1 of a fresh user/PID namespace (`unshare --fork --kill-child --map-current-user`), probed once per run so an unavailable namespace fails closed with its reason instead of silently degrading. A `setsid()` descendant cannot outlive the namespace; the integration suite proves both the contained and the fail-closed paths.

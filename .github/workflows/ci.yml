@@ -41,6 +41,12 @@ jobs:
         run: python skills/best-in-code/scripts/anthropic_adapter_tests.py
       - name: Context, tool-contract, eval, and trace suite
         run: python skills/best-in-code/scripts/context_eval_trace_tests.py
+      - name: Jev turn context and policy suite (offline)
+        run: python -B skills/best-in-code/scripts/jev_runtime_tests.py
+      - name: Decision runtime regression suite
+        run: python -B skills/best-in-code/scripts/decision_runtime_tests.py
+      - name: Performance budget regression suite
+        run: python -B skills/best-in-code/scripts/performance_budget_tests.py
       - name: Loop-contract invariant suite
         run: python skills/best-in-code/scripts/loop_tests.py
       - name: Loop runtime integration suite

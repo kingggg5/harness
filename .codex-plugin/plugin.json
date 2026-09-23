@@ -1,9 +1,9 @@
 {
   "name": "harness",
-  "version": "0.7.0+codex.20260911092453",
-  "description": "A provider-neutral software-delivery harness with executable agent graphs, bounded context, durable memory, behavioral evals, trusted tool policy, and human gates.",
+  "version": "0.7.0+codex.20260923034629",
+  "description": "A provider-neutral software-delivery harness with executable agent graphs, durable memory, behavioral evals, trusted tool policy, human gates, and optional Jev query-time context decisions.",
   "author": {
-    "name": "Local developer"
+    "name": "kingggg5"
   },
   "keywords": [
     "coding",
@@ -36,7 +36,7 @@
     "displayName": "Harness",
     "shortDescription": "Executable agent graphs, durable memory, evals, and human gates.",
     "longDescription": "Harness routes each task to quick, standard, or full delivery; compiles bounded provenance-rich context; validates provider-neutral loop and task-graph contracts; can execute a reviewed role graph through a capability-bounded adapter with model profiles, exact tool scopes, durable action-bound approvals, cancellation, crash guards, and a hash-chained trace; preserves scoped memory; defends research and tool output from prompt injection; and applies behavioral evals, evidence-based QA, and human gates. Named models and optional tools remain reviewed backend mappings rather than hard dependencies.",
-    "developerName": "Local developer",
+    "developerName": "kingggg5",
     "category": "Developer Tools",
     "capabilities": [
       "Adaptive Quick/Standard/Full Routing",
@@ -46,6 +46,8 @@
       "Content-Addressed Graph Receipts and Resume",
       "Executable Capability-Bounded Agent Graphs",
       "Provenance-Rich Context Compilation",
+      "Opt-In Jev Query-Time Context and Tiered Tool Disclosure",
+      "Trust-Aware Routing and Content-Aware Command Review",
       "Durable Action-Bound Approval Receipts",
       "Behavioral Full and Ablation Evaluation Matrix",
       "Hash-Chained Trace Validation and Redaction",

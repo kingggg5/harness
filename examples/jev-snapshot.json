@@ -1,0 +1,6 @@
+{
+	"chunks": [
+		{"id": "public-addition", "path": "docs/addition.md", "kind": "public-doc", "content": "Addition combines two numbers. For example, 2 + 3 = 5.", "pinned": false},
+		{"id": "public-colors", "path": "docs/colors.md", "kind": "public-doc", "content": "Red, green and blue are primary colors of additive light.", "pinned": false}
+	]
+}

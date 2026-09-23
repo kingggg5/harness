@@ -30,6 +30,9 @@ const PROJECT_SCRIPTS = {
 	"run-cancel": { script: "execution_kernel.py", prefix: ["cancel"] },
 	"run-trace-verify": { script: "execution_kernel.py", prefix: ["verify-trace"] },
 	"context-build": { script: "context_compiler.py", prefix: ["compile"] },
+	"turn-build": { script: "jev_runtime.py", prefix: ["build"] },
+	"tools-disclose": { script: "jev_runtime.py", prefix: ["tools"] },
+	"route-cost": { script: "jev_runtime.py", prefix: ["cost"] },
 	"tools-validate": { script: "context_compiler.py", prefix: ["validate-tools"] },
 	"eval-matrix": { script: "eval_matrix.py", prefix: [] },
 	decide: { script: "decision_runtime.py", prefix: ["decide"] },
@@ -63,6 +66,9 @@ Project lifecycle:
   run         Execute/resume a capability-bounded agent graph
   run-validate | run-status | run-approve | run-cancel | run-trace-verify
   context-build Compile bounded, provenance-rich task context
+  turn-build  Project explicit chunks for a query (optional --jev-public)
+  tools-disclose Show snippets, selected schemas or tool docs
+  route-cost  Price delegation including the return context rebuild
   tools-validate Validate a closed capability/tool registry
   eval-matrix Run full/single-owner/ablation behavior trials
   decide      Recommend typed route/risk decisions without executing actions

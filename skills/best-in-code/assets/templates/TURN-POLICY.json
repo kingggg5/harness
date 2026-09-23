@@ -1,0 +1,18 @@
+{
+	"schema_version": 1,
+	"max_context_bytes": 65536,
+	"decision_provider": "local",
+	"decision_rates": {"input": 1, "output": 1},
+	"instructions": [],
+	"sensitivity": [],
+	"models": {
+		"gpt-luna-analysis": "vetted",
+		"gpt-luna-research": "vetted",
+		"gpt-sol-orchestrate-review": "first_party_frontier",
+		"gpt-sol-plan": "vetted",
+		"gpt-sol-test-review": "first_party_frontier",
+		"gpt-terra-build": "first_party_frontier",
+		"gpt-terra-design": "vetted"
+	},
+	"commands": []
+}

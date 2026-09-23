@@ -35,6 +35,11 @@ from typing import Any, BinaryIO, Callable
 sys.dont_write_bytecode = True
 
 from bounded_json import load_bounded_json, unique_object
+from context_compiler import detect_prompt_injection
+from jev_runtime import (
+	TurnError, command_gate, disclose_tools, instruction_chunks, project_chunks,
+	require_model, public_chunks, sensitivity, validate_policy, jev_choices, visibility_questions,
+)
 from memory_ops import (
 	MemoryErrorWithCode,
 	assert_current_identity,
@@ -54,6 +59,7 @@ PROTOCOL_VERSION = 2
 SUPPORTED_PROTOCOL_VERSIONS = {LEGACY_PROTOCOL_VERSION, PROTOCOL_VERSION}
 LEGACY_CONTRACT_SCHEMA = 1
 CONTRACT_SCHEMA = 2
+TURN_CONTRACT_SCHEMA = 3
 STATE_SCHEMA = 1
 RECEIPT_SCHEMA = 1
 TRACE_SCHEMA = 1
@@ -100,6 +106,7 @@ _POSIX_CONTAINMENT_LOCK = threading.Lock()
 TOOL_IDS = {
 	"workspace.read", "workspace.write", "verifier.run", "human.request",
 	"agent.delegate",
+	"tools.describe",
 }
 ACTION_TYPES = {
 	"write", "execute", "delegate", "publish", "deploy", "delete",
@@ -133,6 +140,7 @@ CONTRACT_FIELDS_V1 = {
 	"root_role", "budgets", "adapter", "tools", "verifiers", "delegation",
 }
 CONTRACT_FIELDS_V2 = {*CONTRACT_FIELDS_V1, "verifier_isolation"}
+CONTRACT_FIELDS_V3 = {*CONTRACT_FIELDS_V2, "turn_policy"}
 VERIFIER_ISOLATION_POLICIES = {"required", "best-effort"}
 BUDGET_FIELDS = {
 	"max_steps", "max_tokens", "max_cost_microusd", "max_external_calls",
@@ -414,12 +422,20 @@ def validate_contract(data: Any) -> dict[str, Any]:
 	schema_version = data.get("schema_version")
 	if schema_version == LEGACY_CONTRACT_SCHEMA:
 		contract = require_exact_fields(data, CONTRACT_FIELDS_V1, "run contract")
-	elif schema_version == CONTRACT_SCHEMA:
-		contract = require_exact_fields(data, CONTRACT_FIELDS_V2, "run contract")
+	elif schema_version in {CONTRACT_SCHEMA, TURN_CONTRACT_SCHEMA}:
+		contract = require_exact_fields(data, CONTRACT_FIELDS_V3 if schema_version == TURN_CONTRACT_SCHEMA else CONTRACT_FIELDS_V2, "run contract")
 		if contract.get("verifier_isolation") not in VERIFIER_ISOLATION_POLICIES:
 			fail("INVALID_CONTRACT", "verifier_isolation must be required or best-effort")
+		if schema_version == TURN_CONTRACT_SCHEMA:
+			try:
+				validate_policy(contract["turn_policy"])
+				for role in contract.get("delegation", {}).get("roles", []):
+					if role.get("model_profile") not in contract["turn_policy"]["models"]:
+						fail("INVALID_CONTRACT", "every role needs a declared model trust tier")
+			except (TurnError, TypeError, AttributeError) as exc:
+				fail("INVALID_CONTRACT", str(exc))
 	else:
-		fail("INVALID_CONTRACT", "run contract schema_version must be 1 or 2")
+		fail("INVALID_CONTRACT", "run contract schema_version must be 1, 2 or 3")
 	for field in ("contract_id", "project_id", "run_id"):
 		if not valid_identifier(contract.get(field)):
 			fail("INVALID_CONTRACT", f"{field} is invalid")
@@ -463,6 +479,8 @@ def validate_contract(data: Any) -> dict[str, Any]:
 		tool_id = tool.get("id")
 		if tool_id not in TOOL_IDS:
 			fail("INVALID_CONTRACT", f"tools[{index}].id is unsupported")
+		if tool_id == "tools.describe" and schema_version != TURN_CONTRACT_SCHEMA:
+			fail("INVALID_CONTRACT", "tools.describe requires contract schema 3")
 		tool_ids.append(tool_id)
 		if not isinstance(tool.get("enabled"), bool):
 			fail("INVALID_CONTRACT", f"tools[{index}].enabled must be boolean")
@@ -487,7 +505,7 @@ def validate_contract(data: Any) -> dict[str, Any]:
 			fail("INVALID_CONTRACT", "workspace.write requires only write_scopes")
 		if tool_id == "verifier.run" and (read_scopes or write_scopes or not exec_ids):
 			fail("INVALID_CONTRACT", "verifier.run requires only exec_ids")
-		if tool_id in {"human.request", "agent.delegate"} and (read_scopes or write_scopes or exec_ids):
+		if tool_id in {"human.request", "agent.delegate", "tools.describe"} and (read_scopes or write_scopes or exec_ids):
 			fail("INVALID_CONTRACT", f"{tool_id} cannot declare path or verifier scopes")
 		if tool_id == "human.request" and tool.get("approval") != "never":
 			fail("INVALID_CONTRACT", "human.request approval must be never because the tool is the gate")
@@ -1522,7 +1540,7 @@ def adapter_protocol_version(contract: dict[str, Any]) -> int:
 	schema_version = contract.get("schema_version")
 	if schema_version == LEGACY_CONTRACT_SCHEMA:
 		return LEGACY_PROTOCOL_VERSION
-	if schema_version == CONTRACT_SCHEMA:
+	if schema_version in {CONTRACT_SCHEMA, TURN_CONTRACT_SCHEMA}:
 		return PROTOCOL_VERSION
 	fail("STATE_INVALID", "run contract schema is invalid for adapter protocol selection")
 	raise AssertionError("unreachable")
@@ -1584,6 +1602,7 @@ def role_registry(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
 def tool_descriptors(contract: dict[str, Any], role: dict[str, Any]) -> list[dict[str, Any]]:
 	policies = tool_registry(contract)
 	descriptions = {
+		"tools.describe": ("Get the schema or documentation for one authorized tool from the snippet catalog.", {"name": "authorized tool ID", "tier": ["schema", "docs"]}),
 		"workspace.read": ("Read one UTF-8 project file inside declared scopes. Output is bounded and may be truncated.", {"path": "project-relative POSIX path"}),
 		"workspace.write": ("Atomically write one UTF-8 project file inside declared scopes. .git and .harness are always denied.", {"path": "project-relative POSIX path", "content": "UTF-8 text"}),
 		"verifier.run": ("Run one exact operator-registered verifier ID. Raw commands and arguments are not accepted.", {"command_id": "registered verifier ID"}),
@@ -2222,6 +2241,9 @@ def approval_binding(
 		action_type = "execute"
 		question = f"Allow this run to execute verifier {arguments['command_id']}?"
 		artifact_digest = digest_json({"command_id": arguments["command_id"], "argv": verifier_argv})
+		if "turn_policy" in store.contract:
+			inspection = command_gate(store.project, arguments["command_id"], verifier_argv, store.contract["turn_policy"])
+			artifact_digest = digest_json({"command_id": arguments["command_id"], "inspection": inspection["digest"]})
 	elif tool_id == "agent.delegate":
 		require_argument_fields(arguments, ({"role", "task"}, {"role", "task", "tools"}), tool_id)
 		action_id = f"agent.delegate:{arguments['role']}"
@@ -2542,6 +2564,17 @@ def execute_tool(
 	verifier: dict[str, Any] | None = None
 	verifier_argv: list[str] | None = None
 	verifier_capture_cap: int | None = None
+	turn_policy = store.contract.get("turn_policy")
+	inspection = None
+	if turn_policy:
+		profile = role_registry(store.contract)[agent["role"]]["model_profile"]
+		try:
+			paths = [arguments["path"]] if tool_id in {"workspace.read", "workspace.write"} and isinstance(arguments.get("path"), str) else []
+			if tool_id == "verifier.run":
+				paths = ["infra/verifier-output"]
+			require_model(profile, paths, turn_policy)
+		except TurnError as exc:
+			return tool_failure(call, "MODEL_TRUST_DENIED", str(exc))
 	if tool_id == "verifier.run":
 		try:
 			verifier, verifier_argv = resolve_registered_verifier(store.project, store.contract, policy, arguments)
@@ -2557,9 +2590,42 @@ def execute_tool(
 		if remaining_evidence < minimum_capture:
 			return tool_failure(call, "EVIDENCE_BUDGET_EXHAUSTED", "verifier evidence budget has no safe capture capacity")
 		verifier_capture_cap = min(requested_capture_cap, remaining_evidence)
+		if turn_policy:
+			inspection = command_gate(store.project, arguments["command_id"], verifier_argv, turn_policy)
+			if inspection["decision"] == "deny":
+				return tool_failure(call, "COMMAND_POLICY_DENIED", inspection["reason"])
+			if inspection["decision"] == "ask":
+				policy = {**policy, "approval": "always"}
+	if tool_id == "workspace.write" and turn_policy:
+		require_argument_fields(arguments, ({"content", "path"},), tool_id)
+		relative, _ = relative_workspace_path(store.project, arguments["path"], "workspace.write path")
+		if relative in {r["path"] for r in turn_policy["instructions"]}:
+			return tool_failure(call, "CONTROL_PATH_DENIED", "model writes cannot modify configured instruction files")
+		if not path_in_scopes(relative, policy["write_scopes"]):
+			return tool_failure(call, "WRITE_SCOPE_DENIED", "path is outside workspace.write scopes")
+		# Finish instruction preflight before requesting human approval.
+		known = turn_touched_paths(state, agent, before_current_batch=True)
+		try:
+			before = {c["path"] for c in instruction_chunks(store.project, known, turn_policy)}
+			after = {c["path"] for c in instruction_chunks(store.project, [*known, relative], turn_policy)}
+		except TurnError as exc:
+			return tool_failure(call, "TURN_POLICY_DENIED", str(exc))
+		if after - before:
+			return tool_result(call["id"], tool_id, False, value={"path": relative}, code="INSTRUCTIONS_REQUIRED", error="Retry after the next turn loads the applicable instruction files")
 	receipt = require_approval(store, state, agent, call, policy, verifier_argv)
 	if receipt is not None and receipt["decision"] != "APPROVED":
 		return tool_failure(call, "APPROVAL_DENIED", "human approval was denied or expired")
+	if tool_id == "tools.describe":
+		require_argument_fields(arguments, ({"name", "tier"},), tool_id)
+		role = role_registry(store.contract)[agent["role"]]
+		descriptors = [t for t in tool_descriptors(store.contract, role) if t["id"] in agent["allowed_tools"] and policies[t["id"]]["enabled"]]
+		try:
+			if arguments["tier"] not in {"schema", "docs"} or not isinstance(arguments["name"], str):
+				raise TurnError("select a named authorized tool and schema/docs tier")
+			value = disclose_tools(descriptors, tier=arguments["tier"], names=[arguments["name"]])
+		except (TurnError, TypeError) as exc:
+			return tool_failure(call, "INVALID_TOOL_ARGUMENTS", str(exc))
+		return bounded_result(tool_result(call["id"], tool_id, True, value=value), policy["max_output_bytes"])
 
 	if tool_id == "workspace.read":
 		require_argument_fields(arguments, ({"path"},), tool_id)
@@ -2609,6 +2675,11 @@ def execute_tool(
 		assert verifier is not None and verifier_argv is not None
 		assert verifier_capture_cap is not None
 		artifact_digest = digest_json({"command_id": arguments["command_id"], "argv": verifier_argv})
+		if turn_policy:
+			current = command_gate(store.project, arguments["command_id"], verifier_argv, turn_policy)
+			if current != inspection:
+				return tool_failure(call, "COMMAND_CHANGED", "script contents changed after inspection")
+			artifact_digest = digest_json({"command_id": arguments["command_id"], "inspection": current["digest"]})
 		begin_side_effect(store, state, agent, call, request_digest, artifact_digest)
 		value, raw = verifier_execute(
 			store.project,
@@ -2906,6 +2977,103 @@ def process_pending_tool(store: StateStore, cancelled: Callable[[], bool]) -> No
 	complete_pending_call(store, agent, call, request_digest, result)
 
 
+def turn_touched_paths(state: dict[str, Any], agent: dict[str, Any], *, before_current_batch: bool = False) -> list[str]:
+	paths = []
+	current_ids = {c["id"] for c in agent.get("pending_tool_calls", [])} if before_current_batch else set()
+	for key, completed in state["completed_calls"].items():
+		if key != call_key(agent["agent_id"], completed["result"]["call_id"]):
+			continue
+		if completed["result"]["call_id"] in current_ids:
+			continue  # Results from this batch have not reached the model yet.
+		value = completed["result"].get("value")
+		if isinstance(value, dict) and isinstance(value.get("path"), str):
+			paths.append(value["path"])
+	return sorted(set(paths))
+
+
+def kernel_turn_context(store: StateStore, agent: dict[str, Any]) -> dict[str, Any]:
+	"""Reuse durable tool evidence, filtering shared reads before projection."""
+	state = store.state
+	assert state is not None
+	policy = store.contract["turn_policy"]
+	profile = role_registry(store.contract)[agent["role"]]["model_profile"]
+	read_policy = tool_registry(store.contract).get("workspace.read")
+	chunks = []
+	latest_result_keys = {
+		call_key(agent["agent_id"], result["call_id"])
+		for result in agent.get("tool_results", [])
+		if isinstance(result, dict) and isinstance(result.get("call_id"), str)
+	}
+	latest_completed_count = 0
+	for key, completed in state["completed_calls"].items():
+		result = completed["result"]
+		if result["tool"] == "tools.describe":
+			continue  # One-turn schema/docs must not leak back through history.
+		if key in latest_result_keys:
+			# model_request_payload sends this batch directly as tool_results.
+			# Projecting the same bytes into turn_context buys no information.
+			latest_completed_count += 1
+			continue
+		value = result.get("value")
+		path = value.get("path") if isinstance(value, dict) else None
+		own = key == call_key(agent["agent_id"], result["call_id"])
+		if not own:
+			# Shared retrieval is only already-authorized file reads, never another
+			# role's task, verifier output, approval result or private adapter state.
+			if result["tool"] != "workspace.read" or not result["ok"] or not isinstance(path, str) or not read_policy or not read_policy["enabled"] or "workspace.read" not in agent["allowed_tools"] or not path_in_scopes(path, read_policy["read_scopes"]):
+				continue
+		locator = path or ("infra/verifier-output" if result["tool"] == "verifier.run" else "tool-result/" + result["tool"])
+		try:
+			require_model(profile, [locator], policy)
+		except TurnError:
+			if own:
+				raise
+			continue
+		chunks.append({"id": key, "path": locator, "kind": result["tool"], "content": canonical_json(result).decode("utf-8"), "pinned": False})
+	# A bounded active window; older complete evidence remains in the ledger.
+	instructions = instruction_chunks(store.project, turn_touched_paths(state, agent), policy)
+	require_model(profile, [c["path"] for c in instructions], policy)
+	# Count separately delivered latest results against the same active-window
+	# cap. Otherwise removing duplicates would pull an equal number of older
+	# chunks back into context and erase the token savings.
+	available = 256 - len(instructions) - latest_completed_count
+	older_count = max(0, len(chunks) - available)
+	selected = chunks[-available:] if available else []
+	chunks = [*instructions, *selected]
+	answers = None
+	if policy["decision_provider"] == "jev-public" and selected:
+		# Authorization applies to the selector too. The explicit mode also
+		# attests that the task query is public. Never send pinned control text.
+		try:
+			public_chunks(selected, policy)
+		except TurnError as exc:
+			raise TurnError("Jev may receive only explicitly public chunks") from exc
+		if state["usage"]["external_calls"] + 2 > store.contract["budgets"]["max_external_calls"]:
+			raise TurnError("budget cannot cover Jev plus the writing-model call")
+		if not trace_room(store, 6):
+			raise TurnError("trace budget cannot cover Jev plus the writing-model call")
+		questions = visibility_questions(agent["task"], selected)
+		decision_state = {"query": agent["task"], "chunks": selected}
+		decision_id = "JEV-" + hashlib.sha256(canonical_json(decision_state)).hexdigest()[:24]
+		state["usage"]["external_calls"] += 1
+		state["pending_model_request"] = {"request_id": decision_id, "agent_id": agent["agent_id"], "request_digest": digest_json(decision_state), "started_at": utc_now()}
+		store.commit("decision_requested", {"request_id": decision_id, "provider": "jev"}, agent_id=agent["agent_id"], side_effect="consequential")
+		response = jev_choices(decision_state, questions, api_key=os.environ.get("TYPESAFE_API_KEY", ""))
+		usage = response["usage"]
+		cost = (usage["input_tokens"] * policy["decision_rates"]["input"] + usage["output_tokens"] * policy["decision_rates"]["output"] + 999999) // 1000000
+		state["usage"]["tokens"] += usage["input_tokens"] + usage["output_tokens"]
+		state["usage"]["cost_microusd"] += cost
+		state["pending_model_request"] = None
+		store.commit("model_responded", {"request_id": decision_id, "finish_reason": "decision", "tool_count": 0, "usage": {**usage, "cost_microusd": cost}}, agent_id=agent["agent_id"])
+		if budget_reason(store, agent, reserve_trace=3):
+			raise TurnError("budget exhausted after Jev decision; writing model not called")
+		answers = response["answers"]
+	context = project_chunks(agent["task"], chunks, maximum=policy["max_context_bytes"], answers=answers)
+	context["older_chunks_in_ledger"] = older_count
+	context["projection_digest"] = digest_json({k: v for k, v in context.items() if k != "projection_digest"})
+	return context
+
+
 def model_request_payload(store: StateStore, agent: dict[str, Any], request_id: str) -> dict[str, Any]:
 	state = store.state
 	assert state is not None
@@ -2918,7 +3086,7 @@ def model_request_payload(store: StateStore, agent: dict[str, Any], request_id: 
 		"external_calls": max(0, budgets["max_external_calls"] - state["usage"]["external_calls"]),
 		"role_steps": max(0, role["max_steps"] - agent["step_count"]),
 	}
-	return {
+	payload = {
 		"type": "model_request",
 		"protocol_version": adapter_protocol_version(store.contract),
 		"request_id": request_id,
@@ -2943,6 +3111,32 @@ def model_request_payload(store: StateStore, agent: dict[str, Any], request_id: 
 			"only_named_tools_are_authorized": True,
 		},
 	}
+	if "turn_policy" in store.contract:
+		try:
+			require_model(role["model_profile"], [], store.contract["turn_policy"])
+			payload["turn_context"] = kernel_turn_context(store, agent)
+			remaining["tokens"] = max(0, budgets["max_tokens"] - state["usage"]["tokens"]) if budgets["max_tokens"] else None
+			remaining["cost_microusd"] = max(0, budgets["max_cost_microusd"] - state["usage"]["cost_microusd"]) if budgets["max_cost_microusd"] else None
+			remaining["external_calls"] = max(0, budgets["max_external_calls"] - state["usage"]["external_calls"])
+			payload["tool_results"] = [
+				tool_result(r["call_id"], r["tool"], False, value={"quarantined": True, "result_digest": digest_json(r)}, code="CONTENT_QUARANTINED", error="Untrusted tool content was quarantined; full evidence remains in the ledger")
+				if detect_prompt_injection(canonical_json(r).decode("utf-8"))["high_confidence"] else r
+				for r in agent["tool_results"]
+			]
+			payload["tool_catalog"] = disclose_tools(payload["tools"])
+			# Schema is transient: tools.describe opens it for the following turn.
+			disclosed = {"tools.describe", "human.request"}
+			for result in agent["tool_results"]:
+				if result["tool"] == "tools.describe" and result["ok"] and isinstance(result["value"], list):
+					disclosed.update(item["id"] for item in result["value"])
+			if "tools.describe" in agent["allowed_tools"]:
+				payload["tools"] = [t for t in payload["tools"] if t["id"] in disclosed]
+			# The projection is the model's memory; opaque transcripts cannot
+			# reintroduce hidden chunks or instructions from old turns.
+			payload["adapter_state"] = None
+		except TurnError as exc:
+			fail("TURN_POLICY_DENIED", str(exc))
+	return payload
 
 
 def execute_model_step(store: StateStore, adapter: AdapterProcess) -> None:

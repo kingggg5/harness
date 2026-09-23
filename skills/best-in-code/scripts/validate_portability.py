@@ -82,6 +82,12 @@ REQUIRED_FILES = (
 	"skills/best-in-code/scripts/memory_ops.py",
 	"skills/best-in-code/scripts/context_compiler.py",
 	"skills/best-in-code/scripts/context_eval_trace_tests.py",
+	"skills/best-in-code/scripts/jev_runtime.py",
+	"skills/best-in-code/scripts/jev_runtime_tests.py",
+	"skills/best-in-code/references/jev-runtime.md",
+	"skills/best-in-code/references/async-operation-runtime.md",
+	"skills/best-in-code/assets/templates/TURN-POLICY.json",
+	"skills/best-in-code/assets/templates/RUN-CONTRACT-JEV.json",
 	"skills/best-in-code/scripts/eval_matrix.py",
 	"skills/best-in-code/scripts/decision_runtime.py",
 	"skills/best-in-code/scripts/decision_runtime_tests.py",
@@ -212,6 +218,8 @@ def check_required(root: Path, errors: list[str]) -> None:
 
 def check_tree_hygiene(root: Path, errors: list[str]) -> None:
 	for path in root.rglob("*"):
+		if any(part in {"vendor", "node_modules", ".git", ".venv", "dist", ".release-smoke"} for part in path.parts):
+			continue
 		if path_is_link_or_junction(path):
 			errors.append(f"Package contains unsupported symlink: {path.relative_to(root)}")
 		if path.name == "__pycache__" or path.suffix.lower() == ".pyc":
@@ -220,6 +228,8 @@ def check_tree_hygiene(root: Path, errors: list[str]) -> None:
 
 def check_json_files(root: Path, errors: list[str]) -> None:
 	for path in root.rglob("*.json"):
+		if any(part in {"vendor", "node_modules", ".git", ".venv", "dist", ".release-smoke"} for part in path.parts):
+			continue
 		load_json(path, errors)
 
 
@@ -259,6 +269,8 @@ def check_openai_yaml(root: Path, errors: list[str]) -> None:
 def check_links(root: Path, errors: list[str]) -> None:
 	link_pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 	for path in root.rglob("*.md"):
+		if any(part in {"vendor", "node_modules", ".git", ".venv", "dist", ".release-smoke"} for part in path.parts):
+			continue
 		content = path.read_text(encoding="utf-8")
 		for target in link_pattern.findall(content):
 			clean = target.strip().strip("<>").split("#", 1)[0]
@@ -271,6 +283,8 @@ def check_links(root: Path, errors: list[str]) -> None:
 def check_no_personal_paths(root: Path, errors: list[str]) -> None:
 	pattern = re.compile(r"(?i)([a-z]:[\\/](?:users|documents and settings)[\\/]|/(?:users|home)/[^/\s]+/)")
 	for path in root.rglob("*"):
+		if any(part in {"vendor", "node_modules", ".git", ".venv", "dist", ".release-smoke"} for part in path.parts):
+			continue
 		if not path.is_file() or path.suffix.lower() not in {".md", ".json", ".yaml", ".yml", ".py", ".fragment"}:
 			continue
 		if pattern.search(path.read_text(encoding="utf-8")):
@@ -362,7 +376,20 @@ def check_templates(root: Path, errors: list[str]) -> None:
 			validate_run_contract(run_contract)
 		except KernelError as exc:
 			errors.append(f"Invalid executable run contract: {exc}")
+	jev_contract = load_json(template_root / "RUN-CONTRACT-JEV.json", errors)
+	if isinstance(jev_contract, dict):
+		try:
+			validate_run_contract(jev_contract)
+		except KernelError as exc:
+			errors.append(f"Invalid schema-v3 Jev run contract: {exc}")
 	registry = load_json(template_root / "TOOL-REGISTRY.json", errors)
+	from jev_runtime import TurnError, validate_policy
+	turn_policy = load_json(template_root / "TURN-POLICY.json", errors)
+	if turn_policy is not None:
+		try:
+			validate_policy(turn_policy)
+		except TurnError as exc:
+			errors.append(f"Invalid turn policy: {exc}")
 	if registry is not None:
 		for error in validate_tool_registry(registry):
 			errors.append(f"Invalid tool registry: {error}")

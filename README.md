@@ -176,6 +176,14 @@ npx github:kingggg5/harness run --project . --contract .harness/RUN-CONTRACT.jso
 
 `WAITING_APPROVAL` means the kernel stopped safely. Review its exact action and artifact digest, then use `run-approve`; use `run-cancel` to stop cooperatively. A completed kernel run still waits for the normal human Acceptance Gate. See the [execution runtime guide](skills/best-in-code/references/execution-runtime.md), [context compiler](skills/best-in-code/references/context-compiler.md), and [behavior/trace guide](skills/best-in-code/references/eval-runtime.md).
 
+### Query-time Jev decisions (opt-in)
+
+Schema-v3 runs assemble query-specific context, reload conditional instructions, support optional tiered tool disclosure, enforce configured model trust tiers, and inspect verifier script bytes before execution. Context selection defaults to local extractive ranking. Remote Jev selection is opt-in and restricted to content the operator has explicitly classified as public. Schema-v1/v2 runs retain their existing behavior.
+
+For a new schema-v3 run, copy `.harness/runtime/assets/templates/RUN-CONTRACT-JEV.json` to `.harness/RUN-CONTRACT.json`, set the project/run/task and verifier bindings, then run `harness run-validate` and `harness run`. The template makes no external Jev calls. Enable `decision_provider: "jev-public"` only for public tasks, configure public path patterns and verified decision rates, and provide `TYPESAFE_API_KEY` through the process environment. The [Jev runtime guide](skills/best-in-code/references/jev-runtime.md) documents the boundaries; a [Thai overview](docs/JEV_GUIDE.md) summarizes which features are implemented.
+
+Cost-reduction research against [Unreal Agent](https://unreallabs.ai/blog/unreal-agent/) identified duplicate latest tool results in schema-v3 requests. A synthetic eight-result fixture dropped from 124,040 to 104,898 serialized bytes (15.4%); this is not a billed-token measurement or a Harness task-quality benchmark. The [route-cost example](examples/jev-route-cost.json) reproduces the earlier study note's illustrative rates, not current pricing.
+
 ### Performance work
 
 Performance work is conditional: begin with a reproducible workload, baseline, correctness gate, and resource budget; then profile and make one reversible hypothesis-driven change at a time. The cross-language [performance engineering guide](skills/best-in-code/references/performance-engineering.md) covers cache/data layout, allocations, I/O, parallelism, SIMD, managed runtimes, native rewrites, benchmark integrity, and bounded optimization loops. Copy [PERFORMANCE-EVIDENCE.md](skills/best-in-code/assets/templates/PERFORMANCE-EVIDENCE.md) only when the lane is active; raw benchmark data belongs in run evidence, not canonical memory.

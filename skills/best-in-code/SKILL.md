@@ -47,8 +47,11 @@ Read a linked module only when its condition applies; follow further links only 
 | Repeated, scheduled, proactive, or explicitly bounded improvement work | [loop-engineering.md](references/loop-engineering.md); ordinary repair/retest needs no loop contract |
 | Durable loop supervision or task-node receipts | [loop-runtime.md](references/loop-runtime.md) or [graph-runtime.md](references/graph-runtime.md), respectively |
 | Provider-neutral executable role graph | [execution-runtime.md](references/execution-runtime.md) |
+| Long-running tools, resumable operations, user steering while tools run | [async-operation-runtime.md](references/async-operation-runtime.md) |
+| Provider-specific prompt-cache affinity or cache-token savings | [async-operation-runtime.md](references/async-operation-runtime.md) |
 | Explicit model routing or cross-model handoff | [model-routing.md](references/model-routing.md) |
 | Typed semantic route/risk/guardrail recommendations | [decision-runtime.md](references/decision-runtime.md) |
+| Jev query-time context decisions, visibility ladder, economic routing, or script gating | [jev-runtime.md](references/jev-runtime.md) |
 | Bounded context compilation or source provenance | [context-compiler.md](references/context-compiler.md) |
 | Behavior trials, trace inspection, or Harness evaluation changes | [eval-runtime.md](references/eval-runtime.md) and [harness-evaluation.md](references/harness-evaluation.md) |
 | Researching changes to Harness architecture or policy | [research-basis-2026.md](references/research-basis-2026.md) |

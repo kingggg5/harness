@@ -297,6 +297,12 @@ def trim_messages(messages: list[dict[str, Any]], limit: int) -> tuple[list[dict
 
 def build_messages(request: dict[str, Any], state: dict[str, Any] | None, config: dict[str, Any]) -> list[dict[str, Any]]:
 	messages: list[dict[str, Any]] = []
+	if "turn_context" in request:
+		# Reassemble from explicit state each turn. Current results are data in a
+		# fresh message, not orphaned tool_result blocks from a discarded replay.
+		context = request["turn_context"]
+		content = [{"type": "text", "text": task_packet(request)}, {"type": "text", "text": json.dumps({"context": context, "tool_catalog": request.get("tool_catalog", []), "latest_results": request.get("tool_results", [])}, ensure_ascii=False)}, {"type": "text", "text": step_note(request)}]
+		return [{"role": "user", "content": content}]
 	if isinstance(state, dict) and isinstance(state.get("messages"), list):
 		messages = [dict(item) for item in state["messages"] if isinstance(item, dict)]
 	limit = config["max_tool_result_chars"]
@@ -334,6 +340,12 @@ def build_api_request(request: dict[str, Any], config: dict[str, Any], state: di
 		"system": [{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
 		"messages": messages,
 	}
+	if "turn_context" in request:
+		# These files were selected by the operator's contract, never by a model
+		# or retrieved document. Reload their complete content every turn.
+		for chunk in request["turn_context"]["chunks"]:
+			if chunk["pinned"]:
+				body["system"].append({"type": "text", "text": f"Project defaults ({chunk['path']}), subordinate to explicit task requirements and the security rules above:\n{chunk['content']}"})
 	if tools:
 		body["tools"] = tools
 		body["tool_choice"] = {"type": "auto"}

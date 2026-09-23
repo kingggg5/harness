@@ -1,7 +1,8 @@
 {
 	"name": "@kingggg5/harness",
 	"version": "0.7.0",
-	"description": "Provider-neutral software-delivery harness with executable multi-agent graphs, bounded context, durable memory, behavioral evals, trusted tool policy, and human gates.",
+	"description": "Provider-neutral software-delivery harness with executable agent graphs, durable memory, evals, trusted tools, human gates and optional Jev context decisions.",
+	"author": "kingggg5",
 	"license": "MIT",
 	"homepage": "https://github.com/kingggg5/harness#readme",
 	"bugs": {
@@ -28,7 +29,8 @@
 		"harness": "bin/harness.js"
 	},
 	"scripts": {
-		"test": "npm run test:portability && npm run test:launcher && npm run test:ci-policy && npm run test:runtime-pin && npm run test:execution && npm run test:anthropic-adapter && npm run test:context-eval-trace && npm run test:decision && npm run test:performance && npm run test:loop && npm run test:loop-runtime && npm run test:graph && npm run test:graph-runtime && npm run test:race && npm run test:memory && npm run test:sbom && npm run test:portability",
+		"test": "npm run test:portability && npm run test:launcher && npm run test:ci-policy && npm run test:runtime-pin && npm run test:execution && npm run test:anthropic-adapter && npm run test:context-eval-trace && npm run test:jev && npm run test:decision && npm run test:performance && npm run test:loop && npm run test:loop-runtime && npm run test:graph && npm run test:graph-runtime && npm run test:race && npm run test:memory && npm run test:sbom && npm run test:portability",
+		"test:jev": "python -B skills/best-in-code/scripts/jev_runtime_tests.py",
 		"test:portability": "python -B skills/best-in-code/scripts/validate_portability.py",
 		"test:launcher": "node scripts/launcher_tests.mjs",
 		"test:ci-policy": "python -B scripts/check_eval_results_tests.py",
@@ -56,6 +58,7 @@
 		"hooks/",
 		"assets/",
 		"examples/",
+		"docs/JEV_GUIDE.md",
 		"scripts/check_eval_results.py",
 		"scripts/check_eval_results_tests.py",
 		"scripts/generate-sbom.mjs",

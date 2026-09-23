@@ -90,6 +90,8 @@ def response(request: dict[str, Any]) -> dict[str, Any]:
 	)
 	state = request.get("adapter_state")
 	turn = state.get("turn", 0) if isinstance(state, dict) else 0
+	if "turn_context" in request:
+		turn = max(0, int(request.get("step", 1)) - 1)
 	agent = request.get("agent", {})
 	role = str(agent.get("role", "agent"))
 	task = str(agent.get("task", ""))

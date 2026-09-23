@@ -27,6 +27,8 @@ Execution is deterministic around the model:
 
 Only one agent owns execution at a time in this reference kernel. Delegation is graph-shaped and resumable, but not concurrent. Use the existing isolated graph/worktree runtime when parallel writers are worth the added coordination cost.
 
+This kernel executes pending tool calls synchronously and does not accept live user steering during a run. For a design that introduces long-running background tools, resumable operation IDs, cancellation or user input while work continues, read [async-operation-runtime.md](async-operation-runtime.md) before changing the execution schema. Do not model the current task-graph ledger as an async tool executor.
+
 ## Prepare one run
 
 Initialize Harness first, then copy the reviewed templates from the pinned runtime:
