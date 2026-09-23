@@ -52,6 +52,7 @@ Read a linked module only when its condition applies; follow further links only 
 | Explicit model routing or cross-model handoff | [model-routing.md](references/model-routing.md) |
 | Typed semantic route/risk/guardrail recommendations | [decision-runtime.md](references/decision-runtime.md) |
 | Jev query-time context decisions, visibility ladder, economic routing, or script gating | [jev-runtime.md](references/jev-runtime.md) |
+| Jev strengths/limits and original Exa, Gemini, compaction, or CUA combo recipes | [jev-guide.md](references/jev-guide.md) |
 | Bounded context compilation or source provenance | [context-compiler.md](references/context-compiler.md) |
 | Behavior trials, trace inspection, or Harness evaluation changes | [eval-runtime.md](references/eval-runtime.md) and [harness-evaluation.md](references/harness-evaluation.md) |
 | Researching changes to Harness architecture or policy | [research-basis-2026.md](references/research-basis-2026.md) |

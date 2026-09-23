@@ -1,6 +1,6 @@
 {
 	"name": "@kingggg5/harness",
-	"version": "0.7.0",
+	"version": "0.7.1",
 	"description": "Provider-neutral software-delivery harness with executable agent graphs, durable memory, evals, trusted tools, human gates and optional Jev context decisions.",
 	"author": "kingggg5",
 	"license": "MIT",

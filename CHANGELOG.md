@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.1 — restore the Jev combo guide with implementation status
+
+- Restored the original Jev design context and Exa, Gemini, Fast Jev Compaction, CUA, and Unreal Agent combo recipes in Thai and the skill reference.
+- Marked third-party integrations and historical model/latency/cost claims as references rather than bundled Harness behavior.
+- Added an explicit standalone `turn-build --jev-public --policy` guard: every transmitted chunk path must be classified public; the query must also be public.
+- Added regression coverage for public path floors and updated the Jev usage guidance.
+
 ## 0.7.0 — strict Linux verifier isolation, a real Anthropic adapter, and host-enforced Claude Code boundaries
 
 Run-contract `schema_version` 2 and adapter protocol 2 are breaking for external adapters: a v2 contract sends protocol-2 requests, and a v2 response must use exactly the legacy or the complete cache-telemetry usage shape. Schema-1 contracts keep protocol 1.
