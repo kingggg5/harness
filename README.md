@@ -135,6 +135,7 @@ Start with one small example instead of learning the whole system first:
 |---|---|
 | [Quick bug fix](examples/quick-bug-fix.md) | The smallest safe route with focused verification |
 | [Full product feature](examples/full-product-feature.md) | BA, planning, design, parallel build, QA, and human gates |
+| [Spec to verifiable slices](examples/spec-to-slices.md) | Requirement questions, compact spec synthesis, test-first slices, and review evidence |
 | [Cross-model handoff](examples/cross-model-handoff.md) | Start in one provider and resume or review in another |
 | [Production review](examples/production-review.md) | Read-only security, performance, scale, and failure-path review |
 | [Graph Engineering feature](examples/graph-engineering-feature.md) | Centralized fan-out/fan-in, bounded QA repair, and a human-gated effect |
@@ -175,6 +176,10 @@ npx github:kingggg5/harness run --project . --contract .harness/RUN-CONTRACT.jso
 ```
 
 `WAITING_APPROVAL` means the kernel stopped safely. Review its exact action and artifact digest, then use `run-approve`; use `run-cancel` to stop cooperatively. A completed kernel run still waits for the normal human Acceptance Gate. See the [execution runtime guide](skills/best-in-code/references/execution-runtime.md), [context compiler](skills/best-in-code/references/context-compiler.md), and [behavior/trace guide](skills/best-in-code/references/eval-runtime.md).
+
+### Spec, test-first work and session retrospectives
+
+Harness's [engineering workflows](docs/ENGINEERING_WORKFLOWS.md) inspect facts before asking material design questions, turn accepted specs into verifiable slices, build requested TDD through public boundaries, and review requirements and conventions with evidence. Bug close-out reports repair and coverage separately, with scoped prevention or architecture proposals when justified. An explicit retro improves the environment for the next run. These workflows load inside `best-in-code`; the [example](examples/spec-to-slices.md) shows how to request them. Remote tracker actions, parallel agents and environment changes need their normal authorization.
 
 ### Query-time Jev decisions (opt-in)
 

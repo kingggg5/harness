@@ -45,9 +45,13 @@ At run completion, remove the graph from active annexes and archive it with the 
 
 ## Context packets and execution
 
+For a whole-spec implementation, read [spec-to-slices.md](spec-to-slices.md): only slices with completed, verified prerequisites are ready. Keep acceptance at the integration tip and preserve the existing capability, workspace and model authorization.
+
 The Project Manager emits one minimal role packet per scheduled node: objective, verified memory/source IDs, exact input artifact names, exclusions, read/write scope, capabilities, checks, and stop condition. Pass artifacts, not whole conversations. Re-verify stale project-map, web, retrieved-memory, or previous-node claims before they can drive code or a gate.
 
 Parallel execution requires verified isolated-worker capability, disjoint ownership, one exact base revision, and the workspace/shared-resource contract in [execution-isolation.md](execution-isolation.md). A task graph with `max_parallel > 1` must select `provider-isolated` or `git-worktree`; otherwise preserve the same graph as labeled sequential passes. Worktrees do not isolate ports, databases, caches, credentials, processes, or external services. A different model does not make a verifier independent. A model may perform work inside a node; it must not silently rewrite routing, add nodes, extend limits, authorize side effects, or write the shared runtime ledger.
+
+When independent slices justify a graph but child/parallel agents are unauthorized, keep the real dependencies and select `max_parallel: 1` with `isolation_strategy: "same-worktree-sequential"`. One owner executes the ready nodes sequentially; the graph does not grant agent permissions. A simple sequential feature still needs only the `WORKFLOW.md` task table under the activation rules above.
 
 ## Knowledge graph boundary
 

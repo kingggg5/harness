@@ -56,3 +56,5 @@ For performance and scale, the packet must distinguish measured values, model es
 ## Handoff and re-entry
 
 The Planner consumes the packet; implementation agents receive only approved contracts and relevant evidence. If implementation or QA disproves the discovery hypothesis, return to one bounded discovery cycle with the new evidence. Do not restart broad discovery or erase the failed hypothesis.
+
+After a bug fix, use [behavioral-testing.md](behavioral-testing.md#close-the-bug-before-starting-follow-up-work) for close-out: report repair evidence and regression coverage separately. Missing automation or a test seam can justify a prevention/architecture proposal; it does not automatically invoke a new workflow or replace verification of the original symptom.

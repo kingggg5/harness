@@ -6,6 +6,7 @@ These examples are intentionally small. Copy a prompt into Codex, Claude Code, G
 |---|---|
 | [Quick bug fix](quick-bug-fix.md) | The problem and affected area are already known |
 | [Full product feature](full-product-feature.md) | Product behavior, UX, frontend, backend, and QA must agree |
+| [Spec to verifiable slices](spec-to-slices.md) | A compact spec, behavior-oriented tickets, optional TDD, and evidence-backed review |
 | [Cross-model handoff](cross-model-handoff.md) | Different models should plan, build, or independently review |
 | [Production review](production-review.md) | You need evidence before deciding whether to change code |
 | [Graph Engineering feature](graph-engineering-feature.md) | A centralized diamond, bounded QA loop, and human-gated consequential edge |

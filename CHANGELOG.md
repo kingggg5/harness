@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Added Harness engineering workflows: compact specs and verifiable slices, behavioral/TDD verification, requirement/convention review, PR evidence and explicit session retrospectives.
+- Strengthened bug close-out: distinguish verified repair from regression coverage, propose prevention or a suitable test seam, and preserve authorization before starting follow-up work.
+- Added host-neutral skill-loading/context guidance, glossary compatibility, an example and third-party license notices.
+
 ## 0.7.1 — restore the Jev combo guide with implementation status
 
 - Restored the original Jev design context and Exa, Gemini, Fast Jev Compaction, CUA, and Unreal Agent combo recipes in Thai and the skill reference.

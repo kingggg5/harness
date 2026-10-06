@@ -1,7 +1,7 @@
 interface:
   display_name: "Harness: Best in Code"
-  short_description: "Executable delivery graphs, portable memory, evals, and QA"
-  default_prompt: "Use $best-in-code to select the smallest safe workflow, compile only bounded relevant context, preserve canonical project memory, enforce capability and approval boundaries, verify the result with behavioral and deterministic evidence, and pause at material human gates."
+  short_description: "Spec-to-slices delivery, portable memory, review and QA"
+  default_prompt: "Use $best-in-code to choose the smallest workflow for this request, reuse approved decisions, verify the requested behavior, and preserve scoped Harness memory."
 
 policy:
   allow_implicit_invocation: true

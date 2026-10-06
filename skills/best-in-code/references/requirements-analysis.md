@@ -17,6 +17,8 @@ Do not activate for an implementation-ready bug, refactor, copy/style correction
 
 BA owns **what and why**. Planner/Architect owns **how**, architecture, interfaces, rollout, and technical task decomposition. Product Designer owns interaction and visual decisions. QA converts approved acceptance behavior into verification. A role may challenge inconsistent input but cannot silently change another role's contract.
 
+For an explicit spec/interview or accepted feature breakdown, use [spec-to-slices.md](spec-to-slices.md) with this same requirement baseline. Ask only questions whose prerequisites are settled and whose answers change the task; a synthesis request reuses the decisions already made.
+
 ## Context and tool policy
 
 Prefer the repository's existing product/spec convention. With no convention, use the compact `WORKFLOW.md` baseline; do not create a durable `REQUIREMENTS.md`, install a tool, or duplicate the task graph by default.

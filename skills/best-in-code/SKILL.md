@@ -1,6 +1,6 @@
 ---
 name: best-in-code
-description: "Run or resume Harness delivery work with scoped project memory and human gates. Use for explicit Harness requests, routed quick/standard/full delivery, review, init, resume, or direct memory commands; do not use for plain explanations."
+description: "Run or resume Harness delivery work with scoped memory and human gates. Use for explicit Harness quick/standard/full, spec/slice planning, test-first work, review, retrospective, init, resume, or direct memory commands; do not use for plain explanations."
 ---
 
 # Best in Code
@@ -13,9 +13,13 @@ Take the requested software task through implementation, relevant verification, 
 
 For a small, implementation-ready task, inspect the affected files and relevant repository conventions, make the change, and run proportionate checks. Skip unrelated references, repo maps, role packets, and graph/loop machinery.
 
+For a spec, ticket breakdown or requested design interview, read [spec-to-slices.md](references/spec-to-slices.md); synthesize settled decisions and inspect facts before asking. For TDD read [behavioral-testing.md](references/behavioral-testing.md). A requested retro uses [review-and-retrospective.md](references/review-and-retrospective.md) to propose environment improvements without starting product changes.
+
+When a bug fix exposes a missing test seam or prevention opportunity, read [the bug close-out guidance](references/behavioral-testing.md#close-the-bug-before-starting-follow-up-work). Complete and report the original fix before recommending follow-up work; a recommendation does not invoke a user-only skill or expand implementation scope.
+
 When `.harness/INDEX.md` exists, use it and `STATE.json` to identify the current run and relevant records. Resume an unfinished run for an explicit resume or a clear continuation; a new task must not silently replace it. Resolve ambiguous overlap with the human. Validate Project/Run identity before project-scoped writes. Read [workflow-graph.md](references/workflow-graph.md) before lifecycle transitions and [memory-loop.md](references/memory-loop.md) before recall, memory changes, or run closure.
 
-For explicit init or standard/full work missing canonical files, use [provider-adapters.md](references/provider-adapters.md) and the non-destructive initializer. Preserve existing instructions and runtime pins; migrations use a preview bound to human approval.
+Planning-only and retrospective-proposal requests return the requested baseline/report without starting a delivery run. For explicit init or standard/full implementation missing canonical files, use [provider-adapters.md](references/provider-adapters.md) and the non-destructive initializer. Inspect partial or mixed state before repair; preserve existing instructions and runtime pins. Migrations use a preview bound to human approval.
 
 ## Operating boundaries
 
@@ -36,6 +40,11 @@ Read a linked module only when its condition applies; follow further links only 
 | Recall, remember, correct, forget, export, or close task memory | [memory-loop.md](references/memory-loop.md); direct memory commands skip the delivery graph |
 | Lifecycle transitions, multi-role ownership, or acceptance state | [workflow-graph.md](references/workflow-graph.md) |
 | Nontrivial implementation conventions or quality decisions | [engineering-standards.md](references/engineering-standards.md) |
+| Spec synthesis, material design questions, verifiable slices, or whole-spec integration | [spec-to-slices.md](references/spec-to-slices.md) |
+| Test-first development, regression reproduction, or selecting observable test boundaries | [behavioral-testing.md](references/behavioral-testing.md) |
+| Bug-fix close-out, missing regression seam, or prevention follow-up | [behavioral-testing.md](references/behavioral-testing.md#close-the-bug-before-starting-follow-up-work) |
+| Diff review, PR evidence, or an explicitly requested session retrospective | [review-and-retrospective.md](references/review-and-retrospective.md) |
+| Skill dependency loading, handoff/resume, or phase/context boundaries | [context-and-invocation.md](references/context-and-invocation.md) |
 | A needed optional backend, permission, or isolation capability | [capability-contract.md](references/capability-contract.md); probe the required capabilities only |
 | Unclear business outcome, actors, rules, or acceptance behavior | [requirements-analysis.md](references/requirements-analysis.md) |
 | Bug, security, or architecture unknowns; performance/scale uncertainty after its contract is set | [discovery-loop.md](references/discovery-loop.md) |

@@ -59,6 +59,7 @@
 		"assets/",
 		"examples/",
 		"docs/JEV_GUIDE.md",
+		"docs/ENGINEERING_WORKFLOWS.md",
 		"scripts/check_eval_results.py",
 		"scripts/check_eval_results_tests.py",
 		"scripts/generate-sbom.mjs",
@@ -72,7 +73,8 @@
 		"RELEASING.md",
 		"SECURITY.md",
 		"CHANGELOG.md",
-		"LICENSE"
+		"LICENSE",
+		"THIRD-PARTY-NOTICES.md"
 	],
 	"engines": {
 		"node": ">=18"

@@ -20,6 +20,8 @@ Do not insert tabs where the format forbids them or where doing so breaks the en
 
 ## Correctness and maintainability
 
+For requested TDD or meaningful regression coverage, read [behavioral-testing.md](behavioral-testing.md). For a spec or behavior-oriented breakdown, read [spec-to-slices.md](spec-to-slices.md). These add no mandatory ceremony for a small known change.
+
 - Validate input at trust boundaries and make invalid states hard to represent.
 - Define error ownership and propagation deliberately; do not swallow failures or leak sensitive details.
 - Preserve public API, schema, stored-data, and configuration compatibility unless a breaking change is approved.
@@ -39,6 +41,14 @@ Do not insert tabs where the format forbids them or where doing so breaks the en
 ## Review lenses
 
 QA selects only relevant lenses: functional correctness, invariants, contracts, security, privacy, concurrency, reliability, performance, accessibility, responsive UI, observability, migration safety, and operability. Findings must include a concrete failure scenario and practical remediation; style preference alone is not a defect unless it violates an approved convention.
+
+For a diff review, PR body or requested retrospective, read [review-and-retrospective.md](review-and-retrospective.md). Keep requirement coverage and repository-convention evidence visible so one does not hide the other.
+
+## Module and domain boundaries
+
+When the interface itself is uncertain, compare materially different placements of behavior: what the caller needs to know, where side effects live, how a public boundary can verify the contract, and how many unrelated callers must change. A useful module hides meaningful complexity behind a small interface; a new wrapper that merely moves the same dependencies around may add no value. Compare two designs only when the choice is material, not for every helper.
+
+Read the project's existing glossary and relevant ADRs when domain terms affect the change. Resolve overloaded terms in the current baseline; preserve repository vocabulary and canonical Harness memory naming. Architecture work should start from a concrete missing seam or change cost, not a general urge to deepen every module.
 
 ## User-interface contract
 
