@@ -1,6 +1,6 @@
 ---
 name: best-in-code
-description: "Software-delivery harness for repository coding work: features, bug fixes, refactors, spec-to-slices, test-first work, diff/PR review, performance, retrospectives, Harness quick/standard/full, init, resume and memory commands. Use when the user names Harness or wants code changes that need verification; not for plain explanations or non-code questions."
+description: "Delivery harness for planned or risky repository work: explicit Harness requests (quick/standard/full, review, resume, init, memory), diff or PR reviews, spec-to-slices, test-first work, retrospectives, and changes involving security, data migrations, performance or cross-module design. Skip routine bug fixes, small features, UI tweaks and plain explanations."
 ---
 
 # Best in Code
