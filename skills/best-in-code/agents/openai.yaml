@@ -1,6 +1,6 @@
 interface:
   display_name: "Harness: Best in Code"
-  short_description: "Spec-to-slices delivery, portable memory, review and QA"
+  short_description: "Route, build, verify and review code with project memory"
   default_prompt: "Use $best-in-code to choose the smallest workflow for this request, reuse approved decisions, verify the requested behavior, and preserve scoped Harness memory."
 
 policy:

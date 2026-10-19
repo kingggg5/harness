@@ -92,11 +92,7 @@ Progress receipts are run evidence, not memory. After completion, a human-approv
 
 ## Evidence basis and claim hygiene
 
-- [OpenAI long-running work](https://learn.chatgpt.com/docs/long-running-work) documents `/goal`, explicit outcomes/constraints/verification, steering, permission preservation, and worktree separation for parallel chats.
-- [OpenAI scheduled tasks](https://learn.chatgpt.com/docs/automations) documents background recurring tasks, local-machine availability requirements, isolated worktrees, and testing/reviewing early runs before relying on a cadence.
-- [OpenAI eval-driven improvement loop](https://learn.chatgpt.com/use-cases/iterate-on-difficult-problems) recommends deterministic plus optional judge scores, machine-readable artifacts, explicit thresholds, and a running iteration log.
-- [OpenAI model guidance](https://developers.openai.com/api/docs/guides/latest-model) confirms Sol/Terra/Luna routing and beta multi-agent support, while recommending multi-agent only for cleanly independent workstreams and measured model/effort selection.
-- [Anthropic long-running harness guidance](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) reports better continuity from incremental work, structured progress artifacts, Git history, and end-to-end verification.
-- [Anthropic 2026 harness design](https://www.anthropic.com/engineering/harness-design-long-running-apps) describes planner/generator/evaluator separation and context-reset tradeoffs; [Managed Agents architecture](https://www.anthropic.com/engineering/managed-agents) separates session log, harness, and sandbox so each can recover independently.
+The dated provider evidence behind this design lives in [research-basis-2026.md](research-basis-2026.md#loop-engineering); read it only when changing this policy.
 
 Provider quotes, benchmark rankings, productivity multipliers, fleet sizes, token bills, and claims about an exact default subagent count are contextual leads, not Harness invariants. Keep only claims supported by a current primary source, and re-check vendor-specific commands/capabilities before use.
+

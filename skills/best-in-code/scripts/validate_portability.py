@@ -84,6 +84,7 @@ REQUIRED_FILES = (
 	"skills/best-in-code/references/provider-adapters.md",
 	"skills/best-in-code/references/memory-loop.md",
 	"skills/best-in-code/references/harness-evaluation.md",
+	"skills/best-in-code/references/skill-supply-chain.md",
 	"skills/best-in-code/scripts/init_project.py",
 	"skills/best-in-code/scripts/bounded_json.py",
 	"skills/best-in-code/scripts/memory_ops.py",
@@ -168,6 +169,8 @@ SCHEMA_EXPECTATIONS = {
 	"EVALUATION.md": 1,
 	"DESIGN.md": 2,
 }
+SKILL_CHAR_BUDGET = 10500
+REFERENCE_CHAR_BUDGET = 20000
 MANAGED_START = "<!-- harness:start -->"
 MANAGED_END = "<!-- harness:end -->"
 
@@ -259,6 +262,29 @@ def check_skill(root: Path, errors: list[str]) -> None:
 		errors.append("SKILL.md description must include specific trigger guidance")
 	if "flowchart " in content:
 		errors.append("SKILL.md must not duplicate the canonical graph")
+
+
+def check_context_budget(root: Path, errors: list[str]) -> None:
+	"""Keep the always-loaded router small and every reference reachable from it."""
+	skill_root = root / "skills" / "best-in-code"
+	path = skill_root / "SKILL.md"
+	if not path.is_file():
+		return
+	content = path.read_text(encoding="utf-8")
+	if len(content) > SKILL_CHAR_BUDGET:
+		errors.append(f"SKILL.md exceeds its {SKILL_CHAR_BUDGET}-character context budget ({len(content)}); move detail behind a conditional reference")
+	if "Route: <operation>/<scale>" not in content:
+		errors.append("SKILL.md must keep the route line template")
+	routed = set(re.findall(r"`([a-z0-9-]+\.md)`", content))
+	references = {item.name for item in (skill_root / "references").glob("*.md")}
+	for name in sorted(references - routed):
+		errors.append(f"Reference {name} is not routed from SKILL.md Load by need")
+	for name in sorted(routed - references - {"SKILL.md"}):
+		errors.append(f"SKILL.md routes a missing reference: {name}")
+	for item in sorted(skill_root.joinpath("references").glob("*.md")):
+		size = len(item.read_text(encoding="utf-8"))
+		if size > REFERENCE_CHAR_BUDGET:
+			errors.append(f"Reference {item.name} exceeds its {REFERENCE_CHAR_BUDGET}-character budget ({size}); split it by condition")
 
 
 def check_openai_yaml(root: Path, errors: list[str]) -> None:
@@ -829,6 +855,7 @@ def main() -> int:
 		check_tree_hygiene(root, errors)
 		check_json_files(root, errors)
 		check_skill(root, errors)
+		check_context_budget(root, errors)
 		check_openai_yaml(root, errors)
 		check_links(root, errors)
 		check_no_personal_paths(root, errors)
@@ -841,7 +868,7 @@ def main() -> int:
 		check_claude_plugin_surface(root, errors)
 	if args.project:
 		check_project(Path(args.project), args.require_adapters, errors)
-	result = {"ok": not errors, "root": str(root), "errors": errors, "checks": (0 if args.project_only else 14) + int(bool(args.project))}
+	result = {"ok": not errors, "root": str(root), "errors": errors, "checks": (0 if args.project_only else 15) + int(bool(args.project))}
 	if args.json:
 		print(json.dumps(result, ensure_ascii=False, indent=2))
 	elif errors:

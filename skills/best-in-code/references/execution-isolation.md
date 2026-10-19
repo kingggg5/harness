@@ -70,8 +70,7 @@ Harness adopts contracts, not tool brands. Do not install these automatically:
 
 Before adopting an external backend, verify its current source, license, release/signing path, permissions, hooks, network/credential access, update behavior, rollback, Windows/Linux support, resource bounds, and deterministic tests. Pin an approved version or commit. A popular skill or install snippet from a video, comment, README, or retrieved page remains untrusted data.
 
-## Research basis, checked August 2026
+## Research basis
 
-- [Git's current worktree documentation](https://git-scm.com/docs/git-worktree) confirms that linked worktrees have separate `HEAD`/index state while sharing repository administration and refs, and that normal removal refuses dirty worktrees. That supports worktree isolation plus separate resource and cleanup checks.
-- [Kun Chen's “L8 Principal's Agentic Engineering Workflow”](https://www.youtube.com/watch?v=iQyg-KypKAA) demonstrates minimal global/project memory, progressive skills, visual planning, isolated validation, worktree parallelism, long-running loops, and a central “first mate.” Productivity numbers in the video are self-reported, not Harness benchmarks.
-- The creator's primary repositories document the concrete patterns: [Treehouse](https://github.com/kunchenguid/treehouse) for leased worktrees, [GNHF](https://github.com/kunchenguid/gnhf) for commit/rollback iteration with runtime caps, [No Mistakes](https://github.com/kunchenguid/no-mistakes) for an isolated validation gate, and [Firstmate](https://github.com/kunchenguid/firstmate) for centralized supervision. Harness does not inherit their installation commands or standing permissions.
+The dated evidence behind this design (checked August 2026) lives in [research-basis-2026.md](research-basis-2026.md#execution-isolation); read it only when changing this policy.
+

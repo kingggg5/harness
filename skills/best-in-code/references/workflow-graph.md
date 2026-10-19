@@ -42,15 +42,9 @@ flowchart TD
 
 Researcher supports requirements analysis, discovery, planning, design, and verification as a read-only evidence role. The Business Analyst pass runs inside `INTAKE` or `PLAN`; it adds no state or gate. Inactive roles and passes are `N/A`; do not create work merely to exercise all seven delivery roles or the conditional pass.
 
-## Optional per-run task graph
+## Optional run envelopes
 
-The macro graph above remains canonical. For a run with real independent branches, fan-in, a bounded evaluator loop, or a consequential effect, Planner/Architect may compile the optional `.harness/TASK-GRAPH.json` described in [graph-engineering.md](graph-engineering.md). The graph file is a run-scoped scheduling contract, not another lifecycle authority: Project Manager still advances `STATE.json`, owns merge and gates, and records only macro checkpoints in `WORKFLOW.md`. When session-resilient node receipts are justified, the optional local [graph runtime ledger](graph-runtime.md) records task-level execution under `.harness/.cache/` without replacing those authorities.
-
-Draw an edge only when the target consumes a named source artifact or a real control decision. Keep sequential work with one owner; parallel workers require disjoint write scopes and a stable interface; one merge owner integrates their outputs. Every loop and fan-out is bounded before execution. A provider without isolated agents executes the same contract as labeled sequential passes.
-
-For concurrent writers, context isolation alone is insufficient. Apply [execution-isolation.md](execution-isolation.md): start each worker from the graph's exact base revision in a separate verified workspace, isolate mutable runtime resources, return a commit/evidence receipt, and let Project Manager alone integrate and clean up. Long-running nodes also require observable status, cancellation, stall detection, and fixed iteration/time/token/cost limits.
-
-For a repeated, scheduled, event-triggered, or proactive run, add the optional supervisor envelope from [loop-engineering.md](loop-engineering.md). `LOOP-CONTRACT.json` fixes trigger, verifiers, budgets, scope, rollback, and stop rules above the macro lifecycle. When session-resilient supervision is justified, the [loop runtime ledger](loop-runtime.md) records outer deliveries and iteration receipts under `.harness/.cache/`; it does not create another lifecycle or memory authority.
+The macro graph above remains canonical. A task graph ([graph-engineering.md](graph-engineering.md)), concurrent writers ([execution-isolation.md](execution-isolation.md)) and a repeated, scheduled, event-triggered or proactive loop ([loop-engineering.md](loop-engineering.md)) are optional run-scoped contracts, read only when their route trigger applies. None is another lifecycle or memory authority: Project Manager still advances `STATE.json`, owns merge, integration, cleanup and gates, and records only macro checkpoints in `WORKFLOW.md`. Their optional local ledgers ([graph runtime](graph-runtime.md), [loop runtime](loop-runtime.md)) record receipts under `.harness/.cache/` without replacing those authorities. A provider without isolated agents executes the same contract as labeled sequential passes.
 
 ## States and legal transitions
 

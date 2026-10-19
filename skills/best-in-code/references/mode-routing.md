@@ -63,9 +63,7 @@ Do not activate a role or gate merely because its row exists. The Design Gate tr
 
 Plan and Design checkpoints resolve material choices, not routine implementation details. A clear user request or an earlier approved requirement/design/model plan supplies authorization within that scope; record it rather than asking for the same approval again. A changed scope, unresolved material architecture/schema decision, breaking or destructive effect, new credential/paid-service use, production mutation, or external communication needs authorization that covers that specific action. Platform permission prompts do not substitute for product decisions.
 
-Continue authorized implementation, runtime inspection where relevant, and repairs for change-caused failures. Tests verified to use disposable fixtures without production access may run and be rerun within this scope. Stop for genuinely missing authority or a material unresolved choice, an explicit review boundary, or an evidence-backed blocker—not merely because a first implementation is ready.
-
-Technical readiness and human acceptance are separate checkpoints. Finish applicable verification and report remaining limitations before requesting acceptance. Canonical delivery state then waits at `WAITING_ACCEPTANCE`; only human acceptance permits `DONE` and exact-run memory closure. Read-only reviews end with findings and no memory mutation.
+Continuation, test reruns, technical readiness, `WAITING_ACCEPTANCE` and read-only review endings follow `SKILL.md` operating boundaries and verification rules. Stop only for genuinely missing authority, a material unresolved choice, an explicit review boundary, or an evidence-backed blocker—not merely because a first implementation is ready.
 
 ## Review semantics
 

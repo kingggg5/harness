@@ -346,13 +346,13 @@ harness decision-eval --suite .harness/runtime/assets/evals/DECISION-REPRESENTAT
 
 Decision output is recommendation-only. Its deterministic policy floor sends low-confidence, high-risk, security-sensitive, or human-recommended cases to `human_approval`; the execution kernel still owns capabilities, budgets, authorization, tool calls, and human approval. See [decision runtime](skills/best-in-code/references/decision-runtime.md).
 
-**Reference modules** loaded on demand: `workflow-graph`, `loop-engineering`, `loop-runtime`, `graph-engineering`, `graph-runtime`, `execution-isolation`, `memory-loop`, `mode-routing`, `model-routing`, `decision-runtime`, `performance-engineering`, `requirements-analysis`, `discovery-loop`, `research-routing`, `research-basis-2026`, `capability-contract`, `provider-adapters`, `engineering-standards`, `frontend-skill-routing`, `ux-laws-and-visual-discovery`, `shipproof-routing`, `harness-evaluation`.
+**Reference modules** load on demand from the grouped *Load by need* router in `SKILL.md` (delivery lifecycle, build and verify, research and design, runtime and scale). Every run opens its first reply and its final report with one route line, for example `Route: start/standard · refs: mode-routing.md, behavioral-testing.md · skills: impeccable`, so skipped modules and skills are visible. At each phase change Harness also matches the host's installed skills (versioned docs, UI critique, motion, browser verification, security or production-readiness audits) and loads a match through the host mechanism instead of only naming it. `validate_portability.py` keeps `SKILL.md` under a 10,500-character budget, each reference under 20,000 characters, and fails when a reference is not routed.
 
 Optional tools are capability backends, not dependencies. Harness uses an existing trusted backend only when its lane is active and never auto-installs one:
 
 | Need | Candidate backends |
 |---|---|
-| Current library/API documentation | Context7 → official versioned docs/repository |
+| Current library/API documentation | Vendor docs MCP → Context7 (version-pinned) → official docs/`llms.txt`/repository |
 | Repository and current-web evidence | GitHub, Exa, official sources; Reddit/community sources are secondary evidence only |
 | UI/UX and motion | design-taste, Impeccable, UI UX Pro Max, transitions.dev; Pinterest is read-only inspiration; Caveman is opt-in |
 | Semantic recall | MemPalace over a sanitized project-scoped export; canonical files remain authority |

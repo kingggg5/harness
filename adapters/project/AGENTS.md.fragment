@@ -1,7 +1,7 @@
 <!-- harness:start -->
 ## Harness
 
-Harness is an opt-in software-delivery workflow. On `Harness: <task>` or a provider alias, read the project-pinned `.harness/runtime/SKILL.md`; use an installed `best-in-code` only when no pin exists.
+Harness is this project's software-delivery workflow. For code changes that need verification, and always on `Harness: <task>` or a provider alias, read the project-pinned `.harness/runtime/SKILL.md`; use an installed `best-in-code` only when no pin exists. Plain explanations and non-code questions skip it.
 
 For Harness work, start at `.harness/INDEX.md` and `.harness/STATE.json` when present, then load only task-relevant references and verified records. Preserve Project/Run identity and canonical memory; PM owns shared-state writes.
 

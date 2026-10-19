@@ -1,7 +1,7 @@
 <!-- harness:start -->
 # Harness Generic Agent Launcher
 
-When the user invokes Harness:
+When the user invokes Harness or asks for code changes that need verification:
 
 1. Read the nearest `AGENTS.md`.
 2. Read `.harness/INDEX.md` and validate `.harness/STATE.json` when present.

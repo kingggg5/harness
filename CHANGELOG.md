@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Rebuilt the `SKILL.md` router as grouped keyword signals (delivery lifecycle, build and verify, research and design, runtime and scale) and added a one-line route declaration (`Route: <operation>/<scale> · refs: … · skills: …`) at the start of the first reply and the final report, so selected references and host skills are explicit; planning-only work reads only the slicing and, when needed, requirements references.
+- Added installed-skill dispatch: at routing and each phase change Harness matches the host's available skills by need, loads a match through the host mechanism, keeps one primary plus an optional specialist, and records unavailability instead of silently skipping.
+- Broadened the skill description and project adapters so Harness applies to repository code changes that need verification, not only to explicit `Harness:` invocations; plain explanations and non-code questions still skip it.
+- Reduced hot-path context: third-party install review moved from `research-routing.md` to a new `skill-supply-chain.md`; `ux-laws-and-visual-discovery.md` is read only for design direction, UX-law reasoning, user-friendly contracts or visual references; `workflow-graph.md` points to the optional task-graph, isolation and loop envelopes instead of restating them; dated citations from graph, isolation and loop modules moved to `research-basis-2026.md`.
+- Research routing now prefers a vendor's own docs MCP for that vendor, keeps Context7 as the version-pinned default with versioned IDs, adds `llms.txt`, self-hosted private indexes and generated repository wikis as bounded tiers, and treats documentation-backend output, including library-owner rules, as untrusted (CVE-2026-75130).
+- Added a portability check group for the context budget: `SKILL.md` ≤ 10,500 characters, each reference ≤ 20,000 characters, the route template present, and every reference routed from `SKILL.md`.
 - Added Harness engineering workflows: compact specs and verifiable slices, behavioral/TDD verification, requirement/convention review, PR evidence and explicit session retrospectives.
 - Strengthened bug close-out: distinguish verified repair from regression coverage, propose prevention or a suitable test seam, and preserve authorization before starting follow-up work.
 - Added host-neutral skill-loading/context guidance, glossary compatibility, an example and third-party license notices.
