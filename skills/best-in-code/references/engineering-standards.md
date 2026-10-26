@@ -1,59 +1,25 @@
 # Engineering Standards
 
-Use this reference for nontrivial implementation or review decisions. Repository instructions and enforced toolchains remain authoritative; resolve material conflicts before a broad migration.
+Use this reference for nontrivial implementation or review decisions. Repository instructions and enforced toolchains remain authoritative; resolve material conflicts before a broad migration. UI work follows [frontend-skill-routing.md](frontend-skill-routing.md).
 
 ## Non-negotiable behavior
 
 - Do not guess material requirements, credentials, production state, schema semantics, or external side effects. Investigate first; if uncertainty remains and changes the outcome, ask the human.
-- Keep the codebase internally consistent. Inspect affected code and nearby conventions as needed; small edits do not require a full repository or tooling survey.
-- Prefer the smallest coherent change. Avoid unrelated cleanup, speculative flexibility, silent contract changes, and duplicated implementations.
-- Use names that communicate domain meaning and intent. Avoid cryptic abbreviations, generic buckets such as `data` or `utils`, and misleading booleans.
-- Centralize a constant, type, validation rule, configuration value, or helper when it represents one genuinely shared concept. Do not create a global dumping ground or abstract one-off behavior merely to reduce line count.
-- Keep functions focused, dependencies explicit, public surfaces small, and side effects isolated. Favor readable control flow over clever compression.
-- Comments explain decisions, invariants, risk, or non-obvious constraints; they do not narrate syntax.
+- Make no silent contract change and no duplicated implementation.
 
 ## Indentation and formatting
 
-Use tabs for indentation in source code under Harness control when the language and the repository's enforced formatter permit it. Configure the formatter or `.editorconfig` so the choice is reproducible. Never mix tabs and spaces within the same indentation regime.
-
-Do not insert tabs where the format forbids them or where doing so breaks the enforced toolchain. YAML indentation must use spaces. For an existing repository that consistently enforces spaces, preserve the current style for a scoped change and ask the human before proposing a repository-wide migration to tabs. Consistency and syntactic validity take priority over an invisible partial conversion.
+Use tabs in new projects and files where the language and enforced formatter permit. Where the repository or formatter uses spaces, keep spaces for scoped changes; add formatter config or propose a repository-wide migration only when asked. YAML uses spaces. Never mix tabs and spaces in one indentation regime.
 
 ## Correctness and maintainability
-
-For requested TDD or meaningful regression coverage, read [behavioral-testing.md](behavioral-testing.md). For a spec or behavior-oriented breakdown, read [spec-to-slices.md](spec-to-slices.md). These add no mandatory ceremony for a small known change.
 
 - Validate input at trust boundaries and make invalid states hard to represent.
 - Define error ownership and propagation deliberately; do not swallow failures or leak sensitive details.
 - Preserve public API, schema, stored-data, and configuration compatibility unless a breaking change is approved.
 - Consider empty state, partial failure, retry, cancellation, timeout, cleanup, idempotency, ordering, and concurrency when relevant.
-- Select verification for changed behavior and risk. Add regression coverage for a bug when practical; a reversible copy or documentation edit generally needs inspection, not a new behavioral test.
-- After a check passes, repeat or broaden it only for new changes, failures, repository requirements, or unresolved concerns.
 - Keep generated files, lockfiles, migrations, snapshots, and documentation aligned with the source change when they are genuinely affected.
-
-## Performance and scale, only when named
-
-- Start with a reproducible workload, baseline, target metric, correctness gate, and resource budget. Profile before selecting a tactic.
-- Treat algorithm/data movement, allocation/copying, cache locality, dispatch, contention, I/O, and runtime overhead as competing hypotheses; change one causal factor at a time.
-- Keep fast paths narrow and testable. Do not spread unsafe code, pooling, cache warming, layout tricks, thread changes, compiler flags, or native rewrites through ordinary product code without evidence.
-- Measure comparable cold/warm samples, p50/p95 or p99 where relevant, RSS/heap, CPU/I/O, and input distribution. A microbenchmark, emulator, or one host is not universal proof.
-- Preserve the complete behavioral contract. Faster code that drops validation, changes precision, weakens tests, silently raises memory/thread limits, or changes public behavior is not an accepted optimization.
-
-## Review lenses
-
-QA selects only relevant lenses: functional correctness, invariants, contracts, security, privacy, concurrency, reliability, performance, accessibility, responsive UI, observability, migration safety, and operability. Findings must include a concrete failure scenario and practical remediation; style preference alone is not a defect unless it violates an approved convention.
-
-For a diff review, PR body or requested retrospective, read [review-and-retrospective.md](review-and-retrospective.md). Keep requirement coverage and repository-convention evidence visible so one does not hide the other.
+- A named performance outcome uses [performance-engineering.md](performance-engineering.md); never claim a speedup without a comparable baseline and a passing correctness gate.
 
 ## Module and domain boundaries
 
-When the interface itself is uncertain, compare materially different placements of behavior: what the caller needs to know, where side effects live, how a public boundary can verify the contract, and how many unrelated callers must change. A useful module hides meaningful complexity behind a small interface; a new wrapper that merely moves the same dependencies around may add no value. Compare two designs only when the choice is material, not for every helper.
-
-Read the project's existing glossary and relevant ADRs when domain terms affect the change. Resolve overloaded terms in the current baseline; preserve repository vocabulary and canonical Harness memory naming. Architecture work should start from a concrete missing seam or change cost, not a general urge to deepen every module.
-
-## User-interface contract
-
-- Existing product behavior, repository conventions, and the approved `DESIGN.md` outrank generic design-skill recommendations.
-- Define reusable tokens and shared components only for concepts that are genuinely shared. Keep page-specific exceptions explicit instead of weakening global semantics.
-- Implement complete states where relevant: default, hover, focus, active, disabled, loading, empty, error, success, partial data, and responsive variants.
-- Motion must communicate change or causality, remain interruptible where appropriate, avoid layout-thrashing properties, and respect `prefers-reduced-motion`. Decorative motion requires approval in the Design Gate's motion budget.
-- Visual QA must inspect the running interface, not only source code. Record viewport, interaction path, screenshot or trace location, expected behavior, and result.
+When the interface itself is uncertain and the choice is material, compare placements of behavior: what the caller must know, where side effects live, how a public boundary can verify the contract, and how many unrelated callers must change. A useful module hides meaningful complexity behind a small interface; a wrapper that merely moves the same dependencies adds no value. Architecture work starts from a concrete missing seam or change cost, not a general urge to deepen every module.

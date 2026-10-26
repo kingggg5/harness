@@ -12,9 +12,7 @@ The default contract contains these logical roles:
 - Business Analyst: conditional requirements pass.
 - Planner, Researcher, Designer, Frontend, Backend, and Tester/Reviewer/QA.
 
-Each role has a `model_profile`. A provider adapter maps that portable profile to an available model. The template suggests Sol-class reasoning for orchestration/planning/review, Terra-class balanced models for implementation/design, and Luna-class fast models for bounded research or analysis. These are routing hints, not hard dependencies; user-pinned models and verified provider availability win.
-
-Template profile names do not authorize model switching. By default bind them to the task's fixed model and effort; distinct role bindings require an explicitly approved model plan. The adapter must enforce that binding and report its actual selection; the kernel validates the contract but cannot independently attest which provider model the adapter used.
+Each role has a portable `model_profile` that the provider adapter maps to an available model. The template's Sol/Terra/Luna-class profile names are routing hints that do not authorize model switching: by default bind every profile to the task's fixed model and effort; distinct role bindings or a cheaper model require an explicitly approved model plan recorded in `WORKFLOW.md`. User-pinned models and verified provider availability win. The adapter must enforce that binding and report its actual selection; the kernel validates the contract but cannot attest which provider model the adapter used.
 
 Execution is deterministic around the model:
 
@@ -73,7 +71,7 @@ harness run-trace-verify --project . --contract .harness/RUN-CONTRACT.json --jso
 
 ## Verifier isolation policy
 
-New run-contract schema v2 declares `"verifier_isolation": "required"` or `"best-effort"`. The template defaults to `required`. If the strict backend cannot be established, the verifier does not run and the call returns `EXEC_ISOLATION_UNAVAILABLE` with the reason.
+Run-contract schemas v2 and v3 declare `"verifier_isolation": "required"` or `"best-effort"`. The template defaults to `required`. If the strict backend cannot be established, the verifier does not run and the call returns `EXEC_ISOLATION_UNAVAILABLE` with the reason.
 
 | Host | `required` backend | Teardown guarantee |
 |---|---|---|
@@ -95,13 +93,10 @@ cp .harness/runtime/assets/templates/ANTHROPIC-ADAPTER.json .harness/ANTHROPIC-A
 
 - `ADAPTER-ARGV.json`: `["@harness-python", "-B", ".harness/runtime/scripts/anthropic_adapter.py", "--config", ".harness/ANTHROPIC-ADAPTER.json"]`.
 - `RUN-CONTRACT.json`: add `"ANTHROPIC_API_KEY"` (or `"ANTHROPIC_AUTH_TOKEN"`, optionally `"ANTHROPIC_BASE_URL"`) to `adapter.environment_allowlist`. The credential is read from the process environment only; it is never accepted from the config, the contract, or project content, and the adapter suite proves it does not enter state, evidence, or the trace.
-- The config's `profiles` bind each contract `model_profile` to `{model, effort}`; unmapped profiles use `default_model`. Every template profile defaults to `claude-opus-5` with role-appropriate effort (`high` for orchestration, planning, and review; `medium` for build and design; `low` for bounded research). Rebinding a profile to a cheaper model is a human routing decision recorded in `WORKFLOW.md`.
+- The config's `profiles` bind each `model_profile` to `{model, effort}`; unmapped profiles use `default_model`. Template profiles all use `claude-opus-5`, with `high` effort for orchestration, planning, and review, `medium` for build and design, and `low` for bounded research.
 - `pricing_microusd_per_million_tokens` supplies `cost_microusd`; an unpriced model fails closed rather than costing zero. Update `pricing_verified` when you refresh the table.
-- Thinking is left at the model default (adaptive on current models); `output_config.effort` is sent only for models that accept it. `server_side_fallbacks` stays `false` unless a human enables it, because a silent model substitution would contradict the fixed-primary-model rule.
-- Kernel tools become Anthropic tools named with `__` in place of `.`, each with a closed input schema derived from the kernel descriptor. Only declared tools are sent; a `tool_use` naming anything else is refused before the kernel sees it.
-- The adapter keeps its own bounded transcript in `adapter_state` (task packet, assistant turns including thinking blocks, tool results). Oldest exchange pairs are trimmed under `max_state_bytes`; the kernel trace remains the complete record.
-- Provider usage is normalized to canonical `input_tokens` = uncached + cache read + cache creation, with both cache counters reported; a protocol-1 request receives the legacy shape.
-- Retries are bounded (`max_retries`) for 408/409/429/5xx/529 and connection failures only. A refusal, a `max_tokens` stop, or a 4xx error stops the step with an adapter error and the kernel fails closed.
+- `server_side_fallbacks` stays `false` unless a human enables it; a silent model substitution would break the fixed-primary-model rule.
+- Only declared kernel tools are sent; any other `tool_use` is refused. Retries are bounded by `max_retries`; a refusal, `max_tokens` stop, or other 4xx error fails the step closed.
 
 ## Adapter protocol
 
@@ -136,7 +131,7 @@ Responses must contain exactly:
 
 `finish_reason: final` requires non-empty `message` and no tool calls. The adapter must use `request_id` as its provider-side idempotency key when the provider supports one. Raw shell strings and free-form environment changes are never part of this protocol.
 
-The request version follows the reviewed contract schema: schema v1 sends protocol v1, while schema v2 sends protocol v2. This lets a strict old adapter reject unknown request fields safely. A schema-v2 run may still accept a v1 response only as a controlled compatibility lane, and only with the v1 legacy usage shape. v2 adds the cache-telemetry receipt below; a v2 adapter that receives a v1 request must use a v1 legacy response instead. An unknown version or a v1 response with v2-only fields is refused, so version drift cannot silently reinterpret billing data.
+The request version follows the reviewed contract schema: schema v1 sends protocol v1, while schema v2 and v3 send protocol v2. This lets a strict old adapter reject unknown request fields safely. A schema-v2 or v3 run may still accept a v1 response only as a controlled compatibility lane, and only with the v1 legacy usage shape. v2 adds the cache-telemetry receipt below; a v2 adapter that receives a v1 request must use a v1 legacy response instead. An unknown version or a v1 response with v2-only fields is refused, so version drift cannot silently reinterpret billing data.
 
 ### Usage and cache telemetry
 

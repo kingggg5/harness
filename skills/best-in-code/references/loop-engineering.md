@@ -4,7 +4,7 @@ Loop Engineering moves repeated prompting into a bounded supervisor contract. Us
 
 The portable contract is `.harness/LOOP-CONTRACT.json`. It describes intent and limits; it does not schedule work, meter usage, execute a verifier, launch agents, grant permissions, or authorize an external action. A backend that cannot truthfully report and enforce a declared budget is not ready for unattended use; fall back to one bounded iteration.
 
-When a validated loop needs durable local receipts across process or model restarts, Project Manager may add the optional [loop runtime ledger](loop-runtime.md). The ledger enforces contract binding, delivery dedupe, one lease, accepted Git lineage, evidence digests, received usage, and stop state; the host still supplies every real scheduler, worker, verifier, meter, and kill action.
+For durable local receipts across process or model restarts, Project Manager may add the optional [loop runtime ledger](loop-runtime.md).
 
 ```text
 trigger → select one bounded objective → act → verify → record evidence
@@ -24,7 +24,7 @@ Start one level lower when it can solve the task. `scheduled` and `proactive` ar
 
 ## Create and validate the contract
 
-Copy the starter without overwriting an existing run contract, bind it to the active Project ID, Run ID, and rollback commit, then validate:
+Copy `.harness/runtime/assets/templates/LOOP-CONTRACT.json` to `.harness/LOOP-CONTRACT.json` without overwriting an existing run contract, bind it to the active Project ID, Run ID, and rollback commit, then validate:
 
 ```text
 npx github:kingggg5/harness loop-validate --contract .harness/LOOP-CONTRACT.json
@@ -41,7 +41,7 @@ The contract requires:
 
 For a long run, the active contract is immutable. A model may recommend a new scope, verifier, budget, or trigger, but Project Manager stops at the corresponding human gate and starts a newly reviewed contract/version. Never let a loop silently edit its own definition of success.
 
-Start with a real human bottleneck, not a speculative software factory. Pilot the contract on one representative slice with `max_runs=1`; increase cadence, scope, concurrency, or model cost only after the pilot meets its quality/budget gates and a human reviews the receipts. Match a schedule to how often its source can materially change—polling faster than useful evidence arrives wastes resources and increases overlap risk.
+Pilot the contract on one representative slice with `max_runs=1`; increase cadence, scope, concurrency, or model cost only after the pilot meets its quality/budget gates and a human reviews the receipts.
 
 ## Run one attributable iteration
 
@@ -51,30 +51,20 @@ Start with a real human bottleneck, not a speculative software factory. Pilot th
 4. **Act:** make the smallest reversible slice. Use a reviewed deterministic script for repeated mechanics instead of asking a model to rediscover them.
 5. **Verify:** re-authorize each registered verifier, run focused checks, then every required deterministic verifier against the same candidate. Inspect user-visible artifacts directly when applicable.
 6. **Evaluate:** only after deterministic checks, apply a versioned rubric through an isolated judge when subjective quality matters. Keep judge evidence separate and never let it authorize a tool call.
-7. **Record:** append the source revision, iteration, input/output digests, scores, tokens/cost/external calls as reported, failure/no-progress counts, accepted-best decision, and next hypothesis. Write aggregate usage plus model/role/tool/backend attribution when the host exposes it; mark unavailable dimensions honestly.
+7. **Record:** append the source revision, iteration, input/output digests, scores, failure/no-progress counts, accepted-best decision, and next hypothesis. Write usage to the machine-readable `usage_path`, bound to the contract digest, Loop ID, and Run ID: elapsed time, iterations/runs, tokens, cost in micro-USD, and external calls as the backend reports them, plus model/role/tool/backend attribution when available and an explicit list of unavailable dimensions. Never infer missing cost or normalize unlike provider counters into a false comparison.
 8. **Decide:** continue, keep the new best, restore only the loop-owned slice, or stop with a truthful terminal state.
 
-Terminal states are `PASS WITH EVIDENCE`, `CONDITIONAL`, `BLOCKED`, `BUDGET EXHAUSTED`, or `NO PROGRESS`. Two no-progress cycles or three consecutive failures are hard upper bounds, not targets. A verifier pass is evidence, never permission to push, merge, deploy, publish, delete, spend, or change access.
-
-Keep `usage_path` machine-readable and bound to the contract digest, Loop ID, and Run ID. Record elapsed time, iterations/runs, tokens, cost in micro-USD, and external calls as the backend reports them; include model/role/tool/backend attribution when available plus an explicit list of unavailable dimensions. Never infer missing cost or normalize unlike provider counters into a false comparison.
+Terminal states are `PASS_WITH_EVIDENCE`, `CONDITIONAL`, `BLOCKED`, `BUDGET_EXHAUSTED`, `NO_PROGRESS`, or `CANCELLED`. Two no-progress cycles or three consecutive failures are hard upper bounds, not targets. A verifier pass is evidence, never permission to push, merge, deploy, publish, delete, spend, or change access.
 
 The verifier registry is trusted runtime configuration, not contract or recalled-memory content. Each entry binds one `command_id` to a reviewed executable plus fixed argument policy, working-directory boundary, timeout, output cap, environment allowlist, and evidence adapter. Verifiers are read-only by default and cannot push, deploy, publish, delete, change permissions, or invoke an unrestricted shell. Reject unknown IDs; never fall back to interpreting the ID or model text as a command.
 
-### Close a frontend loop in the running product
-
-Editing files is not frontend completion. When the lane is active and `browser.interactive` is available, start the reviewed development server, open the exact changed route at the approved viewport, capture the before state, perform the primary interaction and one failure/edge path, capture the after state, and inspect new console errors or warnings. Run the repository E2E check and an approved performance/accessibility trace when those claims are in scope. If a required step fails, return to **Observe** with that evidence; do not continue from a partially verified later step.
-
-When browser capability is unavailable, degrade through repository E2E, a human screenshot/walkthrough, then `Not verified`. A screenshot alone proves appearance, not interaction, console health, accessibility, or performance.
+For a performance goal, pair this contract with [performance-engineering.md](performance-engineering.md); a faster result that changes semantics, checks or the benchmark is a failed experiment.
 
 ## Compose with task graphs and memory
 
 `LOOP-CONTRACT.json` is the supervisor envelope: trigger, goal, verifier order, budgets, scope, and stop rules. Its optional [loop runtime](loop-runtime.md) records outer deliveries, iteration leases, accepted best/source receipts, usage, and stop state. `TASK-GRAPH.json` is optional execution topology inside one iteration; the local graph runtime records inner node leases, artifacts, Git lineage, and resume checks. `STATE.json` remains lifecycle authority; `MEMORY.json` remains durable-memory authority.
 
-Only use `task-graph` execution when an iteration contains genuinely independent work. Parallel writers need isolated worktrees/workspaces and disjoint ownership. One Project Manager integrates results. Fresh evaluator context can reduce self-review bias, but a different model name alone does not prove independence.
-
-### Performance optimization loops
-
-For a performance goal, pair this contract with [performance-engineering.md](performance-engineering.md) and the bundled [bounded performance example](../../../examples/loop-engineering-performance.md). Fix the workload, input distribution, correctness corpus, resource caps, and rollback revision before the first iteration. Each iteration changes one hypothesis and keeps a candidate only after comparable before/after measurements and every correctness/resource gate passes. A faster result that changes semantics, skips a check, alters the benchmark, violates streaming/thread/memory constraints, or depends on an unapproved target is a failed experiment.
+Only use `task-graph` execution when an iteration contains genuinely independent work. Parallel writers need isolated worktrees/workspaces and disjoint ownership. One Project Manager integrates results.
 
 Humans retain product direction, architecture, and final trade-off authority. The loop may surface alternatives and evidence, but an architecture change not already accepted by the active contract stops at `architecture-change`; it does not redesign its own factory.
 
@@ -90,9 +80,7 @@ Progress receipts are run evidence, not memory. After completion, a human-approv
 - Scheduled/proactive loops cannot directly own consequential effects. They prepare a bounded candidate and stop for human/backend authorization.
 - Require observable status, pause/cancel, expiry/max-runs, per-tool disable switches, and a global kill path before claiming unattended capability.
 
-## Evidence basis and claim hygiene
+## Evidence basis
 
-The dated provider evidence behind this design lives in [research-basis-2026.md](research-basis-2026.md#loop-engineering); read it only when changing this policy.
-
-Provider quotes, benchmark rankings, productivity multipliers, fleet sizes, token bills, and claims about an exact default subagent count are contextual leads, not Harness invariants. Keep only claims supported by a current primary source, and re-check vendor-specific commands/capabilities before use.
+The dated provider evidence behind this design lives in [research-basis-2026.md](research-basis-2026.md#loop-engineering); read it only when changing this policy. Re-check vendor-specific commands and capabilities before use.
 

@@ -45,7 +45,7 @@ Files are in `references/`. Read one only when its signal applies; follow its li
 
 **Research and design**
 - Current library/API facts or other external evidence → `research-routing.md`
-- Installing or updating a skill, plugin, hook or MCP server → `skill-supply-chain.md`
+- Installing, updating, writing or changing a skill, plugin, hook or MCP server → `skill-supply-chain.md`
 - UI implementation, frontend review, motion → `frontend-skill-routing.md`
 - New or changed design direction, UX-law reasoning, user-friendly success contract, visual references → `ux-laws-and-visual-discovery.md`
 
@@ -61,7 +61,7 @@ Files are in `references/`. Read one only when its signal applies; follow its li
 - Typed semantic route/risk/guardrail recommendations → `decision-runtime.md`
 - Jev query-time context, visibility ladder, economic routing, script gating → `jev-runtime.md`; Jev limits and Exa, Gemini, compaction or CUA recipes → `jev-guide.md`
 - Bounded context compilation or source provenance → `context-compiler.md`
-- Behavior trials, trace inspection, Harness evaluation changes → `eval-runtime.md` and `harness-evaluation.md`
+- Running behavior trials or inspecting traces → `eval-runtime.md`; changing Harness evals or release gates → `harness-evaluation.md`
 - Researching changes to Harness architecture or policy → `research-basis-2026.md`
 - ShipProof selected as an available evidence backend → `shipproof-routing.md`
 
@@ -85,8 +85,8 @@ Harness routes; installed host skills supply specialist craft. When routing and 
 
 ## Verification and handoff
 
-Choose checks for the changed behavior and risk. Fix failures the task caused and rerun affected checks within existing authorization; local tests verified to use disposable fixtures without production access need no further approval. Broaden testing when a change, failure, repository requirement or unresolved concern warrants it; do not repeat a passing suite without a reason. Never weaken valid assertions to obtain a pass.
+Choose checks for the changed behavior and risk. Fix failures the task caused and rerun affected checks within existing authorization; local tests verified to use disposable fixtures without production access need no further approval. Never weaken valid assertions to obtain a pass.
 
-Keep actionable errors and relevant final output in context and detailed evidence local when needed. Record reusable decisions concisely in canonical memory when authorized. Report the outcome, checks actually run, unresolved risks and unavailable evidence.
+Record reusable decisions concisely in canonical memory when authorized. Report the outcome, checks actually run, unresolved risks and unavailable evidence.
 
 Technical readiness means the requested implementation and verification are finished. A delivery run using canonical state records `WAITING_ACCEPTANCE` after verification; only human acceptance permits `DONE` and exact-run memory closure. An explicit read-only review ends with findings and no memory mutation. Human acceptance is a final checkpoint, not a reason to stop before authorized work is complete.

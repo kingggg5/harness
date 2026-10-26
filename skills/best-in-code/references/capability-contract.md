@@ -1,33 +1,30 @@
 # Portable Capability Contract
 
-Harness depends on capabilities, not vendor or model names. At intake, record only capabilities relevant to the run, their actual backend, permissions, isolation, version when material, and state: `READY`, `DEGRADED`, `UNAVAILABLE`, or `DIRTY`.
+Harness depends on capabilities, not vendor or model names. At intake, add a preflight row only for an optional capability the run depends on; core file and shell access need none. Record its actual backend, permissions, isolation, version when material, and state: `READY`, `DEGRADED`, `UNAVAILABLE`, or `DIRTY`.
 
 ## Capability IDs
 
+Self-explanatory: `agents.parallel`, `human.ask`, `filesystem.read` / `filesystem.write`, `shell.execute`, `repository.local` / `repository.remote`, `web.search` / `web.fetch`, `browser.interactive`.
+
 | ID | Purpose |
 |---|---|
-| `agents.parallel` | Run bounded role contracts concurrently. |
 | `agents.isolated` | Verify with context and ownership isolated from implementation. |
 | `agents.supervise` | Observe, cancel, and reconcile bounded long-running workers without continuous model polling. |
 | `automation.schedule` | Wake a bounded run on a verified cadence with status, pause/cancel, overlap, expiry, and run-count controls. |
 | `events.subscribe` | Receive authenticated bounded events with target validation, replay protection, and deduplication. |
-| `models.select` | Select and launch a verified model/effort profile for a bounded role pass. |
-| `decision.semantic` | Produce bounded typed semantic recommendations for route, risk, retrieval, or guardrail checks. |
-| `human.ask` | Pause for a material human decision. |
-| `filesystem.read` / `filesystem.write` | Inspect or mutate project files. |
-| `shell.execute` | Run local diagnostics, tests, builds, and approved scripts. |
-| `docs.versioned` | Retrieve current version-aware official documentation. |
-| `repository.local` / `repository.remote` | Inspect local or hosted repository evidence. |
-| `vcs.worktree` | Create, identify, and safely retire one isolated version-control workspace per concurrent writer. |
-| `graph.ledger` | Persist bounded node claims, receipts, artifact digests, and resume checks without executing nodes. |
-| `web.search` / `web.fetch` | Find and inspect current external evidence. |
-| `browser.interactive` | Inspect or exercise a running interface. |
-| `image.search` | Find public visual references with domain/source controls. |
-| `memory.semantic` | Retrieve scoped candidates from a semantic index. |
-| `requirements.spec` | Create or reconcile repository-native requirement/spec artifacts from an approved baseline. |
-| `evidence.static` / `evidence.runtime` | Produce deterministic static or runtime evidence. |
+| `models.select` | Launch a verified model/effort profile for a bounded role pass. |
+| `decision.semantic` | Bounded typed recommendations for route, risk, retrieval, or guardrail checks. |
+| `docs.versioned` | The vendor's own docs MCP for that vendor, then a version-aware backend such as Context7; official docs, repository or local source as fallback. |
+| `vcs.worktree` | One isolated version-control workspace per concurrent writer, safely retired. |
+| `graph.ledger` | Persist node claims, receipts, artifact digests, and resume checks without executing nodes. |
+| `image.search` | Public visual references with domain/source controls. |
+| `memory.semantic` | Scoped candidates from a semantic index (see MemPalace below). |
+| `requirements.spec` | Repository-native requirement/spec artifacts from an approved baseline. |
+| `evidence.static` / `evidence.runtime` | Deterministic static or runtime evidence. |
 
-Tool and skill names are backend bindings. Examples include the Claude Code plugin subagents `harness-qa` and `harness-researcher` for `agents.isolated`, Context7 for `docs.versioned`, GitHub for `repository.remote`, Exa or another search service for `web.search`, Pinterest/domain-filtered image search for `image.search`, MemPalace for `memory.semantic`, OpenSpec or GitHub Spec Kit for `requirements.spec`, and ShipProof for `evidence.static`. Never require or claim a named backend when only the capability matters.
+Tool and skill names are backend bindings, for example the Claude Code subagents `harness-qa`/`harness-researcher` (`agents.isolated`), GitHub (`repository.remote`), Exa (`web.search`), OpenSpec or GitHub Spec Kit (`requirements.spec`) and ShipProof (`evidence.static`). Never require or claim a named backend when only the capability matters.
+
+**MemPalace for `memory.semantic`.** Installed is not ready: preflight executable/version, UTF-8 output, explicit palace path, status, a Project-ID wing and one safe scoped query. Never auto-install or mine home/parent directories, conversations, archives, or raw logs. Index only the sanitized output of `memory_ops.py export-cache` (dry-run the mine step) and use scoped search with a small result limit. A result lacking matching Project ID, canonical ID, source revision, and digest is only a lead. Never claim an index rebuild or negative search succeeded without recorded evidence from those external commands.
 
 ## Fallback order
 
@@ -38,7 +35,6 @@ Tool and skill names are backend bindings. Examples include the Claude Code plug
 | Long-running supervision | Event-driven supervisor with status/cancel/stall detection → one bounded interactive iteration → handoff |
 | Scheduled/event loop | Verified scheduler/subscription with dedupe and cancellation → one bounded interactive iteration → reusable handoff command |
 | Durable graph receipts | Bundled local Git-backed ledger → Project Manager records the same evidence manually in `WORKFLOW.md` → static graph only |
-| Model selection | Keep current model/effort; select or change only within the user's explicit model authorization; never silently replace an explicitly required model |
 | Typed decision | Bundled deterministic decision runtime → labeled policy rule → human decision for material uncertainty |
 | Current documentation | Versioned-doc tool → official versioned docs → official repository/tag → installed local source → ask human |
 | Remote repository | Connector → local Git → official web source → user-provided evidence |
@@ -49,7 +45,7 @@ Tool and skill names are backend bindings. Examples include the Claude Code plug
 | File mutation unavailable | Return a patch/artifact and state that it was not applied |
 | Static audit | Selected trusted auditor → project linters/scanners → targeted manual review → `Not verified` |
 
-The outcome must remain truthful under every fallback. Missing semantic memory may reduce retrieval convenience, and missing browser automation may reduce UI evidence, but neither permits invented results.
+The outcome must remain truthful under every fallback; a missing capability never permits invented results.
 
 ## Preflight record
 
@@ -62,9 +58,11 @@ Installed is not the same as ready. Probe the smallest safe operation and verify
 
 ## Isolation language
 
-- `independent QA`: different isolated context and no implementation ownership.
-- `isolated review`: isolated context, independence from implementation stated.
-- `self-review`: same agent or same implementation context.
+Report labels map one-to-one to the role-packet labels in [model-routing.md](model-routing.md) and `assets/templates/ROLE-PACKET.md`:
+
+- `independent QA` = `independent-review`: different isolated context and no implementation ownership.
+- `isolated review` = `isolated`: isolated context, independence from implementation stated.
+- `self-review` = `same-context`: same agent or same implementation context.
 - `deterministic verification`: tools/tests with reproducible inputs, regardless of reviewer isolation.
 
 Never substitute one label for another.
