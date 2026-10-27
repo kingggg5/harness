@@ -87,6 +87,6 @@ Harness routes; installed host skills supply specialist craft. When routing and 
 
 Choose checks for the changed behavior and risk. Fix failures the task caused and rerun affected checks within existing authorization; local tests verified to use disposable fixtures without production access need no further approval. Never weaken valid assertions to obtain a pass.
 
-Record reusable decisions concisely in canonical memory when authorized. Report the outcome, checks actually run, unresolved risks and unavailable evidence.
+Record reusable decisions concisely in canonical memory when authorized. Report the outcome, checks actually run, unresolved risks and unavailable evidence. When a defect affected users or money, derive its direction and size from the reproduced numbers (who paid or received more or less, and by how much) before suggesting remediation such as refunds.
 
 Technical readiness means the requested implementation and verification are finished. A delivery run using canonical state records `WAITING_ACCEPTANCE` after verification; only human acceptance permits `DONE` and exact-run memory closure. An explicit read-only review ends with findings and no memory mutation. Human acceptance is a final checkpoint, not a reason to stop before authorized work is complete.
