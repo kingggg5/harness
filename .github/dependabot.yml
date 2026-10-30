@@ -11,6 +11,11 @@ updates:
     labels:
       - dependencies
       - ci
+    groups:
+      # init and analyze must run the same version, so bump them in one PR.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
   - package-ecosystem: npm
     directory: "/"
     schedule:
