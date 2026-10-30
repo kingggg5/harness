@@ -37,7 +37,8 @@ Ask what in the environment would have prevented the observed mistake; trace tha
 | A mechanical error escaped | Current lint/typecheck/test command and its CI wiring | Repair the existing deterministic gate, or add a scoped one when authorized |
 | A judgment keeps needing correction | Existing standards and actual examples | One precise convention with its applicability and rationale |
 | Agent input is large or duplicated | Current descriptions, references and measured tool output | Remove stale/repeated guidance; bound the relevant retrieval |
-| Needed evidence was unavailable | Existing logs/read scopes and responsible owner | A proposed scoped evidence path, without new permissions assumed |
+| Needed evidence was unavailable | Existing logs/read scopes, `.harness/SOURCES.json` and responsible owner | A proposed scoped evidence path or catalog entry, without new permissions assumed |
+| An old instruction or persona line may no longer help | Whether a with/without comparison on the current model exists | Propose that comparison, then keep, rewrite as a concrete method, or remove by its result; leave workflows that measure well alone |
 
 A rule that can be enforced mechanically belongs in an appropriate check; instructions explain decisions the tool cannot make. Treat lacking automation as a proposal proportional to the project, not an automatic security finding or mandatory install.
 

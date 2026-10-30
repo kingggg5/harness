@@ -44,6 +44,8 @@ Context isolation does not establish checkout, service, credential, or other wor
 - Requirement baseline IDs or `N/A`:
 - Verified memory IDs and minimal values:
 - Inputs and source locations:
+- Base revision and diff target under review, or `N/A`:
+- Methods, tools and evidence sources to use:
 - Owned files or read-only boundary:
 - Capabilities/backends permitted:
 - Permissions and external-access boundary:

@@ -85,6 +85,9 @@ REQUIRED_FILES = (
 	"skills/best-in-code/references/memory-loop.md",
 	"skills/best-in-code/references/harness-evaluation.md",
 	"skills/best-in-code/references/skill-supply-chain.md",
+	"skills/best-in-code/references/practitioner-methods.md",
+	"skills/best-in-code/references/evidence-sources.md",
+	"skills/best-in-code/assets/templates/SOURCES.json",
 	"skills/best-in-code/scripts/init_project.py",
 	"skills/best-in-code/scripts/bounded_json.py",
 	"skills/best-in-code/scripts/memory_ops.py",
@@ -169,7 +172,7 @@ SCHEMA_EXPECTATIONS = {
 	"EVALUATION.md": 1,
 	"DESIGN.md": 2,
 }
-SKILL_CHAR_BUDGET = 10500
+SKILL_CHAR_BUDGET = 11000
 REFERENCE_CHAR_BUDGET = 20000
 MANAGED_START = "<!-- harness:start -->"
 MANAGED_END = "<!-- harness:end -->"

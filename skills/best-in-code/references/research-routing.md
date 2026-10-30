@@ -2,7 +2,7 @@
 
 ## Source order
 
-1. **Current project:** repository instructions, source, tests, configuration, lockfiles, schemas, user-supplied logs and reproducible runtime behavior.
+1. **Current project:** repository instructions, source, tests, configuration, lockfiles, schemas, user-supplied logs, reproducible runtime behavior and the crash, ticket or usage sources catalogued in `.harness/SOURCES.json` ([evidence-sources.md](evidence-sources.md)).
 2. **Versioned documentation capability:** prefer the vendor's own docs MCP or endpoint (for example Microsoft Learn, OpenAI or Google developer docs, or a docs site's `/mcp`) for that vendor; otherwise a version-aware backend such as Context7 pinned to the project's version, or a configured self-hosted index for private or offline docs. Confirm material behavior with primary documentation.
 3. **Official documentation:** primary product, API, security, standard and provider docs, including a published `llms.txt`.
 4. **Remote repository capability:** an official host such as GitHub for releases, changelog, commits, issues, pull requests and discussions. Code and releases outrank comments. Generated wikis or Q&A (for example DeepWiki) are unversioned leads for architecture questions, never authority.

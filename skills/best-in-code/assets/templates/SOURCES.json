@@ -1,0 +1,32 @@
+{
+	"schema_version": 1,
+	"sources": [
+		{
+			"id": "crash-reports",
+			"enabled": false,
+			"contains": "Grouped production crashes and errors: signature, stack trace, release, platform, affected users and first/last seen.",
+			"use_when": "Prioritizing defects, confirming that a fix lowered a crash rate, or finding the release that introduced an error.",
+			"access": "Replace with the read-only MCP tool, CLI command or export path for the crash reporter; reference credentials by environment variable, never inline.",
+			"sensitivity": "personal",
+			"freshness": "Replace with how current the data is, for example near real time."
+		},
+		{
+			"id": "support-tickets",
+			"enabled": false,
+			"contains": "Customer support conversations: subject, product area, plan, status, created date and message text.",
+			"use_when": "Finding what hurts customers, how often a symptom is reported, or the exact steps a customer took.",
+			"access": "Replace with the read-only MCP tool, CLI command or export path for the help desk.",
+			"sensitivity": "personal",
+			"freshness": "Replace with how current the data is."
+		},
+		{
+			"id": "product-usage",
+			"enabled": false,
+			"contains": "Product analytics events and aggregates: feature usage, funnels, active users by plan and platform.",
+			"use_when": "Sizing how many users a change or defect affects, or answering a product or business question with numbers.",
+			"access": "Replace with the read-only MCP tool, query endpoint, dashboard or export path for analytics.",
+			"sensitivity": "internal",
+			"freshness": "Replace with how current the data is, for example daily batch."
+		}
+	]
+}

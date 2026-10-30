@@ -84,7 +84,7 @@ Reject any other transition. A resume must restore exactly one `next_action`; if
 | Backend Engineer | APIs, domain logic, data, validation, authorization, concurrency, observability and tests | Assigned server/data files |
 | Tester / Reviewer / QA | Acceptance matrix, negative/boundary cases, final diff, regression and risk verification | Read-only; isolated when claimed independent |
 
-Roles are contracts, not processes. Map them to isolated agents, sequential isolated sessions, or labeled same-agent passes using [capability-contract.md](capability-contract.md). A same-context pass can verify work but is never called independent.
+Roles are contracts, not processes or personas: brief a role pass with the methods, tools and evidence its work needs ([practitioner-methods.md](practitioner-methods.md)), never with "act as a senior X". Map them to isolated agents, sequential isolated sessions, or labeled same-agent passes using [capability-contract.md](capability-contract.md). A same-context pass can verify work but is never called independent.
 
 ## Role packet and ownership
 

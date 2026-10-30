@@ -113,7 +113,9 @@ Beyond the shared skill, the Claude Code plugin ships two read-only subagents an
 | `@harness:harness-qa` | Isolated Tester/Reviewer/QA pass with `Read`, `Grep`, `Glob`, and `Bash` for registered checks only; a fresh context lets the Project Manager label it `independent-review` truthfully |
 | `@harness:harness-researcher` | Read-only evidence role with repository search plus web fetch/search, returning provenance-labeled Known/Assumption/Open-question findings |
 | PreToolUse hook | Denies direct `Edit`/`Write` calls to `MEMORY.json`, `IDENTITY.json`, generated views, the pinned runtime, archives, and `.harness/.cache` ledgers, pointing to the memory_ops/upgrade/ledger commands instead |
-| SessionStart hook | Prints the current project, run, state, next action, memory revision, and up to 8 active project decisions and preferences when the working directory contains `.harness/`; silent elsewhere |
+| SessionStart hook | Prints the current project, run, state, next action, memory revision, up to 8 active project decisions and preferences, and up to 8 enabled evidence sources with their sensitivity from the optional `.harness/SOURCES.json` (withholding entries that look like credentials or agent instructions) when the working directory contains `.harness/`; silent elsewhere |
+
+`.harness/SOURCES.json` is an optional catalog of where real-user evidence lives (crash reports, support tickets, product usage): what each source contains, when to use it, how to reach it read-only and how sensitive it is. Name credentials by environment variable, never inline: the file is committed and shown at session start. Copy it from `.harness/runtime/assets/templates/SOURCES.json` and enable only sources whose access works. Agents see the one-line descriptions at session start and query a source only when the task needs it; no data is loaded up front.
 
 ### Common invocations
 

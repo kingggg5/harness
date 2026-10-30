@@ -21,6 +21,7 @@ Self-explanatory: `agents.parallel`, `human.ask`, `filesystem.read` / `filesyste
 | `memory.semantic` | Scoped candidates from a semantic index (see MemPalace below). |
 | `requirements.spec` | Repository-native requirement/spec artifacts from an approved baseline. |
 | `evidence.static` / `evidence.runtime` | Deterministic static or runtime evidence. |
+| `evidence.sources` | Read-only crash, error, ticket, usage or business data catalogued in `.harness/SOURCES.json` ([evidence-sources.md](evidence-sources.md)). |
 
 Tool and skill names are backend bindings, for example the Claude Code subagents `harness-qa`/`harness-researcher` (`agents.isolated`), GitHub (`repository.remote`), Exa (`web.search`), OpenSpec or GitHub Spec Kit (`requirements.spec`) and ShipProof (`evidence.static`). Never require or claim a named backend when only the capability matters.
 
@@ -38,6 +39,7 @@ Tool and skill names are backend bindings, for example the Claude Code subagents
 | Typed decision | Bundled deterministic decision runtime → labeled policy rule → human decision for material uncertainty |
 | Current documentation | Versioned-doc tool → official versioned docs → official repository/tag → installed local source → ask human |
 | Remote repository | Connector → local Git → official web source → user-provided evidence |
+| Real-user evidence | Catalogued read-only source → export or dashboard the human provides → one-sided conclusion labeled as such |
 | Browser/UI verification | Browser automation → repository E2E → manual screenshot/walkthrough evidence → `Not verified` |
 | Semantic memory | Scoped memory adapter → exact scan of canonical `.harness/` files → ask human |
 | Requirement/spec artifacts | Existing repository convention → compact Harness baseline → approved optional spec backend → human clarification |
