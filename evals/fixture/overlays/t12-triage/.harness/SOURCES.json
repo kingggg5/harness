@@ -1,0 +1,32 @@
+{
+	"schema_version": 1,
+	"sources": [
+		{
+			"id": "crash-reports",
+			"enabled": true,
+			"contains": "Production crash groups for the last week: title, culprit, event and user counts, release, trend, one sample event with stack and user.",
+			"use_when": "Choosing which crash to fix, sizing a crash, or confirming the release that introduced it.",
+			"access": "Read the export at ops/crash-export.json (refreshed hourly from the crash reporter).",
+			"sensitivity": "personal",
+			"freshness": "hourly"
+		},
+		{
+			"id": "support-tickets",
+			"enabled": true,
+			"contains": "Support tickets for the last week: product area, plan, subject and customer message.",
+			"use_when": "Finding what customers report, how often, and their exact steps.",
+			"access": "Read the export at ops/support-tickets.json.",
+			"sensitivity": "personal",
+			"freshness": "daily"
+		},
+		{
+			"id": "product-usage",
+			"enabled": true,
+			"contains": "Weekly product analytics: active users by platform, iOS version share, checkout sessions, completions and revenue share.",
+			"use_when": "Sizing how many users or how much revenue a defect affects.",
+			"access": "Read the export at ops/usage-weekly.json.",
+			"sensitivity": "internal",
+			"freshness": "daily"
+		}
+	]
+}

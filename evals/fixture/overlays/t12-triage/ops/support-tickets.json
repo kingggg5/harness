@@ -1,0 +1,17 @@
+{
+	"exported_at": "2026-10-29T08:00:00Z",
+	"period": "2026-10-22 to 2026-10-29",
+	"tickets": [
+		{"id": 9101, "created": "2026-10-26", "from": "pim.srisuk@mailbox.example", "plan": "consumer", "area": "checkout", "subject": "App closes when I press Pay", "body": "Updated the iPhone app yesterday and now it closes every time I tap Pay. Tried three times."},
+		{"id": 9104, "created": "2026-10-26", "from": "lena.hoffmann@mailbox.example", "plan": "consumer", "area": "checkout", "subject": "Cannot complete order", "body": "The app crashes at checkout on my iPhone. I ended up buying somewhere else."},
+		{"id": 9107, "created": "2026-10-27", "from": "diego.ramos@mailbox.example", "plan": "consumer", "area": "checkout", "subject": "Crash on payment", "body": "Crash right after choosing two of the same shirt. One item works fine."},
+		{"id": 9110, "created": "2026-10-27", "from": "aiko.tanaka@mailbox.example", "plan": "business", "area": "checkout", "subject": "Team cannot reorder supplies", "body": "Our office orders through the iOS app and since the update checkout fails for everyone."},
+		{"id": 9112, "created": "2026-10-27", "from": "sam.okafor@mailbox.example", "plan": "consumer", "area": "checkout", "subject": "app crash", "body": "crashes when paying, android tablet works"},
+		{"id": 9115, "created": "2026-10-28", "from": "maria.costa@mailbox.example", "plan": "consumer", "area": "checkout", "subject": "Lost my cart", "body": "App crashed at payment and my cart was gone afterwards."},
+		{"id": 9118, "created": "2026-10-28", "from": "noah.levi@mailbox.example", "plan": "consumer", "area": "checkout", "subject": "Payment screen crash", "body": "Since version 2.4 the app crashes on the payment screen when I buy more than one of something."},
+		{"id": 9120, "created": "2026-10-23", "from": "kwame.mensah@mailbox.example", "plan": "consumer", "area": "orders", "subject": "Orders page blank", "body": "My orders page was blank this morning. Reloading fixed it."},
+		{"id": 9123, "created": "2026-10-25", "from": "elif.demir@mailbox.example", "plan": "consumer", "area": "orders", "subject": "Order history empty sometimes", "body": "Sometimes the order list is empty on the website, refresh brings it back."},
+		{"id": 9126, "created": "2026-10-24", "from": "ops-qa@ourshop.example", "plan": "staff", "area": "admin", "subject": "Nightly export failing for Brazil store", "body": "Admin export job fails on the Sao Paulo timezone. We run the Brazil report by hand for now."},
+		{"id": 9129, "created": "2026-10-25", "from": "olga.ivanova@mailbox.example", "plan": "consumer", "area": "account", "subject": "Change email", "body": "How do I change the email on my account?"}
+	]
+}

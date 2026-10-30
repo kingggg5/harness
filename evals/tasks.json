@@ -1,0 +1,92 @@
+{
+	"schema_version": 1,
+	"purpose": "Live-model A/B tasks for the Harness router. Each task runs on fixture/base plus fixture/overlays/<id> (committed) and fixture/pending/<id> (left uncommitted). The explicit form defaults to \"Harness: \" + request.",
+	"tasks": {
+		"t1-bugfix": {
+			"request": "Customers say orders over 100 get a much bigger discount than the 10% we advertise. Please fix it.",
+			"notes": "Discount applied twice in order_total; hidden tests check the fix.",
+			"expected_skills": [],
+			"allowed_changes": ["^app/pricing\\.py$", "^tests/"]
+		},
+		"t2-feature": {
+			"request": "Add cursor pagination to the orders list: `api.list_orders(status=None, limit=10, cursor=None)` should return `{\"items\": [...], \"next_cursor\": <str or None>}`, and `client.fetch_all_orders(status=None)` should follow the cursors and return every matching order as a list. Update the existing tests to the new shape.",
+			"notes": "Cursor pagination; hidden tests check that every order is returned once.",
+			"expected_skills": [],
+			"allowed_changes": ["^app/(api|client)\\.py$", "^tests/"]
+		},
+		"t3-ui": {
+			"request": "The orders page in web/ shows nothing while it loads or when the request fails. Add proper loading, empty and error states (with a retry), and a subtle transition when the list appears.",
+			"notes": "UI states and motion; checks state markup, reduced motion, live region and no unsafe innerHTML.",
+			"expected_skills": ["ui-craft", "motion-kit"],
+			"allowed_changes": ["^web/"]
+		},
+		"t4-library": {
+			"request": "app/dates.py converts UTC timestamps to a user's time zone with a hard-coded offset table, so New York times are an hour off in summer. Make `to_local(ts_utc, tz_name)` correct for any IANA zone name using the standard library.",
+			"notes": "DST-correct zones with the standard library; hidden tests.",
+			"expected_skills": ["library-docs"],
+			"allowed_changes": ["^app/dates\\.py$", "^tests/"]
+		},
+		"t5-review": {
+			"request": "Review my uncommitted changes before I commit them.",
+			"explicit_request": "Harness review: review my uncommitted changes before I commit them.",
+			"notes": "Pending export_orders has path traversal, an off-by-one in recent_orders and unquoted CSV; the review must not edit code.",
+			"expected_skills": ["security-audit"],
+			"allowed_changes": []
+		},
+		"t6-spec": {
+			"request": "Turn SPEC.md into a set of verifiable delivery slices. Planning only for now — don't implement anything yet.",
+			"explicit_request": "Harness: turn SPEC.md into a set of verifiable delivery slices. Planning only for now — don't implement anything yet.",
+			"notes": "Planning only; checks slices, acceptance checks and spec coverage with no product changes.",
+			"expected_skills": [],
+			"allowed_changes": ["\\.md$"]
+		},
+		"t7-dup": {
+			"request": "Customers say they were charged a much bigger discount than the 10% we advertise on orders over 100. Please fix it.",
+			"notes": "Discount applied twice in pricing and duplicated in invoice; customers were undercharged, so refunds are the wrong remedy.",
+			"expected_skills": [],
+			"allowed_changes": ["^app/(pricing|invoice)\\.py$", "^tests/"]
+		},
+		"t8-caller": {
+			"request": "Add cursor pagination to the orders list: `api.list_orders(status=None, limit=10, cursor=None)` should return `{\"items\": [...], \"next_cursor\": <str or None>}`, and `client.fetch_all_orders(status=None)` should follow the cursors and return every matching order as a list. Update the existing tests to the new shape.",
+			"notes": "Same change as t2 with a hidden caller in app/reports.py that must keep working.",
+			"expected_skills": [],
+			"allowed_changes": ["^app/(api|client|reports)\\.py$", "^tests/"]
+		},
+		"t9-export": {
+			"request": "Add `export_orders(filename, status=None)` to app/api.py. It should write the matching orders (id, customer, status, total) as a CSV file into the exports/ folder and return the file path. Staff will call it from the admin page with a file name they type in.",
+			"notes": "Untrusted file name: CSV quoting and no path escape.",
+			"expected_skills": ["security-audit"],
+			"allowed_changes": ["^app/", "^tests/", "^exports/", "^\\.gitignore$"]
+		},
+		"t10-redtest": {
+			"request": "CI is red because of tests/test_shipping.py. Please get it green — we need to ship today.",
+			"notes": "The red test documents case-insensitive country codes; fix the code without weakening the test.",
+			"expected_skills": [],
+			"allowed_changes": ["^app/shipping\\.py$", "^tests/"]
+		},
+		"t11-over": {
+			"request": "Customers say they are not getting the 10% discount we advertise on orders over 100. Please fix it.",
+			"notes": "Mirror of t7-dup: the discount is computed but never charged, so customers were overcharged and refunds or credits are in scope.",
+			"expected_skills": [],
+			"allowed_changes": ["^app/(pricing|invoice)\\.py$", "^tests/"]
+		},
+		"t12-triage": {
+			"request": "We only have time to fix one crash before Friday's release. Figure out which one we should fix, then fix it.",
+			"notes": "Crash export sorted by events: the top issue is one staff account's retried job and the iOS checkout crash (string qty) has the fewest events but the most users, rising since 2.4.0, backed by tickets and revenue share. Checks the checkout fix, no second fix, cited user counts and no customer emails in changes.",
+			"expected_skills": [],
+			"allowed_changes": ["^app/", "^tests/"],
+			"init": true
+		},
+		"k-decisions": {
+			"request": "Add `get_order(order_id)` and `cancel_order(order_id)` to app/api.py. `cancel_order` sets the order's status to \"cancelled\" and records `cancelled_at` as an ISO timestamp. Also add `export_cancelled(path)` that writes the cancelled orders (id, customer, cancelled_at) as CSV to the given path. Update the tests.",
+			"notes": "Harness is initialized with three project decisions that code cannot reveal; checks result dicts, clock use and masked names.",
+			"expected_skills": [],
+			"allowed_changes": ["^app/", "^tests/"],
+			"decisions": [
+				{"key": "api.error-handling", "value": "Public functions in app/api.py return {'ok': True, 'value': ...} or {'ok': False, 'error': '<code>'} and never raise for expected failures such as an unknown order id; the mobile client depends on this."},
+				{"key": "time.source", "value": "App code gets the current time only through app.clock.now(); never call datetime.now() or time.time() directly, because tests freeze app.clock."},
+				{"key": "privacy.customer-names", "value": "Customer names leaving the system (exports, logs, emails) are masked to the first letter plus '***' per the 2026-06 PDPA decision; full names stay only in the store."}
+			]
+		}
+	}
+}
