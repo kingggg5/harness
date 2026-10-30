@@ -4,20 +4,18 @@ Read this reference when a bug, performance, scale, architecture, security, inci
 
 ## Activation
 
-Run one concise pass whenever a full trigger or material unknown applies. Standard may use a single targeted pass; quick skips discovery when repository evidence already makes the change and verification path unambiguous. Repeat only when a new material unknown could change requirements, architecture, risk, workload, cost, acceptance criteria, or the responsible role.
+Run one concise pass when a material unknown blocks planning. Standard may use a single targeted pass; quick skips discovery when repository evidence already makes the change and verification path unambiguous. Repeat only when a new material unknown could change requirements, architecture, risk, workload, cost, acceptance criteria, or the responsible role.
 
 Use the relevant lane:
 
 - **Bug:** reproduce the failure, identify expected versus actual behavior, map the affected path and blast radius, then form one root-cause hypothesis.
-- **Performance:** name the workload and SLO, capture a comparable baseline and environment, profile the dominant bottleneck, then propose one measurable experiment.
+- **Performance:** set the contract in [performance-engineering.md](performance-engineering.md) before choosing an optimization; this loop resolves its unknowns.
 - **Scale:** convert product usage into concurrency, requests, bytes, database/queue work, and failure scenarios. Keep workload assumptions explicit and separate estimates from measured throughput.
 - **Architecture/security:** map trust, ownership, data, side-effect, deployment, and recovery boundaries; identify the invariant that evidence must prove.
 
 ## Discovery contract
 
-For a named performance, CPU, memory, I/O, or scale outcome, read [performance-engineering.md](performance-engineering.md) before choosing an optimization. It adds the cross-language performance contract, benchmark-integrity rules, technique ladder, and bounded optimization-loop constraints; this discovery loop remains the owner of uncertainty reduction.
-
-Before probing, record the compact contract in `WORKFLOW.md` and detailed lane evidence in conditional `EVIDENCE.md`:
+For a `.harness` delivery run or a multi-cycle investigation, record the compact contract in `WORKFLOW.md` and detailed lane evidence in conditional `EVIDENCE.md` before probing:
 
 - objective and excluded scope;
 - known facts, assumptions, and open questions;
@@ -26,7 +24,9 @@ Before probing, record the compact contract in `WORKFLOW.md` and detailed lane e
 - maximum cycles, elapsed time, cost, and external calls;
 - plan-readiness and stop conditions.
 
-Local repository inspection and scoped deterministic diagnostics can proceed within the task's authorization. Disposable local reproduction fixtures and generated test artifacts do not need another approval when their scope and lack of production access are verified. Profiling untrusted code, fuzzing, DAST, load tests, production traffic, external targets, credentials, paid services, and installations require authorization covering the target and effects; reuse an existing approval when it already covers them.
+Otherwise state the objective, read-only boundary, and stop condition inline.
+
+Profiling untrusted code, fuzzing, DAST, load tests, production traffic, external targets, credentials, paid services, and installations require authorization covering the target and effects; reuse an existing approval when it already covers them.
 
 ## One cycle
 
@@ -37,7 +37,9 @@ Local repository inspection and scoped deterministic diagnostics can proceed wit
 5. **Classify:** Record the command or method, result, evidence location, confidence change, limitations, and provenance. Deterministic output remains separate from agent interpretation.
 6. **Decide:** Finish as `READY_FOR_PLAN`, run one new targeted cycle, ask the human a bundled material question, or stop with `BLOCKED`, `BUDGET_EXHAUSTED`, or `NO_PROGRESS`.
 
-Two consecutive cycles that add no material evidence are `NO_PROGRESS`; stop that investigation loop, reconsider the hypothesis, or ask for missing context. Preserve the primary model and effort unless the user requests a change. Do not repeat an unchanged command without a changed hypothesis. Never weaken a test, scanner, budget, SLO, or invariant to produce a ready state.
+These are discovery outcomes, not `STATE.json` states: `READY_FOR_PLAN` moves the run to `PLAN`; a needed human answer to `WAITING_DECISION`; `BLOCKED`, `NO_PROGRESS`, or `BUDGET_EXHAUSTED` to `BLOCKED`, or to `WAITING_DECISION` when a human decision can unblock it.
+
+Two consecutive cycles that add no material evidence are `NO_PROGRESS`; stop that investigation loop, reconsider the hypothesis, or ask for missing context. Do not repeat an unchanged command without a changed hypothesis. Never weaken a test, scanner, budget, SLO, or invariant to produce a ready state.
 
 ## Plan-ready packet
 
@@ -57,4 +59,4 @@ For performance and scale, the packet must distinguish measured values, model es
 
 The Planner consumes the packet; implementation agents receive only approved contracts and relevant evidence. If implementation or QA disproves the discovery hypothesis, return to one bounded discovery cycle with the new evidence. Do not restart broad discovery or erase the failed hypothesis.
 
-After a bug fix, use [behavioral-testing.md](behavioral-testing.md#close-the-bug-before-starting-follow-up-work) for close-out: report repair evidence and regression coverage separately. Missing automation or a test seam can justify a prevention/architecture proposal; it does not automatically invoke a new workflow or replace verification of the original symptom.
+Bug close-out: [behavioral-testing.md](behavioral-testing.md#close-the-bug-before-starting-follow-up-work).

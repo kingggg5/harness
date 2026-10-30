@@ -1,6 +1,6 @@
 # Jev Engineering and Best Combos
 
-This guide preserves the earlier Jev strengths/limits, research grounding and combo recipes while labeling integrations that are not shipped. Use [jev-runtime.md](jev-runtime.md) for executable behavior and setup; use [async-operation-runtime.md](async-operation-runtime.md) for Unreal Agent operations, cache affinity, bounded outputs and migration tradeoffs.
+This guide preserves the earlier Jev strengths/limits, research grounding and combo recipes while labeling integrations that are not shipped. Use [jev-runtime.md](jev-runtime.md) for executable behavior and setup; use [async-operation-runtime.md](async-operation-runtime.md) for durable async operations, cache affinity, bounded outputs and migration limits.
 
 ## The original Jev design ideas
 
@@ -8,7 +8,7 @@ Jev is a hosted typed-decision model for choices, scores and binary probability 
 
 The zero-KV-cache thought experiment asks what context each model turn truly needs. The ten ideas in the older note are: separate writing from execution/decision; build context per query; price context transfer in model routing; measure reads/search separately from edits; select hide/short/long/full visibility; disclose tool schemas on demand; pin conditional instructions; route by data trust; share read-only retrieval where useful; inspect scripts before execution.
 
-Harness `0.7.1` implements these selectively and opt-in through schema-v3. Exact support and limitations live in the runtime guide; no single combo below should be assumed active just because it appears here.
+Harness implements these selectively and opt-in through schema-v3. Exact support and limitations live in the runtime guide; no single combo below should be assumed active just because it appears here.
 
 ## Original combo recipes
 

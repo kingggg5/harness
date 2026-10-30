@@ -1,6 +1,6 @@
 # Context compiler and tool contracts
 
-Use the context compiler for standard/full work, multi-module onboarding, handoffs, resumed runs, or any task where “load the whole repository” would be noisy or unsafe. Quick work can keep a small inspected context without writing a manifest.
+Use the context compiler for handoffs, resumed runs and multi-module tasks that need a provenance-labelled context file, not for every standard run. Other work keeps a small inspected context without writing a manifest.
 
 The compiler produces one deterministic JSON object with bounded selected content, provenance, trust labels, exclusion reasons, prompt-injection quarantine, budget use, and an integrity digest. It searches only project-relative regular text files, skips links and common generated/vendor directories, bounds Git commands, and never runs repository code.
 
@@ -27,7 +27,7 @@ The compiler does not decide correctness, grant a tool, or turn retrieved text i
 
 ## Tool registry
 
-`TOOL-REGISTRY.json` is the richer design-time contract for a tool backend. It closes the input/output JSON schemas and records when to use it, when not to use it, prohibitions, scopes, effect class, approval class, timeout, pagination/output caps, digest fields, idempotency, and redacted telemetry.
+`TOOL-REGISTRY.json` is the richer design-time contract for a tool backend. Init does not create it; copy it from `.harness/runtime/assets/templates/TOOL-REGISTRY.json` to `.harness/TOOL-REGISTRY.json`. It closes the input/output JSON schemas and records when to use it, when not to use it, prohibitions, scopes, effect class, approval class, timeout, pagination/output caps, digest fields, idempotency, and redacted telemetry.
 
 ```bash
 harness tools-validate --registry .harness/TOOL-REGISTRY.json --json

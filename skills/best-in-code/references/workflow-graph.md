@@ -40,17 +40,11 @@ flowchart TD
 	RH --> RD[Finish review without memory mutation]
 ```
 
-Researcher supports requirements analysis, discovery, planning, design, and verification as a read-only evidence role. The Business Analyst pass runs inside `INTAKE` or `PLAN`; it adds no state or gate. Inactive roles and passes are `N/A`; do not create work merely to exercise all seven delivery roles or the conditional pass.
+The Business Analyst pass runs inside `INTAKE` or `PLAN` and adds no state or gate. Inactive roles and passes are `N/A`; do not create work to exercise every role.
 
-## Optional per-run task graph
+## Optional run envelopes
 
-The macro graph above remains canonical. For a run with real independent branches, fan-in, a bounded evaluator loop, or a consequential effect, Planner/Architect may compile the optional `.harness/TASK-GRAPH.json` described in [graph-engineering.md](graph-engineering.md). The graph file is a run-scoped scheduling contract, not another lifecycle authority: Project Manager still advances `STATE.json`, owns merge and gates, and records only macro checkpoints in `WORKFLOW.md`. When session-resilient node receipts are justified, the optional local [graph runtime ledger](graph-runtime.md) records task-level execution under `.harness/.cache/` without replacing those authorities.
-
-Draw an edge only when the target consumes a named source artifact or a real control decision. Keep sequential work with one owner; parallel workers require disjoint write scopes and a stable interface; one merge owner integrates their outputs. Every loop and fan-out is bounded before execution. A provider without isolated agents executes the same contract as labeled sequential passes.
-
-For concurrent writers, context isolation alone is insufficient. Apply [execution-isolation.md](execution-isolation.md): start each worker from the graph's exact base revision in a separate verified workspace, isolate mutable runtime resources, return a commit/evidence receipt, and let Project Manager alone integrate and clean up. Long-running nodes also require observable status, cancellation, stall detection, and fixed iteration/time/token/cost limits.
-
-For a repeated, scheduled, event-triggered, or proactive run, add the optional supervisor envelope from [loop-engineering.md](loop-engineering.md). `LOOP-CONTRACT.json` fixes trigger, verifiers, budgets, scope, rollback, and stop rules above the macro lifecycle. When session-resilient supervision is justified, the [loop runtime ledger](loop-runtime.md) records outer deliveries and iteration receipts under `.harness/.cache/`; it does not create another lifecycle or memory authority.
+A task graph ([graph-engineering.md](graph-engineering.md)), concurrent writers ([execution-isolation.md](execution-isolation.md)), a loop ([loop-engineering.md](loop-engineering.md)) and their local ledgers ([graph runtime](graph-runtime.md), [loop runtime](loop-runtime.md)) are optional run-scoped contracts read only on their route trigger. None replaces `STATE.json`/`WORKFLOW.md` authority or Project Manager ownership of merge, integration, cleanup and gates.
 
 ## States and legal transitions
 
@@ -90,22 +84,20 @@ Reject any other transition. A resume must restore exactly one `next_action`; if
 | Backend Engineer | APIs, domain logic, data, validation, authorization, concurrency, observability and tests | Assigned server/data files |
 | Tester / Reviewer / QA | Acceptance matrix, negative/boundary cases, final diff, regression and risk verification | Read-only; isolated when claimed independent |
 
-Roles are contracts, not processes. Map them to isolated agents, sequential isolated sessions, or labeled same-agent passes using [capability-contract.md](capability-contract.md). The Business Analyst pass is not a mandatory eighth agent. A same-context pass can verify work but is never called independent.
+Roles are contracts, not processes or personas: brief a role pass with the methods, tools and evidence its work needs ([practitioner-methods.md](practitioner-methods.md)), never with "act as a senior X". Map them to isolated agents, sequential isolated sessions, or labeled same-agent passes using [capability-contract.md](capability-contract.md). A same-context pass can verify work but is never called independent.
 
 ## Role packet and ownership
 
-Create a packet from `assets/templates/ROLE-PACKET.md` for each active parallel/material role. A quick same-agent pass may keep the same required fields as one inline workflow-ledger row instead of creating a separate file. Every packet includes objective, exclusions, verified memory IDs, inputs, owned files or read-only scope, capability/permission limits, required evidence, checks, stop condition, and expected next state. Give semantic-memory results only after canonical ID/source verification; never forward raw retrieval dumps.
+Create a packet file from `assets/templates/ROLE-PACKET.md` only for a pass that runs in a separate context (child, parallel or cross-model). A same-agent pass records the template's contract fields as one `WORKFLOW.md` row. Forward only verified memory IDs, never raw retrieval dumps.
 
-The Project Manager serializes overlapping file ownership. Frontend and backend may run in parallel only after their interface contract is stable. Designer may support implementation but does not silently rewrite an approved direction. QA does not repair production code during its verification pass.
+The Project Manager serializes overlapping file ownership. Frontend and backend run in parallel only after their interface contract is stable. Designer does not silently rewrite an approved direction. QA does not repair production code during its verification pass. A role may challenge inconsistent input but never silently changes another role's contract.
 
 ## Failure routing
 
-Classify before retrying: requirement, discovery, plan/contract, design contract, implementation, test expectation, environment/capability, performance budget, or scale evidence. Preserve the same workload and threshold when repairing performance failures. Never weaken a valid assertion or label unavailable evidence as a pass.
+Classify before retrying: requirement, discovery, plan/contract, design contract, implementation, test expectation, environment/capability, performance budget, or scale evidence. Preserve the same workload and threshold when repairing performance failures. Never label unavailable evidence as a pass.
 
-Discovery stops after two consecutive cycles add no material evidence. The same blocker surviving three evidence-based attempts becomes `BLOCKED` or `WAITING_DECISION`; record attempted fixes and ask the human rather than retrying blindly.
+The same blocker surviving three evidence-based attempts moves to `BLOCKED` or `WAITING_DECISION` by a legal edge: from `PLAN` or `DESIGN` that is `WAITING_DECISION`; from other states go through `REWORK` first when there is no direct edge. Record attempted fixes and ask the human rather than retrying blindly.
 
 ## Checkpoint writes
 
 The Project Manager updates `STATE.json` and the current workflow only at intake, plan/gate, integration, verification, blocker, and completion. Use optimistic memory revisions from [memory-loop.md](memory-loop.md). Role agents return structured packets and do not concurrently edit `.harness/`.
-
-An existing approval satisfies its checkpoint while scope and material contracts remain unchanged. Apply [mode-routing.md](mode-routing.md) for authorization and completion: continue implementation and affected verification before the final acceptance handoff; do not manufacture another gate for ordinary repairs.
