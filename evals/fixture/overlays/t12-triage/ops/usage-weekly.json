@@ -1,0 +1,13 @@
+{
+	"exported_at": "2026-10-29T08:00:00Z",
+	"period": "2026-10-22 to 2026-10-29",
+	"active_users": {"ios": 5200, "android": 3100, "web": 4400, "staff": 3},
+	"ios_versions": {"2.4.0": 0.64, "2.3.1": 0.31, "older": 0.05},
+	"checkout": {
+		"sessions": {"ios": 2900, "android": 1700, "web": 2300},
+		"completed": {"ios": 2410, "android": 1610, "web": 2190},
+		"revenue_share_by_platform": {"ios": 0.47, "android": 0.24, "web": 0.29}
+	},
+	"orders_page_views": {"web": 9800},
+	"admin_export_runs": {"scheduled": 672, "manual": 4, "staff_accounts_using": 1}
+}

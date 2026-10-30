@@ -1,0 +1,9 @@
+body {
+	font-family: system-ui, sans-serif;
+	margin: 2rem;
+}
+
+#orders li {
+	padding: 0.5rem 0;
+	border-bottom: 1px solid #ddd;
+}

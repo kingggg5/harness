@@ -1,0 +1,117 @@
+{
+	"exported_at": "2026-10-29T08:00:00Z",
+	"period": "2026-10-22 to 2026-10-29",
+	"sort": "events desc",
+	"issues": [
+		{
+			"id": "CRASH-311",
+			"title": "KeyError: 'America/Sao_Paulo'",
+			"culprit": "app/dates.py in to_local",
+			"events": 412,
+			"users": 1,
+			"platform": "server",
+			"first_seen_release": "2.3.0",
+			"trend_7d": "flat",
+			"tags": {
+				"job": "nightly-admin-export",
+				"environment": "production"
+			},
+			"sample_event": {
+				"user": {
+					"email": "ops-qa@ourshop.example",
+					"name": "Ops QA"
+				},
+				"stack": [
+					{
+						"file": "app/dates.py",
+						"function": "to_local",
+						"line": 9,
+						"in_app": true
+					}
+				],
+				"message": "KeyError: 'America/Sao_Paulo' (retried every 15 minutes by the export scheduler)"
+			}
+		},
+		{
+			"id": "CRASH-287",
+			"title": "TypeError: Cannot read properties of undefined (reading 'map')",
+			"culprit": "web/app.js in loadOrders",
+			"events": 140,
+			"users": 37,
+			"platform": "web",
+			"first_seen_release": "1.9.0",
+			"trend_7d": "flat",
+			"tags": {
+				"page": "orders",
+				"environment": "production"
+			},
+			"sample_event": {
+				"user": {
+					"email": "kwame.mensah@mailbox.example",
+					"name": "Kwame Mensah"
+				},
+				"stack": [
+					{
+						"file": "web/app.js",
+						"function": "loadOrders",
+						"line": 5,
+						"in_app": true
+					}
+				],
+				"message": "TypeError: Cannot read properties of undefined (reading 'map'); page recovers on reload"
+			}
+		},
+		{
+			"id": "CRASH-342",
+			"title": "TypeError: can't multiply sequence by non-int of type 'float'",
+			"culprit": "app/pricing.py in subtotal",
+			"events": 96,
+			"users": 81,
+			"platform": "ios",
+			"first_seen_release": "2.4.0",
+			"trend_7d": "rising",
+			"tags": {
+				"flow": "checkout",
+				"app_version": "2.4.0",
+				"environment": "production"
+			},
+			"sample_event": {
+				"user": {
+					"email": "pim.srisuk@mailbox.example",
+					"name": "Pim Srisuk"
+				},
+				"stack": [
+					{
+						"file": "app/checkout.py",
+						"function": "checkout",
+						"line": 8,
+						"in_app": true
+					},
+					{
+						"file": "app/pricing.py",
+						"function": "order_total",
+						"line": 16,
+						"in_app": true
+					},
+					{
+						"file": "app/pricing.py",
+						"function": "subtotal",
+						"line": 6,
+						"in_app": true
+					}
+				],
+				"request_body": {
+					"items": [
+						{
+							"sku": "TEE-01",
+							"price": 24.5,
+							"qty": "2"
+						}
+					],
+					"shipping": "4.00"
+				},
+				"message": "TypeError: can't multiply sequence by non-int of type 'float'"
+			}
+		}
+	]
+}
